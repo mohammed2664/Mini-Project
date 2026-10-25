@@ -71,10 +71,16 @@ public class RentSphereVerificationTest {
         testSmartHubOtpLockoutAndExpiry();
         testDisputeArbitrationAndState();
         testPolicyServiceAndConsentTracking();
+        testSupportTicketLifecycle();
+        testNotificationServiceAndPersistence();
 
         System.out.println("\n=================================================================");
         System.out.printf("  VERIFICATION SUMMARY: %d / %d TESTS PASSED (100%% SUCCESS)%n", testsPassed, testsTotal);
         System.out.println("=================================================================");
+
+        if (testsPassed != testsTotal) {
+            System.exit(1);
+        }
     }
 
     // ========================================================================
@@ -306,10 +312,20 @@ public class RentSphereVerificationTest {
         EscrowAccount account = vault.getAccount("host_faaris");
         assertTrue(account != null && account.getWalletBalance() >= 25000.0, "Escrow account balance in INR verified (₹25,000+)");
 
-        // Append and read WAL entry
-        engine.appendWal("TEST-CAM", "UNIT_TEST", "NONE", "ONLINE", "test_runner", "Automated verification test completed (INR currency)");
+        // Read production WAL entries to verify presence of audit history
         List<String> walEntries = engine.readWalEntries(10);
         assertTrue(!walEntries.isEmpty(), "Write-Ahead Log contains audited entries in data/audit_wal.txt");
+
+        // Test WAL write/read in isolated test directory to prevent production WAL pollution (G-4)
+        File testWalDir = new File("data/test_wal");
+        testWalDir.mkdirs();
+        File testWalFile = new File(testWalDir, "audit_wal.txt");
+        if (testWalFile.exists()) { testWalFile.delete(); }
+        FlatFilePersistenceEngine testWalEngine = new FlatFilePersistenceEngine(testWalDir.getPath());
+        testWalEngine.appendWal("TEST-ISOLATED-01", "UNIT_TEST", "NONE", "ONLINE", "test_runner", "Isolated WAL verification (INR currency)");
+        List<String> testWalEntries = testWalEngine.readWalEntries(5);
+        assertTrue(!testWalEntries.isEmpty() && testWalEntries.get(testWalEntries.size() - 1).contains("TEST-ISOLATED-01"),
+                "Write-Ahead Log writes and reads accurately in isolated test environment without polluting production ledger");
     }
 
     // ========================================================================
@@ -469,4 +485,86 @@ public class RentSphereVerificationTest {
         assertTrue(policyService.hasAcceptedAllEssential(testUser), "PolicyService auditable consent verified for essential policies");
         assertTrue(policyService.getAcceptedPolicies(testUser).contains("tos"), "User acceptance history retained in memory and flat file");
     }
+
+    // ========================================================================
+    // TEST 13: SUPPORT TICKET & GRIEVANCE SERVICE (IT RULES 2021 SLA)
+    // ========================================================================
+    private static void testSupportTicketLifecycle() {
+        System.out.println("\n--- [TEST 13] Support Ticket Lifecycle & IT Rules 2021 SLA ---");
+
+        SupportService support = new SupportService("data");
+
+        // 1. Create a ticket and verify it gets a non-null ticketId
+        String testUserId = "renter_test_support_audit";
+        SupportService.SupportTicket ticket = support.createTicket(
+                testUserId, "BOOKING",
+                "Pickup OTP did not work at Bay A2",
+                "I entered the 6-digit PIN correctly but the compartment remained locked."
+        );
+        assertTrue(ticket != null && ticket.ticketId != null && !ticket.ticketId.isBlank(),
+                "Support ticket creation returns a non-null, non-empty ticketId");
+        assertTrue(ticket.ticketId.startsWith("TCK-"), "Ticket ID follows TCK-NNN naming convention");
+
+        // 2. Retrieve tickets by userId and confirm it appears in the user's list
+        List<SupportService.SupportTicket> userTickets = support.getUserTickets(testUserId);
+        boolean foundTicket = userTickets.stream().anyMatch(t -> t.ticketId.equals(ticket.ticketId));
+        assertTrue(foundTicket, "Ticket is retrievable by userId from SupportService");
+
+        // 3. Initial status must be OPEN
+        assertTrue("OPEN".equals(ticket.status), "Newly created ticket has OPEN status (IT Rules 2021 SLA clock started)");
+
+        // 4. Resolve the ticket and verify transition to RESOLVED
+        boolean resolved = support.resolveTicket(ticket.ticketId, "admin_almeida",
+                "OTP reset performed remotely. Bay A2 unlocked. Equipment confirmed retrieved.");
+        assertTrue(resolved, "Ticket resolution returns true for valid ticketId");
+
+        SupportService.SupportTicket resolvedTicket = support.getUserTickets(testUserId).stream()
+                .filter(t -> t.ticketId.equals(ticket.ticketId)).findFirst().orElse(null);
+        assertTrue(resolvedTicket != null && "RESOLVED".equals(resolvedTicket.status),
+                "Resolved ticket status is RESOLVED");
+
+        // 5. SLA timestamp: resolvedAt must be >= createdAt
+        assertTrue(resolvedTicket.resolvedAt >= resolvedTicket.createdAt,
+                "SLA timestamps valid: resolvedAt >= createdAt (24h SLA compliance)");
+
+        // 6. Resolution message must be persisted and non-null
+        assertTrue(resolvedTicket.resolution != null && !resolvedTicket.resolution.isBlank(),
+                "Resolution message stored and non-null after ticket closed");
+
+        // 7. Attempting to resolve a non-existent ticket returns false
+        boolean badResolve = support.resolveTicket("TCK-INVALID-9999", "admin", "Should not work");
+        assertTrue(!badResolve, "Resolving a non-existent ticket returns false (safe no-op)");
+    }
+
+    // ========================================================================
+    // TEST 14: IN-APP NOTIFICATION CENTER & FLAT-FILE PERSISTENCE
+    // ========================================================================
+    private static void testNotificationServiceAndPersistence() {
+        System.out.println("\n--- [TEST 14] In-App Notification Center & Flat-File Persistence ---");
+
+        File testNotifDir = new File("data/test_notifs");
+        testNotifDir.mkdirs();
+        File testLog = new File(testNotifDir, "notifications_log.txt");
+        if (testLog.exists()) { testLog.delete(); }
+        NotificationService notifService = new NotificationService(testNotifDir.getPath());
+
+        String userId = "renter_deepak";
+        notifService.pushNotification(userId, "Booking Confirmed", "Your Sony A7 IV reservation is confirmed", "SUCCESS");
+        notifService.pushNotification(userId, "Locker Ready", "Bay A2 is unlocked and ready for pickup", "INFO");
+
+        List<NotificationService.NotificationItem> items = notifService.getUserNotifications(userId);
+        assertTrue(items.size() == 2, "Notification service pushed and retrieved 2 items");
+        assertTrue(!items.get(0).read, "Newly pushed notification has unread status (read=false)");
+
+        notifService.markAllAsRead(userId);
+        List<NotificationService.NotificationItem> readItems = notifService.getUserNotifications(userId);
+        assertTrue(readItems.get(0).read && readItems.get(1).read, "markAllAsRead transitioned all items to read=true");
+
+        // Test persistence reload across simulated restart
+        NotificationService reloadedService = new NotificationService(testNotifDir.getPath());
+        List<NotificationService.NotificationItem> reloadedItems = reloadedService.getUserNotifications(userId);
+        assertTrue(reloadedItems.size() == 2, "Reloaded notification service restored items from flat file");
+        assertTrue(reloadedItems.get(0).read, "Reloaded notification maintained read status across persistence reload");
+    }
 }
+

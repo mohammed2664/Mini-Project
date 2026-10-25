@@ -1588,7 +1588,7 @@ body {
 /* ==========================================================================
    RESPONSIVE DESIGN (TABLET & MOBILE)
    ========================================================================== */
-@media (max-width: 900px) {
+@media (max-width: 992px) {
     .header-top {
         flex-direction: column;
         align-items: flex-start;
@@ -1601,10 +1601,19 @@ body {
     .nav-bar {
         overflow-x: auto;
         white-space: nowrap;
+        padding-bottom: 8px;
     }
     .hero-banner {
         flex-direction: column;
         align-items: flex-start;
+    }
+    .hero-actions {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .locker-matrix-container {
+        grid-template-columns: 1fr;
     }
     .admin-support-grid {
         grid-template-columns: 1fr;
@@ -1613,3 +1622,86 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 768px) {
+    .app-container {
+        padding: 0 16px;
+        margin: 16px auto;
+    }
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+    .assets-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .grid-wrapper-card {
+        padding: 16px;
+        overflow-x: auto;
+    }
+    .grid-8x8 {
+        min-width: 480px;
+        gap: 6px;
+        padding: 8px;
+    }
+    .bay-cell {
+        padding: 4px;
+        font-size: 10px;
+    }
+    .wal-table-container, .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .modal-card {
+        max-width: 95%;
+        margin: 12px auto;
+        border-radius: var(--radius-lg);
+    }
+    .modal-header {
+        padding: 16px 18px;
+    }
+    .modal-body {
+        padding: 18px;
+    }
+    .quick-personas-grid {
+        grid-template-columns: 1fr;
+    }
+    .toast-container {
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+    }
+    .toast {
+        min-width: unset;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    .hero-title {
+        font-size: 20px;
+    }
+    .hero-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+    .hero-actions button {
+        width: 100%;
+    }
+    .header-top {
+        padding: 8px 16px;
+    }
+    .nav-bar {
+        padding: 6px 12px;
+        gap: 6px;
+    }
+    .nav-pill {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+}
+

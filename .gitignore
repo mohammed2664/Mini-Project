@@ -34,3 +34,8 @@ Desktop.ini
 *.log
 logs/
 scratch/
+
+# Test output directories
+data/test_*/
+data/test/
+sources.txt

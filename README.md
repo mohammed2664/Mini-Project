@@ -3,7 +3,7 @@
 [![Java Version](https://img.shields.io/badge/Java-SE%2017%2B%20%2F%2025-0D9488.svg)](https://openjdk.org/)
 [![Architecture](https://img.shields.io/badge/Architecture-Zero--Database%20Pure%20OOP-0A5C4D.svg)](#zero-database-flat-file-persistence-engine)
 [![Currency](https://img.shields.io/badge/Currency-Indian%20Rupees%20(%E2%82%B9%20INR)-F59E0B.svg)](#realistic-catalog-in-indian-rupees--inr)
-[![Test Suite](https://img.shields.io/badge/Verification%20Tests-76%20%2F%2076%20PASSED-10B981.svg)](#running-automated-verification-tests)
+[![Test Suite](https://img.shields.io/badge/Verification%20Tests-91%20%2F%2091%20PASSED-10B981.svg)](#running-automated-verification-tests)
 [![Security Status](https://img.shields.io/badge/Security-OWASP%20Hardened%20%7C%20Zero%20OTP%20Leakage-10B981.svg)](#security-audit--threat-remediation)
 [![Legal Compliance](https://img.shields.io/badge/Compliance-DPDP%20Act%202023%20%7C%20IT%20Rules%202021-3B82F6.svg)](#legal-policies--statutory-grievance-redressal)
 [![Design System](https://img.shields.io/badge/Theme-Warm%20Horizon%20Marketplace-0D9488.svg)](#5-cohesive-product-views)
@@ -130,14 +130,14 @@ Get-ChildItem -Path "backend/src", "tests" -Filter "*.java" -Recurse | ForEach-O
 javac -d bin -sourcepath "backend/src;tests" @sources.txt
 ```
 
-### Step 2: Run Automated Verification Test Suite (76 Tests)
+### Step 2: Run Automated Verification Test Suite (91 Tests across 14 Suites)
 ```powershell
 java -cp bin tests.RentSphereVerificationTest
 ```
 *Expected Output:*
 ```
 =================================================================
-  VERIFICATION SUMMARY: 76 / 76 TESTS PASSED (100% SUCCESS)
+  VERIFICATION SUMMARY: 91 / 91 TESTS PASSED (100% SUCCESS)
 =================================================================
 ```
 
@@ -157,9 +157,10 @@ All seeded accounts share the default password: **`RentSphere@2026`**
 
 ## 8. Complete Project Documentation Index
 
+- [GAP_ANALYSIS.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/GAP_ANALYSIS.md) — Evidence-based codebase audit, gap analysis, and 91-test validation.
 - [PROJECT_AUDIT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/PROJECT_AUDIT.md) — Architectural assessment, initial state, and risk classification.
 - [IMPLEMENTATION_REPORT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/IMPLEMENTATION_REPORT.md) — Detailed changelog of all implemented features.
-- [TEST_REPORT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/TEST_REPORT.md) — Test commands, 76 automated test results, and browser verification artifacts.
+- [TEST_REPORT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/TEST_REPORT.md) — Test commands, automated test results, and browser verification artifacts.
 - [SECURITY_REVIEW.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/SECURITY_REVIEW.md) — Threat modeling, OWASP remediation, and residual risk analysis.
 - [POLICY_REVIEW_CHECKLIST.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/POLICY_REVIEW_CHECKLIST.md) — 20 Indian legal policies, compliance matrix, and counsel sign-off checklist.
 - [DEPLOYMENT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/DEPLOYMENT.md) — Operations, recovery, reverse proxy setup, and disaster recovery procedures.

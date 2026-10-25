@@ -1053,8 +1053,8 @@ public class MainServer {
         }
 
         UserAccount admin = resolveUser(exchange);
-        if (admin != null && !isUserAdmin(admin)) {
-            sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Admin access required for dispute arbitration.\"}");
+        if (admin == null || !isUserAdmin(admin)) {
+            sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Admin session required for dispute arbitration.\"}");
             return;
         }
 

@@ -13,12 +13,12 @@
 
 | Metric | Target | Actual Result | Status |
 | :--- | :--- | :--- | :--- |
-| **Total Automated Unit & Integration Tests** | >= 70 | **76 Tests** | **PASS (100%)** |
+| **Total Automated Unit & Integration Tests** | >= 70 | **91 Tests across 14 Suites** | **PASS (100%)** |
 | **Failed / Flaky Tests** | 0 | **0** | **PASS** |
 | **External Dependencies Required** | 0 | **0 (Pure Java SE built-ins)** | **PASS** |
 | **Compilation Status** | Clean (Exit 0) | **Clean (Exit 0, 0 warnings)** | **PASS** |
 | **Browser E2E Walkthrough** | 8 Major Views | **8 / 8 Views Verified** | **PASS** |
-| **Security Invariant Verification** | Zero OTP Leak, Lockout | **Verified (CWE-200, CWE-307 Defended)** | **PASS** |
+| **Security Invariant Verification** | Zero OTP Leak, Lockout, Strict RBAC | **Verified (CWE-200, CWE-307, CWE-285 Defended)** | **PASS** |
 
 ---
 
@@ -35,11 +35,11 @@ javac -encoding UTF-8 -d bin '@sources.txt'
 ```powershell
 java -cp bin tests.RentSphereVerificationTest
 ```
-*Output: Exit code 0. All 76 tests passed.*
+*Output: Exit code 0. All 91 tests passed.*
 
 ---
 
-## 3. Detailed Automated Test Breakdown (76 Passing Tests)
+## 3. Detailed Automated Test Breakdown (91 Passing Tests)
 
 ### Test Suite 1: 5-Tier Inheritance Hierarchy & Polymorphic Rates (8 Tests)
 - `[PASS]` CameraAndOpticsGear 4K video tariff calculation (Expected ₹2760.00, Got ₹2760.0)
@@ -91,11 +91,12 @@ java -cp bin tests.RentSphereVerificationTest
 - `[PASS]` What-If Trust simulation computed positive score delta (+5.0 pts)
 - `[PASS]` Baseline metrics remained 100% UNMUTATED due to deep cloning
 
-### Test Suite 7: Deterministic Flat-File I/O & WAL Auditing (4 Tests)
+### Test Suite 7: Deterministic Flat-File I/O & WAL Auditing (5 Tests)
 - `[PASS]` Flat file persistence engine loaded 8 seed assets from assets_ledger.txt
 - `[PASS]` Flat file persistence engine loaded 6 accounts from escrow_vault.txt
 - `[PASS]` Escrow account balance in INR verified (₹25,000+)
 - `[PASS]` Write-Ahead Log contains audited entries in data/audit_wal.txt
+- `[PASS]` Write-Ahead Log writes and reads accurately in isolated test environment without polluting production ledger
 
 ### Test Suite 8: PBKDF2 Password Hashing, Sessions & RBAC (7 Tests)
 - `[PASS]` PBKDF2-HMAC-SHA256 produced 256-bit cryptographically secure hash
@@ -140,6 +141,24 @@ java -cp bin tests.RentSphereVerificationTest
 - `[PASS]` Grievance Policy implements Rule 3(2) IT Intermediary Rules 2021
 - `[PASS]` PolicyService auditable consent verified for essential policies
 - `[PASS]` User acceptance history retained in memory and flat file
+
+### Test Suite 13: Customer Grievance & Support Ticket Lifecycle (IT Rules 2021) (9 Tests)
+- `[PASS]` Support ticket creation returns a non-null, non-empty ticketId
+- `[PASS]` Ticket ID follows TCK-NNN naming convention
+- `[PASS]` Ticket is retrievable by userId from SupportService
+- `[PASS]` Newly created ticket has OPEN status (IT Rules 2021 SLA clock started)
+- `[PASS]` Ticket resolution returns true for valid ticketId
+- `[PASS]` Resolved ticket status is RESOLVED
+- `[PASS]` SLA timestamps valid: resolvedAt >= createdAt (24h SLA compliance)
+- `[PASS]` Resolution message stored and non-null after ticket closed
+- `[PASS]` Resolving a non-existent ticket returns false (safe no-op)
+
+### Test Suite 14: In-App Notification Center & Flat-File Persistence (5 Tests)
+- `[PASS]` Notification service pushed and retrieved 2 items
+- `[PASS]` Newly pushed notification has unread status (read=false)
+- `[PASS]` markAllAsRead transitioned all items to read=true
+- `[PASS]` Reloaded notification service restored items from flat file
+- `[PASS]` Reloaded notification maintained read status across persistence reload
 
 ---
 

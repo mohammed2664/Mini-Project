@@ -3,3 +3,8 @@ usr_pilot_verif_99|privacy|v1.0-2026|2026-10-25T11:50:06.530801200Z
 usr_pilot_verif_99|rental_agreement|v1.0-2026|2026-10-25T11:50:06.530801200Z
 usr_pilot_verif_99|cancellation|v1.0-2026|2026-10-25T11:50:06.530801200Z
 usr_pilot_verif_99|deposit_payment|v1.0-2026|2026-10-25T11:50:06.530801200Z
+renter_deepak|tos|v1.0-2026|2026-10-25T12:12:35.949653600Z
+renter_deepak|privacy|v1.0-2026|2026-10-25T12:12:35.949653600Z
+renter_deepak|rental_agreement|v1.0-2026|2026-10-25T12:12:35.949653600Z
+renter_deepak|cancellation|v1.0-2026|2026-10-25T12:12:35.949653600Z
+renter_deepak|deposit_payment|v1.0-2026|2026-10-25T12:12:35.949653600Z
