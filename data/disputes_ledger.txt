@@ -1,0 +1,4 @@
+# RentSphere Dispute & Arbitration Ledger
+DSP-101|TEST-DISPUTE-AST|renter_deepak|host_faaris|4000.00|800.00|Lens cap had pre-existing dust; optics glass completely pristine|Return photo timestamp 16:30 shows zero scratches|RESOLVED_REFUND|Arbitrated by admin_lead: Photo evidence confirms pre-existing dust.|1792930242567|1792929006526
+DSP-102|TEST-DISPUTE-AST|renter_deepak|host_faaris|4000.00|800.00|Lens cap had pre-existing dust; optics glass completely pristine|Return photo timestamp 16:30 shows zero scratches|RESOLVED_REFUND|Arbitrated by admin_lead: Photo evidence confirms pre-existing dust.|1792930242567|1792930036794
+DSP-103|TEST-DISPUTE-AST|renter_deepak|host_faaris|4000.00|800.00|Lens cap had pre-existing dust; optics glass completely pristine|Return photo timestamp 16:30 shows zero scratches|RESOLVED_REFUND|Arbitrated by admin_lead: Photo evidence confirms pre-existing dust.|1792930242567|1792930242569

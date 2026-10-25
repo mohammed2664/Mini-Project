@@ -37,6 +37,10 @@ public class LockerCompartment {
         this.weightKg = weightKg;
     }
 
+    public LockerCompartment(String bayId, int row, int col, CompartmentSize sizeTier) {
+        this(bayId, row, col, sizeTier, false, "", "ONLINE_READY", "000000", 24.0, 48.0, 0.0);
+    }
+
     public String getBayId() {
         return bayId;
     }
@@ -109,15 +113,52 @@ public class LockerCompartment {
         this.weightKg = Math.round(weightKg * 10.0) / 10.0;
     }
 
+    private int failedOtpAttempts = 0;
+    private long lockoutUntil = 0L;
+    private long otpExpiresAt = 0L;
+    public static final int MAX_FAILED_ATTEMPTS = 3;
+    public static final long LOCKOUT_DURATION_MS = 15 * 60 * 1000L; // 15 Minutes
+    public static final long OTP_VALIDITY_MS = 60 * 60 * 1000L;     // 60 Minutes
+
+    public synchronized int getFailedOtpAttempts() {
+        return failedOtpAttempts;
+    }
+
+    public synchronized boolean isLockedOut() {
+        return System.currentTimeMillis() < lockoutUntil;
+    }
+
+    public synchronized long getLockoutRemainingSeconds() {
+        if (!isLockedOut()) return 0;
+        return (lockoutUntil - System.currentTimeMillis()) / 1000;
+    }
+
+    public synchronized boolean isOtpExpired() {
+        return otpExpiresAt > 0 && System.currentTimeMillis() > otpExpiresAt;
+    }
+
     public synchronized String generateNewOtp() {
         int pin = 100000 + RANDOM.nextInt(900000);
         this.otpPin = String.valueOf(pin);
+        this.otpExpiresAt = System.currentTimeMillis() + OTP_VALIDITY_MS;
+        this.failedOtpAttempts = 0;
+        this.lockoutUntil = 0L;
         return this.otpPin;
     }
 
     public synchronized boolean verifyOtp(String inputPin) {
-        if (inputPin == null || inputPin.isBlank()) return false;
-        return this.otpPin.equals(inputPin.trim());
+        if (isLockedOut() || isOtpExpired()) {
+            return false;
+        }
+        if (inputPin != null && this.otpPin.equals(inputPin.trim())) {
+            this.failedOtpAttempts = 0;
+            return true;
+        }
+        this.failedOtpAttempts++;
+        if (this.failedOtpAttempts >= MAX_FAILED_ATTEMPTS) {
+            this.lockoutUntil = System.currentTimeMillis() + LOCKOUT_DURATION_MS;
+        }
+        return false;
     }
 
     public String serializeToPipe() {

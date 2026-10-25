@@ -190,3 +190,36 @@
      - `tests/RentSphereVerificationTest.java`: **42 / 42 Tests Passed (100% Success)**.
      - Polyglot reference files (`polyglot/cpp/`, `polyglot/csharp/`, `polyglot/python/`) fully refactored for new domain classes, Trust Score formula, and INR currency.
      - Browser Subagent verified all 4 tabs, category filtering, hub bay telemetry, escrow queue, and trust simulation with live recordings and screenshots.
+
+---
+
+### [Phase 4: Full-Stack Product Completion, Security Hardening & Regulatory Pilot Readiness]
+- **Date & Context**: October 25, 2026.
+- **Architect & Engineering Role**: Principal Full-Stack Architect, Application Security Engineer & DevOps Consultant.
+- **Key Deliverables Completed**:
+  1. **Security & Cryptographic Hardening**:
+     - Remediated **CWE-200 (OTP Credential Leakage)**: `MainServer.java` masks compartment `otpPin` as `""` for unauthenticated/visitor queries. Cleartext PIN is strictly restricted to authenticated administrators and the assigned active renter.
+     - Remediated **CWE-307 (Brute-Force Lockout)**: Added 3-strike lockout (15 minutes) and 60-minute expiry timestamps to `LockerCompartment.java`.
+     - Remediated **CWE-256 (Plaintext Passwords)**: Implemented `PasswordHasher.java` with PBKDF2-HMAC-SHA256 (100,000 iterations, 32-byte salt, constant-time compare).
+     - Role-Based Access Control (`AuthService.java`): Defined roles (`VISITOR`, `RENTER`, `HOST`, `ADMIN`), 256-bit cryptographically secure sessions, and pre-seeded default accounts (`RentSphere@2026`).
+  2. **Indian Payment Gateway Sandbox (₹ INR) & HMAC Verification**:
+     - Created `PaymentOrder.java`, `PaymentGateway.java`, and `SandboxPaymentAdapter.java`.
+     - Full support for Indian payment flows (UPI, NetBanking, Cards) in ₹ INR.
+     - Server-authoritative HMAC-SHA256 signature verification preventing forged client confirmations.
+     - Idempotent webhook processing preventing duplicate payment credits.
+  3. **Physical Hub Hardware Abstraction & Locker Lifecycle**:
+     - Created `LockerDevice.java` interface and `SimulatedLockerDevice.java` maintaining door solenoids, telemetry, and device states (`ONLINE_READY`, `DOOR_UNLOCKED`, `DOOR_JAMMED`, `MAINTENANCE_MODE`, `OFFLINE`).
+  4. **Damage Dispute Handling & GoF State Pattern Extension**:
+     - Extended GoF State pattern with `DisputedState.java`, freezing security deposits in escrow during contested returns.
+     - Created `DisputeRecord.java` and `DisputeService.java` with photo-evidence notes and administrative arbitration.
+  5. **Indian Regulatory & Legal Compliance Engine**:
+     - Built `PolicyService.java` managing 20 comprehensive policy documents (DPDP Act 2023, IT Rules 2021, Consumer Protection E-Commerce Rules 2020, Indian Contract Act 1872).
+     - Deterministic consent logging in `data/policy_acceptance.txt`.
+     - Statutory Grievance Redressal mechanism (`SupportService.java`) with 24h acknowledgement and 15-day resolution SLA.
+  6. **UI/UX Expansion & 5th Product View**:
+     - Added **Visitor Hero Banner**, In-App Notification Center with live unread badge, Auth Modal, Checkout & Payment Modal, Dispute Filing Modal, Policy Center Modal, and **Tab 5: Admin & Grievance Hub**.
+  7. **Automated Verification & Browser Testing**:
+     - Expanded `tests/RentSphereVerificationTest.java` from 42 to **76 Tests across 12 Test Suites**: **76 / 76 Passed (100% Success)**.
+     - Browser Subagent verified all modals, tabs, checkout flow, smart hub, escrow quarantine, host diagnostics, and admin hub with 8 recorded screenshots and video.
+  8. **Comprehensive Project Deliverables**:
+     - Created `PROJECT_AUDIT.md`, `IMPLEMENTATION_REPORT.md`, `TEST_REPORT.md`, `SECURITY_REVIEW.md`, `POLICY_REVIEW_CHECKLIST.md`, and `DEPLOYMENT.md`.

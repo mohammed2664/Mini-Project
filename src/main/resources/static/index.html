@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RentSphere: Local P2P Rental & Smart Pickup Hub (Goa)</title>
+    <title>RentSphere: Peer-to-Peer Rental & Smart Pickup Hub (Goa, India)</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -15,11 +15,38 @@
                 <div class="brand-logo">🌐</div>
                 <div>
                     <h1 class="brand-title">RentSphere</h1>
-                    <p class="brand-subtitle">Peer-to-Peer Rental & Smart Pickup Hub • Goa Community Scale</p>
+                    <p class="brand-subtitle">Peer-to-Peer Rental & 8x8 Smart Pickup Hub • Goa Community Pilot (₹ INR)</p>
                 </div>
             </div>
 
             <div class="user-selector-bar">
+                <!-- Notifications Bell -->
+                <div class="notif-wrapper">
+                    <button class="icon-btn" id="notifBellBtn" title="In-App Notifications">
+                        <span>🔔</span>
+                        <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            <span>Notifications</span>
+                            <button id="markNotifsReadBtn" class="link-btn">Mark All Read</button>
+                        </div>
+                        <div class="notif-list" id="notifList">
+                            <div class="notif-empty">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Policy Center Trigger -->
+                <button class="btn-secondary" id="openPolicyCenterBtn" style="padding:6px 12px; font-size:12px;">
+                    <span>📜</span> Policies (20)
+                </button>
+
+                <!-- Auth / Login Trigger -->
+                <button class="btn-secondary" id="openAuthModalBtn" style="padding:6px 12px; font-size:12px;">
+                    <span>👤</span> <span id="authButtonLabel">Sign In / Switch</span>
+                </button>
+
                 <div class="active-user-badge">
                     <span id="userRoleBadge" class="role-tag role-renter">RENTER</span>
                     <label for="activeUserSelect" style="font-size:11px; color:var(--slate-500); font-weight:600;">Active Persona:</label>
@@ -40,7 +67,7 @@
             </div>
         </div>
 
-        <!-- 4 Cohesive Product Navigation Tabs -->
+        <!-- 5 Cohesive Product Navigation Tabs -->
         <nav class="nav-bar">
             <button class="nav-pill active" data-view="marketplaceView">
                 <span>🛒</span> Explore Marketplace
@@ -53,6 +80,9 @@
             </button>
             <button class="nav-pill" data-view="hostView">
                 <span>⚡</span> Host Studio & System Diagnostics
+            </button>
+            <button class="nav-pill" data-view="adminSupportView">
+                <span>⚖️</span> Admin & Grievance Hub
             </button>
         </nav>
     </header>
@@ -96,6 +126,30 @@
              TAB 1: EXPLORE MARKETPLACE
              ================================================================== -->
         <section id="marketplaceView" class="view-section active">
+
+            <!-- Public Visitor Hero & How-It-Works Banner -->
+            <div class="hero-banner" id="visitorHeroBanner">
+                <div class="hero-content">
+                    <div class="hero-badge">🌴 GOA UNIVERSITY CAMPUS & LOCAL PILOT (INR ₹)</div>
+                    <h2 class="hero-title">Rent High-End Gear Near You with Smart Contactless Pickup</h2>
+                    <p class="hero-subtitle">
+                        Peer-to-peer equipment rentals with 100% transparent pricing, refundable deposits held in escrow, 
+                        and automated 24/7 pickup at our 8x8 Smart Locker Hub.
+                    </p>
+                    <div class="hero-features-row">
+                        <div class="hero-feat-item"><span>🔒</span> 4-Gate Fail-Fast Escrow</div>
+                        <div class="hero-feat-item"><span>📱</span> 6-Digit OTP Contactless Lockers</div>
+                        <div class="hero-feat-item"><span>🛡️</span> Mandatory Inspection Quarantine</div>
+                        <div class="hero-feat-item"><span>⚖️</span> Fair Dispute Arbitration</div>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <button class="btn-primary" id="heroExploreBtn"><span>🔍</span> Browse Gear</button>
+                    <button class="btn-secondary" id="heroBecomeHostBtn"><span>➕</span> Become a Host</button>
+                    <button class="btn-secondary" id="heroLearnPoliciesBtn"><span>📜</span> Read Policies</button>
+                </div>
+            </div>
+
             <!-- Filter Pills for Categories -->
             <div class="category-pills-bar">
                 <button class="cat-pill active" data-category="ALL">All Items</button>
@@ -117,6 +171,7 @@
                         <option value="RESERVED_ESCROW">Reserved (Escrow Locked)</option>
                         <option value="ACTIVE_LEASE">Out on Rent</option>
                         <option value="INSPECTION_QUARANTINE">In Post-Return Inspection</option>
+                        <option value="DISPUTED">In Active Dispute</option>
                     </select>
                 </div>
                 <button class="btn-primary" id="openListEquipmentBtn">
@@ -146,7 +201,10 @@
                                 Rows A–C: Small Gear Lockers • Rows D–G: Medium/Large Lockers • <strong>Row H: Ground Vehicle Slots H1–H8</strong>
                             </p>
                         </div>
-                        <button class="btn-secondary" id="refreshGridBtn">🔄 Refresh Hub Sensors</button>
+                        <div style="display:flex; gap:8px;">
+                            <span class="sim-badge" title="High-Fidelity Solenoid & Sensor Simulation">SIMULATED DEVICE ENGINE</span>
+                            <button class="btn-secondary" id="refreshGridBtn">🔄 Refresh Hub Sensors</button>
+                        </div>
                     </div>
 
                     <div class="matrix-legend">
@@ -194,6 +252,7 @@
                     <div class="otp-box">
                         <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--warm-amber-dark);">6-Digit Pickup OTP Passcode</div>
                         <div class="otp-val" id="inspectorOtp">348192</div>
+                        <div style="font-size:10px; color:var(--slate-500); margin-top:4px;">Protected by 3-attempt brute-force lockout (CWE-307)</div>
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:10px; margin-top:auto;">
@@ -220,7 +279,7 @@
                             <span>🛡️</span> Post-Return Equipment Inspection Queue
                         </h2>
                         <p style="font-size:12px; color:var(--slate-500); margin-top:2px;">
-                            Returned equipment is held in Quarantine until the host verifies physical condition before releasing deposit in ₹ INR.
+                            Returned equipment enters mandatory Quarantine. Hosts verify physical condition before releasing deposit. Renters can contest damage deductions.
                         </p>
                     </div>
                     <span style="font-size:12px; color:var(--crimson); font-weight:700; background:var(--crimson-light); padding:4px 12px; border-radius:var(--radius-pill);">
@@ -272,7 +331,6 @@
              TAB 4: HOST INVENTORY, MULTI-UNIT CLONER & TRUST SCORE
              ================================================================== -->
         <section id="hostView" class="view-section">
-            <!-- Top Controls: Cloner & Diagnostics -->
             <div class="host-studio-grid">
                 
                 <!-- Card 1: Multi-Unit Listing Cloner (Prototype Deep Cloning) -->
@@ -451,13 +509,121 @@
             </div>
         </section>
 
+        <!-- ==================================================================
+             TAB 5: ADMIN, GRIEVANCE & SUPPORT HUB (IT RULES 2021)
+             ================================================================== -->
+        <section id="adminSupportView" class="view-section">
+            <div class="section-title-bar">
+                <div>
+                    <h2 class="section-title"><span>⚖️</span> Administrator Arbitration & Grievance Redressal</h2>
+                    <p style="font-size:12px; color:var(--slate-500); margin-top:2px;">
+                        Fulfilling Rule 3(2) of the Information Technology (Intermediary Guidelines) Rules, 2021 and Goa University community pilot standards.
+                    </p>
+                </div>
+                <button class="btn-primary" id="openSupportTicketBtn">
+                    <span>🎫</span> Submit New Grievance / Ticket
+                </button>
+            </div>
+
+            <!-- 2-Column Deck: Dispute Arbitration & Support Tickets -->
+            <div class="admin-support-grid">
+                
+                <!-- Deck 1: Active Damage Disputes Queue -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h3><span>🛡️</span> Damage Dispute Arbitration Queue</h3>
+                        <span class="count-badge" id="disputeCountBadge">0 Active</span>
+                    </div>
+                    <p style="font-size:12px; color:var(--slate-500); margin-bottom:12px;">
+                        When a renter contests a host's damage deduction, security deposit release is frozen pending administrator arbitration.
+                    </p>
+                    <div class="dispute-list" id="disputeListContainer">
+                        <div class="empty-state-box">No active damage disputes. All return inspections clean.</div>
+                    </div>
+                </div>
+
+                <!-- Deck 2: Customer Grievance & Support Tickets -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h3><span>🎫</span> Grievance Redressal Tickets (IT Rules 2021)</h3>
+                        <span class="count-badge" id="ticketCountBadge">0 Open</span>
+                    </div>
+                    <p style="font-size:12px; color:var(--slate-500); margin-bottom:12px;">
+                        Designated Grievance Officer: Prof. Support / Compliance Lead (Goa University Campus). Acknowledged within 24h.
+                    </p>
+                    <div class="ticket-list" id="ticketListContainer">
+                        <div class="empty-state-box">No unresolved support tickets.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subdeck: User Accounts & Hub Hardware Simulation -->
+            <div class="admin-support-grid" style="margin-top:24px;">
+                
+                <!-- Deck 3: Registered User Accounts & RBAC Status -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h3><span>👥</span> Registered User Accounts & RBAC Status</h3>
+                        <button class="btn-secondary" id="refreshUsersBtn" style="padding:4px 8px; font-size:11px;">🔄 Refresh Users</button>
+                    </div>
+                    <div class="user-table-wrapper" style="max-height:260px; overflow-y:auto; margin-top:8px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>User ID</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>KYC</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Deck 4: Smart Hub Hardware Simulator Controls -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h3><span>🗄️</span> Smart Hub Hardware Simulator Controls</h3>
+                        <span class="sim-badge">TEST HARNESS</span>
+                    </div>
+                    <p style="font-size:12px; color:var(--slate-500); margin-bottom:12px;">
+                        Simulate solenoid lock states, door jams, and maintenance modes across the 64 physical bays.
+                    </p>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group">
+                            <label style="font-size:12px; font-weight:700;">Select Hub Bay:</label>
+                            <input type="text" class="form-control" id="simBayIdInput" value="A2" style="text-transform:uppercase;">
+                        </div>
+                        <div class="form-group">
+                            <label style="font-size:12px; font-weight:700;">Simulated Device State:</label>
+                            <select class="form-control" id="simDeviceStateSelect">
+                                <option value="ONLINE_READY">ONLINE_READY (Normal)</option>
+                                <option value="DOOR_UNLOCKED">DOOR_UNLOCKED (Open)</option>
+                                <option value="DOOR_JAMMED">DOOR_JAMMED (Error State)</option>
+                                <option value="MAINTENANCE_MODE">MAINTENANCE_MODE (Lockout)</option>
+                                <option value="OFFLINE">OFFLINE (Disconnected)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn-secondary" id="applyDeviceStateBtn" style="width:100%; justify-content:center; margin-top:12px;">
+                        <span>⚙️</span> Apply Device State to Hub Bay
+                    </button>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <!-- ======================================================================
-         MODALS: RESERVATION & LISTING EQUIPMENT (₹ INR)
+         MODALS & DIALOGS
          ====================================================================== -->
 
-    <!-- Modal: Rent & Reserve Equipment -->
+    <!-- Modal 1: Rent & Reserve Equipment (with Payment Sandbox Choice) -->
     <div class="modal-overlay" id="reserveModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -476,7 +642,7 @@
                     <input type="number" class="form-control" id="rentalDaysInput" min="1" max="30" value="2">
                 </div>
 
-                <div style="background:var(--slate-50); padding:14px; border-radius:var(--radius-md); margin-bottom:20px; border:1px solid var(--slate-200);">
+                <div style="background:var(--slate-50); padding:14px; border-radius:var(--radius-md); margin-bottom:16px; border:1px solid var(--slate-200);">
                     <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
                         <span>Rental Tariff:</span>
                         <strong id="modalTariffEstimate">₹2,400.00</strong>
@@ -488,6 +654,20 @@
                     <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800; border-top:1px dashed var(--slate-300); padding-top:6px; color:var(--brand-teal-dark);">
                         <span>Total Escrow Required:</span>
                         <span id="modalTotalEscrow">₹7,400.00</span>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="font-size:12px; font-weight:700;">Payment & Authorization Method:</label>
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                            <input type="radio" name="paymentOption" value="wallet" checked>
+                            <span>Direct Escrow Wallet Lock (Instant Demo Balance)</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
+                            <input type="radio" name="paymentOption" value="gateway">
+                            <span>Indian Payment Gateway Sandbox (Simulated Razorpay / Cashfree UPI in ₹)</span>
+                        </label>
                     </div>
                 </div>
 
@@ -503,7 +683,248 @@
         </div>
     </div>
 
-    <!-- Modal: List New Equipment -->
+    <!-- Modal 2: Indian Payment Gateway Sandbox (Simulating Razorpay/Cashfree flow) -->
+    <div class="modal-overlay" id="paymentSandboxModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Indian Gateway Sandbox (₹ INR)</h3>
+                <button class="modal-close-btn" id="closePaymentSandboxModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-badge-row">
+                    <span class="gateway-badge">SANDBOX SIMULATION</span>
+                    <span style="font-size:11px; color:var(--slate-500);">Mode: UPI / NetBanking / RuPay</span>
+                </div>
+
+                <div class="payment-order-box">
+                    <div class="pay-row">
+                        <span>Order ID:</span>
+                        <code id="sandboxOrderId">order_inr_8829103948</code>
+                    </div>
+                    <div class="pay-row">
+                        <span>Rental Tariff:</span>
+                        <span id="sandboxTariff">₹2,400.00</span>
+                    </div>
+                    <div class="pay-row">
+                        <span>Refundable Deposit:</span>
+                        <span id="sandboxDeposit">₹5,000.00</span>
+                    </div>
+                    <div class="pay-row total">
+                        <span>Total Payable Now:</span>
+                        <strong id="sandboxTotal">₹7,400.00</strong>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:16px;">
+                    <label>Simulated Indian Payment Instrument:</label>
+                    <select class="form-control" id="sandboxMethodSelect">
+                        <option value="upi_gpay">UPI - Google Pay (deepak@okhdfcbank)</option>
+                        <option value="upi_phonepe">UPI - PhonePe (deepak@ybl)</option>
+                        <option value="netbanking_sbi">SBI NetBanking (State Bank of India)</option>
+                        <option value="rupay_card">RuPay Platinum Debit Card (•••• 4021)</option>
+                    </select>
+                </div>
+
+                <div class="security-note" style="font-size:11px; color:var(--slate-500); margin:12px 0;">
+                    🔒 Cryptographic HMAC-SHA256 signature verification will be validated server-side. Zero real money deducted.
+                </div>
+
+                <button class="btn-primary" id="authorizeSandboxPaymentBtn" style="width:100%; justify-content:center;">
+                    <span>✅</span> Authorize Payment & Generate Signature
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: Renter Damage Dispute Filing -->
+    <div class="modal-overlay" id="disputeModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Contest Damage Deduction / File Dispute</h3>
+                <button class="modal-close-btn" id="closeDisputeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="disputeAssetId">
+                <div style="margin-bottom:12px;">
+                    <div id="disputeAssetTitle" style="font-weight:700; font-size:15px;">Asset Title</div>
+                    <div id="disputeHeldCollateral" style="font-size:12px; color:var(--crimson); font-weight:600;">Held Deposit: ₹0.00</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Reason for Contesting Host's Claim:</label>
+                    <textarea class="form-control" id="disputeReasonInput" rows="2" placeholder="e.g. Scratches were pre-existing before pickup; normal wear-and-tear."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Supporting Evidence & Return Photo Notes:</label>
+                    <textarea class="form-control" id="disputeEvidenceInput" rows="2" placeholder="e.g. Return check-in photo timestamped 16:30 shows spotless front element."></textarea>
+                </div>
+
+                <div style="font-size:11px; color:var(--slate-500); margin-bottom:14px;">
+                    ⚖️ Filing a dispute immediately freezes automatic deposit release and routes this booking to the Goa University Hub Administrator for independent arbitration.
+                </div>
+
+                <button class="btn-danger" id="submitDisputeBtn" style="width:100%; justify-content:center;">
+                    <span>⚖️</span> Submit Formal Dispute (Freeze Deposit)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 4: Legal & Regulatory Policy Center (20 Documents) -->
+    <div class="modal-overlay" id="policyModal">
+        <div class="modal-card" style="max-width:760px;">
+            <div class="modal-header">
+                <h3 class="modal-title">📜 RentSphere Legal & Policy Center (20 Indian Policies)</h3>
+                <button class="modal-close-btn" id="closePolicyModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:12px; color:var(--slate-500); margin-bottom:12px;">
+                    Governed by the <strong>Digital Personal Data Protection Act 2023</strong>, <strong>Consumer Protection (E-Commerce) Rules 2020</strong>, and <strong>Indian Contract Act 1872</strong>.
+                </p>
+
+                <div class="policy-filter-bar">
+                    <input type="text" class="form-control" id="policySearchInput" placeholder="Filter policies (e.g. Privacy, Cancellation, Dispute, IP)..." style="font-size:12px;">
+                </div>
+
+                <div class="policy-accordion" id="policyAccordionContainer">
+                    <!-- Populated dynamically with 20 policy documents -->
+                </div>
+
+                <div class="policy-consent-box" style="margin-top:16px; background:var(--slate-50); padding:12px; border-radius:var(--radius-md); border:1px solid var(--slate-200);">
+                    <label style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; cursor:pointer;">
+                        <input type="checkbox" id="acceptEssentialPoliciesCheckbox" checked>
+                        <span>I accept the Terms of Service, DPDP Act 2023 Privacy Policy, and Standard Rental Bailment Agreement.</span>
+                    </label>
+                    <button class="btn-primary" id="savePolicyConsentBtn" style="margin-top:8px; font-size:11px; padding:6px 12px;">
+                        <span>✍️</span> Record Auditable Policy Consent
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 5: Submit Customer Grievance / Support Ticket (IT Rules 2021) -->
+    <div class="modal-overlay" id="supportModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Customer Support & Grievance Redressal</h3>
+                <button class="modal-close-btn" id="closeSupportModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:11px; color:var(--slate-500); margin-bottom:12px;">
+                    Statutory Grievance Redressal under Rule 3(2) of IT Rules, 2021. Acknowledgment generated within 24 hours.
+                </p>
+
+                <div class="form-group">
+                    <label>Grievance Category:</label>
+                    <select class="form-control" id="ticketCategory">
+                        <option value="BOOKING">Booking & State Machine Issue</option>
+                        <option value="PAYMENT">Escrow / Payment / Deposit Inquiry</option>
+                        <option value="HARDWARE_LOCKER">Locker Solenoid / Jammed Bay / OTP Error</option>
+                        <option value="DAMAGE_DISPUTE">Condition Assessment Appeal</option>
+                        <option value="ACCOUNT">Identity Verification / Account Access</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Subject / Summary:</label>
+                    <input type="text" class="form-control" id="ticketSubject" placeholder="e.g. Locker Bay B2 solenoid didn't pop open">
+                </div>
+
+                <div class="form-group">
+                    <label>Detailed Explanation:</label>
+                    <textarea class="form-control" id="ticketDescription" rows="3" placeholder="Provide booking ID, bay number, and details..."></textarea>
+                </div>
+
+                <button class="btn-primary" id="submitTicketBtn" style="width:100%; justify-content:center;">
+                    <span>📨</span> Submit Grievance Ticket
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 6: User Authentication & Registration (PBKDF2) -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">RentSphere Account Access</h3>
+                <button class="modal-close-btn" id="closeAuthModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="auth-tabs" style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--slate-200); padding-bottom:8px;">
+                    <button class="cat-pill active" id="tabAuthLogin">Sign In</button>
+                    <button class="cat-pill" id="tabAuthRegister">Register New User</button>
+                    <button class="cat-pill" id="tabAuthQuick">Quick Demo Switch</button>
+                </div>
+
+                <!-- Sign In Form -->
+                <div id="authLoginForm">
+                    <div class="form-group">
+                        <label>Email or User ID:</label>
+                        <input type="text" class="form-control" id="loginEmail" value="renter_deepak" placeholder="email@unigoa.ac.in">
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" class="form-control" id="loginPassword" value="RentSphere@2026">
+                        <div style="font-size:10px; color:var(--slate-500); margin-top:2px;">Default password for seeded personas: <code>RentSphere@2026</code></div>
+                    </div>
+                    <button class="btn-primary" id="executeLoginBtn" style="width:100%; justify-content:center; margin-top:10px;">
+                        <span>🔑</span> Sign In Securely
+                    </button>
+                </div>
+
+                <!-- Register Form -->
+                <div id="authRegisterForm" style="display:none;">
+                    <div class="form-group">
+                        <label>Full Legal Name:</label>
+                        <input type="text" class="form-control" id="regFullName" placeholder="e.g. Sanjeev Prabhugaonkar">
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address:</label>
+                        <input type="email" class="form-control" id="regEmail" placeholder="name@unigoa.ac.in">
+                    </div>
+                    <div class="form-group">
+                        <label>Password (Min 8 chars, hashed via PBKDF2):</label>
+                        <input type="password" class="form-control" id="regPassword" placeholder="Strong password">
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="form-group">
+                            <label>Primary Role:</label>
+                            <select class="form-control" id="regRole">
+                                <option value="RENTER">Renter (Rent Gear)</option>
+                                <option value="HOST">Host (List Gear)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone (+91):</label>
+                            <input type="text" class="form-control" id="regPhone" value="+91 98221 44556">
+                        </div>
+                    </div>
+                    <button class="btn-primary" id="executeRegisterBtn" style="width:100%; justify-content:center; margin-top:10px;">
+                        <span>✨</span> Create Account & Agree to Policies
+                    </button>
+                </div>
+
+                <!-- Quick Switch Persona -->
+                <div id="authQuickForm" style="display:none;">
+                    <p style="font-size:12px; color:var(--slate-500); margin-bottom:10px;">
+                        Click any seeded persona to instantly authenticate with PBKDF2 verification:
+                    </p>
+                    <div class="quick-personas-grid">
+                        <button class="btn-secondary quick-persona-btn" data-user="renter_deepak">👤 Deepak Dev (Renter)</button>
+                        <button class="btn-secondary quick-persona-btn" data-user="renter_nikhil">👤 Nikhil Bhaiju (Renter)</button>
+                        <button class="btn-secondary quick-persona-btn" data-user="renter_priya">👤 Priya Sharma (Renter)</button>
+                        <button class="btn-secondary quick-persona-btn" data-user="host_faaris">⚡ Faaris Khan (Host)</button>
+                        <button class="btn-secondary quick-persona-btn" data-user="host_ketan">⚡ Ketan Naik (Host)</button>
+                        <button class="btn-secondary quick-persona-btn" data-user="inspector_almeida">⚖️ Prof. Almeida (Admin)</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 7: List New Equipment -->
     <div class="modal-overlay" id="onboardModal">
         <div class="modal-card">
             <div class="modal-header">
@@ -551,6 +972,62 @@
             </div>
         </div>
     </div>
+
+    <!-- Application Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:20px;">🌐</span>
+                    <strong style="font-family:var(--font-heading); font-size:16px;">RentSphere</strong>
+                </div>
+                <p style="font-size:12px; color:var(--slate-500); margin-top:4px;">
+                    Decentralized Peer-to-Peer Equipment Rentals & 8x8 Micro-Storage Engine.<br>
+                    Goa University Campus, Taleigao Plateau, Goa 403206, India.
+                </p>
+                <div style="font-size:11px; color:var(--slate-400); margin-top:6px;">
+                    Pure Java SE Architecture (Zero External JAR Dependencies) • Native Currency: Indian Rupees (₹ INR)
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>Legal & Policies</h4>
+                <ul class="footer-links">
+                    <li><a href="#" class="policy-link-trigger" data-policy="tos">Terms of Service</a></li>
+                    <li><a href="#" class="policy-link-trigger" data-policy="privacy">Privacy Policy (DPDP Act 2023)</a></li>
+                    <li><a href="#" class="policy-link-trigger" data-policy="rental_agreement">Standard Rental Bailment</a></li>
+                    <li><a href="#" class="policy-link-trigger" data-policy="cancellation">Cancellation & Refund Rules</a></li>
+                    <li><a href="#" class="policy-link-trigger" data-policy="dispute_resolution">Arbitration Framework</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Safety & Compliance</h4>
+                <ul class="footer-links">
+                    <li><a href="#" class="policy-link-trigger" data-policy="prohibited_items">Prohibited Items</a></li>
+                    <li><a href="#" class="policy-link-trigger" data-policy="damage_loss">Wear & Tear Standards</a></li>
+                    <li><a href="#" class="policy-link-trigger" data-policy="grievance_support">Grievance Redressal (IT Rules 2021)</a></li>
+                    <li><a href="#" class="policy-link-trigger" data-policy="cookie_tracking">Cookie & Session Disclosures</a></li>
+                    <li><a href="#" class="policy-link-trigger" data-policy="data_retention">Data Retention & Deletion</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Academic Invariants</h4>
+                <div style="font-size:11px; color:var(--slate-500); line-height:1.6;">
+                    • 5-Tier Domain Model Hierarchy<br>
+                    • 4-Stage GoF State Pattern<br>
+                    • Prototype Deep vs. Shallow Cloning<br>
+                    • 4-Gate Fail-Fast Verification Pipeline<br>
+                    • 8x8 Spatial Ground Slot Rule (Row H)
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2026 RentSphere P2P Hub. Built for MCA Object-Oriented Technology Lab Viva Defense.</span>
+            <span>All 20 Indian Legal & Regulatory Policies Accessible Above.</span>
+        </div>
+    </footer>
 
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>

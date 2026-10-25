@@ -6,3 +6,13 @@
 2026-10-25T11:45:00.000Z|WAL-006|AST-108|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_priya|MANDATORY QUARANTINE: Ather 450X returned to Ground Slot H4. Security deposit ₹2,000 held pending condition check
 2026-10-25T11:00:24.796753700Z|WAL-B9847480|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
 2026-10-25T11:06:12.091800800Z|WAL-DCD2596C|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
+2026-10-25T11:17:36.368675Z|WAL-5581DFB8|AST-103|RESERVE|AVAILABLE|RESERVED_ESCROW|host_faaris|Escrow locked ₹4235.00. OTP 984038 generated for bay C3
+2026-10-25T11:18:21.534854300Z|WAL-62F5048D|AST-103|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|host_faaris|Unlocked via OTP 984038. Bay C3 vacated for active rental.
+2026-10-25T11:18:27.012279400Z|WAL-3BF56222|AST-103|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|host_faaris|MANDATORY QUARANTINE: Item returned to Bay C3. Security deposit held pending inspection.
+2026-10-25T11:33:57.543922900Z|WAL-D0E64556|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
+2026-10-25T11:47:02.560692500Z|WAL-E337AE32|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
+2026-10-25T11:48:35.370615Z|WAL-59F923A0|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
+2026-10-25T11:48:57.784817700Z|WAL-8467FE76|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
+2026-10-25T11:50:06.114542100Z|WAL-E372A16E|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
+2026-10-25T12:07:16.534253300Z|WAL-AFA0D620|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
+2026-10-25T12:10:42.322497200Z|WAL-5CBAC7A9|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)

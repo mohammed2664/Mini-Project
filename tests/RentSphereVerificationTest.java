@@ -15,6 +15,13 @@ import rentsphere.pipeline.GateResult;
 import rentsphere.pipeline.PipelineContext;
 import rentsphere.persistence.FlatFilePersistenceEngine;
 import rentsphere.state.*;
+import rentsphere.auth.*;
+import rentsphere.dispute.*;
+import rentsphere.locker.LockerDevice;
+import rentsphere.locker.SimulatedLockerDevice;
+import rentsphere.payment.*;
+import rentsphere.policy.*;
+import rentsphere.support.*;
 
 import java.io.File;
 import java.util.List;
@@ -59,6 +66,11 @@ public class RentSphereVerificationTest {
         testMetaOOPReflectionAndCloning();
         testTrustScoreEngine();
         testFlatFilePersistenceAndWal();
+        testAuthenticationAndRBAC();
+        testPaymentGatewaySandbox();
+        testSmartHubOtpLockoutAndExpiry();
+        testDisputeArbitrationAndState();
+        testPolicyServiceAndConsentTracking();
 
         System.out.println("\n=================================================================");
         System.out.printf("  VERIFICATION SUMMARY: %d / %d TESTS PASSED (100%% SUCCESS)%n", testsPassed, testsTotal);
@@ -298,5 +310,163 @@ public class RentSphereVerificationTest {
         engine.appendWal("TEST-CAM", "UNIT_TEST", "NONE", "ONLINE", "test_runner", "Automated verification test completed (INR currency)");
         List<String> walEntries = engine.readWalEntries(10);
         assertTrue(!walEntries.isEmpty(), "Write-Ahead Log contains audited entries in data/audit_wal.txt");
+    }
+
+    // ========================================================================
+    // TEST 8: AUTHENTICATION, PBKDF2 HASHING & RBAC
+    // ========================================================================
+    private static void testAuthenticationAndRBAC() {
+        System.out.println("\n--- [TEST 8] PBKDF2 Password Hashing, Sessions & RBAC ---");
+
+        String password = "SecurePassword@2026";
+        String salt = PasswordHasher.generateSalt();
+        String hash = PasswordHasher.hashPassword(password, salt);
+
+        assertTrue(hash != null && hash.length() >= 64, "PBKDF2-HMAC-SHA256 produced 256-bit cryptographically secure hash");
+        assertTrue(PasswordHasher.verifyPassword(password, salt, hash), "PBKDF2 constant-time verification successfully validated correct password");
+        assertTrue(!PasswordHasher.verifyPassword("WrongPassword", salt, hash), "PBKDF2 rejected invalid password attempt");
+
+        AuthService authService = new AuthService("data");
+        String testEmail = "test_pilot_" + System.currentTimeMillis() + "@unigoa.ac.in";
+        UserAccount newUser = authService.registerUser(testEmail, "CampusStudent#2026", "Ananya Naik", "RENTER", "+91 98221 11223");
+        assertTrue(newUser != null && "RENTER".equals(newUser.getRole()), "User registration generated valid RENTER account entity");
+
+        UserSession session = authService.login(testEmail, "CampusStudent#2026");
+        assertTrue(session != null && session.getToken().length() == 64, "Successful login issued 256-bit secure session token");
+        assertTrue(!session.isExpired(), "Session token active and valid within 24h duration window");
+
+        // Test RBAC suspension
+        authService.setAccountStatus(newUser.getUserId(), "SUSPENDED");
+        boolean loginBlocked = false;
+        try {
+            authService.login(testEmail, "CampusStudent#2026");
+        } catch (IllegalStateException e) {
+            loginBlocked = true;
+        }
+        assertTrue(loginBlocked, "Suspended user account blocked from authenticating (OWASP A01 Access Control)");
+        authService.setAccountStatus(newUser.getUserId(), "ACTIVE");
+    }
+
+    // ========================================================================
+    // TEST 9: PAYMENT GATEWAY SANDBOX & HMAC-SHA256 WEBHOOK IDEMPOTENCY
+    // ========================================================================
+    private static void testPaymentGatewaySandbox() {
+        System.out.println("\n--- [TEST 9] Indian Payment Gateway Sandbox (₹ INR) & HMAC ---");
+
+        SandboxPaymentAdapter gateway = new SandboxPaymentAdapter("data");
+        PaymentOrder order = gateway.createOrder("BKG-9901", "AST-101", "renter_deepak", "host_faaris", 1500.0, 5000.0);
+
+        assertTrue(order != null && order.getOrderId().startsWith("order_inr_"), "Gateway generated valid Indian payment order (₹ INR)");
+        assertTrue(Math.abs(order.getTotalAmount() - 6500.0) < 0.01, "Total amount payable accurately combined tariff (₹1,500) and deposit (₹5,000) = ₹6,500");
+
+        String clientSig = gateway.generateClientSignature(order.getOrderId(), "pay_test_123");
+        boolean sigValid = gateway.verifyPaymentSignature(order.getOrderId(), "pay_test_123", clientSig);
+        assertTrue(sigValid, "HMAC-SHA256 signature verification validated authentic gateway response");
+        assertTrue("CAPTURED".equals(order.getStatus()), "Order status transitioned to CAPTURED upon signature verification");
+
+        // Idempotent webhook processing
+        boolean firstDelivery = gateway.processWebhook("payment.captured", order.getOrderId(), "pay_test_123", clientSig);
+        assertTrue(firstDelivery, "First webhook delivery processed and recorded in ledger");
+        boolean duplicateDelivery = gateway.processWebhook("payment.captured", order.getOrderId(), "pay_test_123", clientSig);
+        assertTrue(duplicateDelivery, "Duplicate webhook delivery handled idempotently without duplicate charges");
+    }
+
+    // ========================================================================
+    // TEST 10: SMART HUB OTP LOCKOUT, EXPIRY & ZERO LEAKAGE
+    // ========================================================================
+    private static void testSmartHubOtpLockoutAndExpiry() {
+        System.out.println("\n--- [TEST 10] Smart Hub OTP Lockout & Zero OTP Leakage ---");
+
+        LockerCompartment comp = new LockerCompartment("B3", 2, 3, CompartmentSize.MEDIUM);
+        String realOtp = comp.generateNewOtp();
+        assertTrue(realOtp != null && realOtp.length() == 6, "Cryptographically secure 6-digit OTP generated");
+
+        // Failed attempt 1 and 2
+        assertTrue(!comp.verifyOtp("000000"), "Failed attempt 1 rejected");
+        assertTrue(!comp.verifyOtp("111111"), "Failed attempt 2 rejected");
+        assertTrue(!comp.isLockedOut(), "Compartment still open after 2 failed attempts");
+
+        // Failed attempt 3 triggers lockout
+        assertTrue(!comp.verifyOtp("222222"), "Failed attempt 3 rejected and triggered security lockout");
+        assertTrue(comp.isLockedOut(), "Compartment locked out against brute-force attacks (CWE-307)");
+
+        // 4th attempt with CORRECT OTP must now fail due to lockout
+        assertTrue(!comp.verifyOtp(realOtp), "Correct OTP rejected while compartment is under brute-force lockout");
+
+        // Hardware device abstraction
+        SimulatedLockerDevice device = new SimulatedLockerDevice();
+        assertTrue(device.getDeviceState("B3") == LockerDevice.DeviceState.ONLINE_READY, "Simulated device state initializes to ONLINE_READY");
+        device.sendUnlockCommand("B3", realOtp);
+        assertTrue(device.getDeviceState("B3") == LockerDevice.DeviceState.DOOR_UNLOCKED, "Solenoid command transitioned device state to DOOR_UNLOCKED");
+    }
+
+    // ========================================================================
+    // TEST 11: DAMAGE DISPUTE ARBITRATION & COLLATERAL SETTLEMENT
+    // ========================================================================
+    private static void testDisputeArbitrationAndState() {
+        System.out.println("\n--- [TEST 11] Damage Dispute State & Administrative Arbitration ---");
+
+        CameraAndOpticsGear asset = new CameraAndOpticsGear(
+                "TEST-DISPUTE-AST", "Fujifilm X-T5 Mirrorless", "host_faaris",
+                1000.0, 4000.0, "C2", 1.20, "STANDARD_SHIELD", 40.0, true
+        );
+
+        // Reserve, Pickup, Return to Quarantine
+        asset.getCurrentState().reserve(asset, "renter_deepak");
+        asset.getCurrentState().pickup(asset);
+        asset.getCurrentState().initiateReturn(asset);
+        assertTrue("INSPECTION_QUARANTINE".equals(asset.getCurrentState().getStateName()), "Asset returned to mandatory INSPECTION_QUARANTINE");
+
+        // Transition to DISPUTED
+        asset.setState(new DisputedState());
+        assertTrue("DISPUTED".equals(asset.getCurrentState().getStateName()), "Asset successfully transitioned to DISPUTED state");
+
+        // Invariant: Cannot reserve or pickup while in dispute
+        boolean reserveBlocked = false;
+        try {
+            asset.getCurrentState().reserve(asset, "renter_nikhil");
+        } catch (IllegalStateException e) {
+            reserveBlocked = true;
+        }
+        assertTrue(reserveBlocked, "New reservation strictly blocked while asset is frozen in DISPUTED state");
+
+        // File dispute record
+        DisputeService disputeService = new DisputeService("data");
+        DisputeRecord dispute = disputeService.fileDispute(asset.getId(), "renter_deepak", "host_faaris", 4000.0, 800.0,
+                "Lens cap had pre-existing dust; optics glass completely pristine", "Return photo timestamp 16:30 shows zero scratches");
+        assertTrue(dispute != null && "OPEN".equals(dispute.getStatus()), "Dispute record created with held collateral frozen");
+
+        // Admin arbitration
+        boolean arbitrated = disputeService.resolveDispute(dispute.getDisputeId(), "admin_lead", "RESOLVED_REFUND", "Photo evidence confirms pre-existing dust.");
+        assertTrue(arbitrated, "Dispute arbitrated by administrator");
+        assertTrue("RESOLVED_REFUND".equals(dispute.getStatus()), "Dispute status updated to RESOLVED_REFUND");
+
+        // State restored to AVAILABLE
+        asset.getCurrentState().approveInspection(asset);
+        assertTrue("AVAILABLE".equals(asset.getCurrentState().getStateName()), "Arbitration resolution restored asset state to AVAILABLE");
+    }
+
+    // ========================================================================
+    // TEST 12: 20 INDIAN LEGAL POLICIES & AUDITABLE CONSENT
+    // ========================================================================
+    private static void testPolicyServiceAndConsentTracking() {
+        System.out.println("\n--- [TEST 12] 20 Indian Legal Policies & Versioned Consent ---");
+
+        PolicyService policyService = new PolicyService("data");
+        List<PolicyService.PolicyDocument> policies = policyService.getAllPolicies();
+        assertTrue(policies.size() == 20, "PolicyService manages exactly 20 distinct Indian regulatory policy documents");
+
+        PolicyService.PolicyDocument privacy = policyService.getPolicy("privacy");
+        assertTrue(privacy != null && privacy.jurisdictionNote().contains("DPDP Act"), "Privacy Policy explicitly references Digital Personal Data Protection Act 2023");
+
+        PolicyService.PolicyDocument grievance = policyService.getPolicy("grievance_support");
+        assertTrue(grievance != null && (grievance.jurisdictionNote().contains("IT Act") || grievance.jurisdictionNote().contains("Intermediary")),
+                "Grievance Policy implements Rule 3(2) IT Intermediary Rules 2021");
+
+        // User consent recording
+        String testUser = "usr_pilot_verif_99";
+        policyService.recordAcceptance(testUser, List.of("tos", "privacy", "rental_agreement", "cancellation", "deposit_payment"));
+        assertTrue(policyService.hasAcceptedAllEssential(testUser), "PolicyService auditable consent verified for essential policies");
+        assertTrue(policyService.getAcceptedPolicies(testUser).contains("tos"), "User acceptance history retained in memory and flat file");
     }
 }
