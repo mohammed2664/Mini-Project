@@ -73,6 +73,7 @@ public class RentSphereVerificationTest {
         testPolicyServiceAndConsentTracking();
         testSupportTicketLifecycle();
         testNotificationServiceAndPersistence();
+        testSecurityRemediationAndMultiDayEscrow();
 
         System.out.println("\n=================================================================");
         System.out.printf("  VERIFICATION SUMMARY: %d / %d TESTS PASSED (100%% SUCCESS)%n", testsPassed, testsTotal);
@@ -565,6 +566,77 @@ public class RentSphereVerificationTest {
         List<NotificationService.NotificationItem> reloadedItems = reloadedService.getUserNotifications(userId);
         assertTrue(reloadedItems.size() == 2, "Reloaded notification service restored items from flat file");
         assertTrue(reloadedItems.get(0).read, "Reloaded notification maintained read status across persistence reload");
+    }
+
+    // ========================================================================
+    // TEST 15: SECURITY REMEDIATION, MULTI-DAY ESCROW & PHYSICAL INVARIANTS
+    // ========================================================================
+    private static void testSecurityRemediationAndMultiDayEscrow() {
+        System.out.println("\n--- [TEST 15] Security Remediation, Multi-Day Escrow & Physical Invariants ---");
+
+        // 1. Multi-Day Escrow Math Invariant (F-01 Verification)
+        EscrowVault vault = new EscrowVault();
+        EscrowAccount renter = new EscrowAccount("usr_test_renter", "Renter Deepak", "RENTER", 20000.0, 0.0, 0.0, true);
+        EscrowAccount host = new EscrowAccount("usr_test_host", "Host Faaris", "HOST", 5000.0, 0.0, 0.0, true);
+        vault.registerAccount(renter);
+        vault.registerAccount(host);
+
+        CameraAndOpticsGear gear = new CameraAndOpticsGear("AST-TEST-99", "Sony FX3 Cinema", "usr_test_host",
+                1000.0, 5000.0, "A2", 1.20, "Standard", 33.0, true);
+        gear.setRentalDays(3);
+        double tariff3Days = gear.calculateDailyRentalTariff(3); // 1000 * 1.15 * 3 = 3450.0
+        double collateral = gear.calculateRequiredCollateral(); // 5000 * 1.20 = 6000.0
+        assertTrue(tariff3Days == 3450.0, "3-day 4K camera tariff is calculated accurately as ₹3450.00");
+
+        boolean locked = vault.lockEscrow("usr_test_renter", "usr_test_host", gear.getId(), tariff3Days, collateral);
+        assertTrue(locked, "Multi-day escrow locked ₹9450 successfully in renter escrow");
+        assertTrue(renter.getLockedEscrow() == 9450.0, "Renter locked escrow is exactly ₹9450.00");
+        assertTrue(renter.getWalletBalance() == (20000.0 - 9450.0), "Renter wallet balance debited by ₹9450.00");
+
+        // Release clean inspection for full 3-day duration
+        vault.releasePayoutClean("usr_test_renter", "usr_test_host", gear.getId(), tariff3Days, collateral);
+        assertTrue(renter.getLockedEscrow() == 0.0, "MULTI-DAY ESCROW INVARIANT: Zero capital trapped in locked escrow after clean inspection (F-01)");
+        assertTrue(host.getEarnedRevenue() == 3450.0, "Host received full 3-day rental tariff of ₹3450.00 without underpayment (F-01)");
+        assertTrue(renter.getWalletBalance() == (20000.0 - 3450.0), "Renter collateral (₹6000.00) fully refunded to wallet");
+
+        // 2. Physical Smart Hub Bay Collision Prevention (F-05 Verification)
+        SmartLockerGrid8x8 grid = new SmartLockerGrid8x8();
+        LockerCompartment bayB1 = grid.getCompartment("B1");
+        assertTrue(bayB1 != null && !bayB1.isOccupied(), "Initial locker bay B1 is vacant");
+        grid.assignAssetToBay(gear, "B1");
+        assertTrue(bayB1.isOccupied(), "Locker bay B1 is marked occupied after asset assignment");
+        assertTrue(bayB1.getCurrentAssetId().equals(gear.getId()), "Occupying asset in B1 matches assigned gear ID");
+
+        // 3. Support Ticket Resolution Admin Attribution (F-10 Verification)
+        File testSupportDir = new File("data/test_support_audit");
+        testSupportDir.mkdirs();
+        File testSupportFile = new File(testSupportDir, "support_tickets.txt");
+        if (testSupportFile.exists()) testSupportFile.delete();
+        SupportService supportAudit = new SupportService(testSupportDir.getPath());
+        SupportService.SupportTicket tick = supportAudit.createTicket("usr_renter_1", "BILLING", "Tariff Query", "Explain multi-day escrow");
+        supportAudit.resolveTicket(tick.ticketId, "admin_lead", "Settled tariff calculation in accordance with lease terms.");
+        SupportService.SupportTicket resolvedTick = supportAudit.getTicket(tick.ticketId);
+        assertTrue(resolvedTick.resolution.contains("Resolved by admin_lead"), "Support ticket resolution accurately attributes acting administrator ID (F-10)");
+
+        // 4. Atomic Flat-File Persistence Staging & Multi-Day Reload (F-01 / F-07 Verification)
+        File testPersistDir = new File("data/test_persist_atomic");
+        testPersistDir.mkdirs();
+        FlatFilePersistenceEngine atomicEngine = new FlatFilePersistenceEngine(testPersistDir.getPath());
+        GenericRepository<RentableAsset> testRepo = new GenericRepository<>();
+        gear.setRentalDays(5);
+        testRepo.save(gear);
+        atomicEngine.saveAssets(testRepo);
+
+        File assetsFile = new File(testPersistDir, "assets_ledger.txt");
+        File tmpFile = new File(testPersistDir, "assets_ledger.txt.tmp");
+        assertTrue(assetsFile.exists() && assetsFile.length() > 0, "Assets ledger successfully written via atomic staging (F-07)");
+        assertTrue(!tmpFile.exists(), "Temporary staging file cleanly renamed via atomic move without stale locks (F-07)");
+
+        // Reload into fresh repo and verify rentalDays persisted
+        GenericRepository<RentableAsset> reloadedRepo = new GenericRepository<>();
+        atomicEngine.loadAssets(reloadedRepo);
+        RentableAsset loadedGear = reloadedRepo.findById(gear.getId()).orElse(null);
+        assertTrue(loadedGear != null && loadedGear.getRentalDays() == 5, "Multi-day rental duration (5 days) accurately restored from flat-file persistence (F-01/F-07)");
     }
 }
 

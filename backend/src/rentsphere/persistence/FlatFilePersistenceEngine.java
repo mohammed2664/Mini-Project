@@ -79,6 +79,10 @@ public class FlatFilePersistenceEngine {
                     if (asset != null) {
                         asset.setRenterId(renterId);
                         applyState(asset, stateStr);
+                        int days = parseInt(extraMap.get("days"), 1);
+                        if (days >= 1) {
+                            asset.setRentalDays(days);
+                        }
 
                         if (!logs.isBlank()) {
                             for (String logEntry : logs.split(",")) {
@@ -98,14 +102,11 @@ public class FlatFilePersistenceEngine {
 
     public void saveAssets(GenericRepository<RentableAsset> repo) {
         synchronized (fileLock) {
-            try (BufferedWriter writer = Files.newBufferedWriter(assetsFile, StandardCharsets.UTF_8)) {
-                for (RentableAsset asset : repo.findAll()) {
-                    writer.write(asset.serializeToPipe());
-                    writer.newLine();
-                }
-            } catch (IOException e) {
-                System.err.println("[PERSISTENCE] Error saving assets_ledger.txt: " + e.getMessage());
+            List<String> lines = new ArrayList<>();
+            for (RentableAsset asset : repo.findAll()) {
+                lines.add(asset.serializeToPipe());
             }
+            writeLinesAtomically(assetsFile, lines);
         }
     }
 
@@ -150,14 +151,11 @@ public class FlatFilePersistenceEngine {
 
     public void saveLockers(SmartLockerGrid8x8 grid) {
         synchronized (fileLock) {
-            try (BufferedWriter writer = Files.newBufferedWriter(lockerGridFile, StandardCharsets.UTF_8)) {
-                for (LockerCompartment comp : grid.getAllCompartments()) {
-                    writer.write(comp.serializeToPipe());
-                    writer.newLine();
-                }
-            } catch (IOException e) {
-                System.err.println("[PERSISTENCE] Error saving locker_grid_8x8.txt: " + e.getMessage());
+            List<String> lines = new ArrayList<>();
+            for (LockerCompartment comp : grid.getAllCompartments()) {
+                lines.add(comp.serializeToPipe());
             }
+            writeLinesAtomically(lockerGridFile, lines);
         }
     }
 
@@ -195,14 +193,31 @@ public class FlatFilePersistenceEngine {
 
     public void saveEscrow(EscrowVault vault) {
         synchronized (fileLock) {
-            try (BufferedWriter writer = Files.newBufferedWriter(escrowVaultFile, StandardCharsets.UTF_8)) {
-                for (EscrowAccount acc : vault.getAllAccounts()) {
-                    writer.write(acc.serializeToPipe());
+            List<String> lines = new ArrayList<>();
+            for (EscrowAccount acc : vault.getAllAccounts()) {
+                lines.add(acc.serializeToPipe());
+            }
+            writeLinesAtomically(escrowVaultFile, lines);
+        }
+    }
+
+    private void writeLinesAtomically(Path targetFile, List<String> lines) {
+        Path tempFile = targetFile.resolveSibling(targetFile.getFileName().toString() + ".tmp");
+        try {
+            try (BufferedWriter writer = Files.newBufferedWriter(tempFile, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE)) {
+                for (String line : lines) {
+                    writer.write(line);
                     writer.newLine();
                 }
-            } catch (IOException e) {
-                System.err.println("[PERSISTENCE] Error saving escrow_vault.txt: " + e.getMessage());
             }
+            try {
+                Files.move(tempFile, targetFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tempFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            System.err.println("[PERSISTENCE] Error writing " + targetFile.getFileName() + ": " + e.getMessage());
         }
     }
 

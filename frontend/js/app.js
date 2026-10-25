@@ -46,7 +46,7 @@ function formatInrCompact(val) {
 // ============================================================================
 // INITIALIZATION ON DOM LOAD
 // ============================================================================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initNavigation();
     initCategoryPills();
     initUserSelector();
@@ -54,7 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initAuthModals();
     initPolicies();
     initEventListeners();
-    fetchAllData();
+
+    // Auto-login default persona so session cookie and token match active user
+    await executeLogin(state.activeUser, 'RentSphere@2026');
+    await fetchAllData();
 
     // Auto-refresh data every 8 seconds to reflect background flat-file state
     setInterval(refreshBackgroundData, 8000);
@@ -101,11 +104,11 @@ function initCategoryPills() {
 function initUserSelector() {
     const select = document.getElementById('activeUserSelect');
     if (!select) return;
-    select.addEventListener('change', (e) => {
+    select.addEventListener('change', async (e) => {
         state.activeUser = e.target.value;
+        await executeLogin(state.activeUser, 'RentSphere@2026');
         updateUserUI();
         fetchNotifications();
-        showToast('Active persona switched to ' + getActiveUserName(), 'info');
     });
 }
 

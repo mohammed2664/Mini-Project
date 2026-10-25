@@ -76,8 +76,8 @@ public class EventAndMobilityVehicle extends UtilityAndMobilityAsset {
     @Override
     public String serializeToPipe() {
         String logs = String.join(",", serviceLogs);
-        String extra = String.format("seats=%d;fuel=%s;auto=%b;power=%s;safety=%s",
-                seatingCapacity, fuelOrChargingType, fastChargingOrAuto, powerOrEngineSpec, safetyCertification);
+        String extra = String.format("seats=%d;fuel=%s;auto=%b;power=%s;safety=%s;days=%d",
+                seatingCapacity, fuelOrChargingType, fastChargingOrAuto, powerOrEngineSpec, safetyCertification, rentalDays);
         return String.join("|",
                 id, title, category, "EventAndMobilityVehicle", ownerId, renterId,
                 currentState.getStateName(), String.format("%.2f", baseDailyRate),

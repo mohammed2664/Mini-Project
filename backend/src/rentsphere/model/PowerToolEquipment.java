@@ -54,8 +54,8 @@ public class PowerToolEquipment extends UtilityAndMobilityAsset {
     @Override
     public String serializeToPipe() {
         String logs = String.join(",", serviceLogs);
-        String extra = String.format("power=%s;safety=%s;cordless=%b;bits=%d",
-                powerOrEngineSpec, safetyCertification, cordlessBatteryPowered, accessoryBitsIncluded);
+        String extra = String.format("power=%s;safety=%s;cordless=%b;bits=%d;days=%d",
+                powerOrEngineSpec, safetyCertification, cordlessBatteryPowered, accessoryBitsIncluded, rentalDays);
         return String.join("|",
                 id, title, category, "PowerToolEquipment", ownerId, renterId,
                 currentState.getStateName(), String.format("%.2f", baseDailyRate),

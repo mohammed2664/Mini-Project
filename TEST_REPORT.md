@@ -13,12 +13,12 @@
 
 | Metric | Target | Actual Result | Status |
 | :--- | :--- | :--- | :--- |
-| **Total Automated Unit & Integration Tests** | >= 70 | **91 Tests across 14 Suites** | **PASS (100%)** |
+| **Total Automated Unit & Integration Tests** | >= 70 | **105 Tests across 15 Suites** | **PASS (100%)** |
 | **Failed / Flaky Tests** | 0 | **0** | **PASS** |
 | **External Dependencies Required** | 0 | **0 (Pure Java SE built-ins)** | **PASS** |
 | **Compilation Status** | Clean (Exit 0) | **Clean (Exit 0, 0 warnings)** | **PASS** |
 | **Browser E2E Walkthrough** | 8 Major Views | **8 / 8 Views Verified** | **PASS** |
-| **Security Invariant Verification** | Zero OTP Leak, Lockout, Strict RBAC | **Verified (CWE-200, CWE-307, CWE-285 Defended)** | **PASS** |
+| **Security Invariant Verification** | Zero OTP Leak, Lockout, Strict RBAC | **Verified (CWE-200, CWE-307, CWE-285, CWE-682 Defended)** | **PASS** |
 
 ---
 
@@ -35,11 +35,11 @@ javac -encoding UTF-8 -d bin '@sources.txt'
 ```powershell
 java -cp bin tests.RentSphereVerificationTest
 ```
-*Output: Exit code 0. All 91 tests passed.*
+*Output: Exit code 0. All 105 tests passed across 15 suites.*
 
 ---
 
-## 3. Detailed Automated Test Breakdown (91 Passing Tests)
+## 3. Detailed Automated Test Breakdown (105 Passing Tests)
 
 ### Test Suite 1: 5-Tier Inheritance Hierarchy & Polymorphic Rates (8 Tests)
 - `[PASS]` CameraAndOpticsGear 4K video tariff calculation (Expected ₹2760.00, Got ₹2760.0)
@@ -159,6 +159,22 @@ java -cp bin tests.RentSphereVerificationTest
 - `[PASS]` markAllAsRead transitioned all items to read=true
 - `[PASS]` Reloaded notification service restored items from flat file
 - `[PASS]` Reloaded notification maintained read status across persistence reload
+
+### Test Suite 15: Security Remediation, Multi-Day Escrow & Physical Invariants (14 Tests)
+- `[PASS]` 3-day 4K camera tariff is calculated accurately as ₹3450.00
+- `[PASS]` Multi-day escrow locked ₹9450 successfully in renter escrow
+- `[PASS]` Renter locked escrow is exactly ₹9450.00
+- `[PASS]` Renter wallet balance debited by ₹9450.00
+- `[PASS]` MULTI-DAY ESCROW INVARIANT: Zero capital trapped in locked escrow after clean inspection (F-01)
+- `[PASS]` Host received full 3-day rental tariff of ₹3450.00 without underpayment (F-01)
+- `[PASS]` Renter collateral (₹6000.00) fully refunded to wallet
+- `[PASS]` Initial locker bay B1 is vacant
+- `[PASS]` Locker bay B1 is marked occupied after asset assignment
+- `[PASS]` Occupying asset in B1 matches assigned gear ID
+- `[PASS]` Support ticket resolution accurately attributes acting administrator ID (F-10)
+- `[PASS]` Assets ledger successfully written via atomic staging (F-07)
+- `[PASS]` Temporary staging file cleanly renamed via atomic move without stale locks (F-07)
+- `[PASS]` Multi-day rental duration (5 days) accurately restored from flat-file persistence (F-01/F-07)
 
 ---
 

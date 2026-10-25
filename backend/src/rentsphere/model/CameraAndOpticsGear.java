@@ -74,8 +74,8 @@ public class CameraAndOpticsGear extends EventAndCreatorAsset {
     @Override
     public String serializeToPipe() {
         String logs = String.join(",", serviceLogs);
-        String extra = String.format("sensorMp=%.1f;is4k=%b;mount=%s;protection=%s;kitCount=%d",
-                sensorResolutionMp, is4kOr8kVideo, mountType, protectionTier, accessoryKitCount);
+        String extra = String.format("sensorMp=%.1f;is4k=%b;mount=%s;protection=%s;kitCount=%d;days=%d",
+                sensorResolutionMp, is4kOr8kVideo, mountType, protectionTier, accessoryKitCount, rentalDays);
         return String.join("|",
                 id, title, category, "CameraAndOpticsGear", ownerId, renterId,
                 currentState.getStateName(), String.format("%.2f", baseDailyRate),

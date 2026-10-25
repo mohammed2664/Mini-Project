@@ -2,9 +2,9 @@
 
 **Project:** RentSphere: P2P Equipment Rental & 8x8 Smart Pickup Hub
 **Institution:** Goa University -- MCA Object-Oriented Technology (OOT) Lab
-**Currency:** Indian Rupees (Rs. INR)
+**Currency:** Indian Rupees (₹ INR)
 **Audit Date:** 2026-10-25
-**Test Baseline:** 91/91 PASS (100% -- verified by running `java -cp bin tests.RentSphereVerificationTest`)
+**Test Baseline:** 105/105 PASS (100% -- verified by running `java -cp bin tests.RentSphereVerificationTest`)
 **Runtime:** Pure Java SE 17+ (Zero External JAR Dependencies)
 
 ---
@@ -498,7 +498,8 @@ Each section below records:
 | TEST 12 | 5 | 5 | 20 Policies, Consent Tracking |
 | TEST 13 | 9 | 9 | Support Tickets, Grievance Redressal, IT Rules 2021 SLA |
 | TEST 14 | 5 | 5 | In-App Notification Center & Flat-File Persistence |
-| TOTAL | 91 | 91 | 100% (0 failures) |
+| TEST 15 | 14 | 14 | Security Remediation, Multi-Day Escrow & Physical Invariants |
+| TOTAL | 105 | 105 | 100% (0 failures across 15 suites) |
 
 ---
 
@@ -506,12 +507,22 @@ Each section below records:
 
 | # | Gap | Severity | Files Affected | Status | Resolution |
 |---|---|---|---|---|---|
-| G-1 | RBAC bypass on unauthenticated dispute resolve | Medium | MainServer.java L1056 | RESOLVED | Changed guard to `admin == null || !isUserAdmin(admin)` |
-| G-2 | SupportService has no unit test (TEST 13 missing) | Medium | tests/RentSphereVerificationTest.java | RESOLVED | Added TEST 13 covering full ticket lifecycle & 24h SLA |
-| G-3 | Notifications not persisted (ephemeral on restart) | Low | support/NotificationService.java | RESOLVED | Implemented atomic persistence to `notifications_log.txt` + TEST 14 |
-| G-4 | WAL test entries pollute production audit file | Low | tests/RentSphereVerificationTest.java | RESOLVED | Test WAL isolated to `data/test_wal/`, production WAL cleaned |
-| G-5 | Payment saga -- no atomic link between payment verify and reserve | Low (demo) | MainServer.java, app.js | DOCUMENTED | Acceptable in sandbox/demo pilot architecture |
-| G-6 | No responsive CSS breakpoints for mobile | Cosmetic | frontend/css/styles.css | RESOLVED | Added 992px, 768px, and 480px responsive rules |
+| F-01 | Escrow Math Invariant: multi-day rental only debited 1 day tariff | Critical | `MainServer.java`, `RentableAsset.java` | RESOLVED | Recorded rentalDays in RentableAsset, calculated tariff for rentalDays, and reset to 1 on completion |
+| F-02 | CWE-285 Admin RBAC bypass when caller is unauthenticated | High | `MainServer.java` L1351, L1379, L1233 | RESOLVED | Changed check to `caller == null \|\| !isUserAdmin(caller)` returning 403 Forbidden |
+| F-03 | CWE-285 Missing auth on hardware locker state manipulation | High | `MainServer.java` L1397 | RESOLVED | Added admin authorization check returning 403 Forbidden |
+| F-04 | CWE-200 Public information leakage of disputes and support tickets | High | `MainServer.java` L1048, L1193 | RESOLVED | Enforced authentication check returning 401 Unauthorized for visitors |
+| F-05 | Physical Locker Collision on onboard and clone | Medium | `MainServer.java` L635, L708 | RESOLVED | Added `comp.isOccupied()` and ground slot check before assignment |
+| F-06 | Non-positive rental days allowed negative escrow debits | Medium | `MainServer.java` L285 | RESOLVED | Enforced `1 <= days <= 90` returning 400 Bad Request |
+| F-07 | Non-atomic flat-file truncation risk on JVM crash | Medium | `FlatFilePersistenceEngine.java` | RESOLVED | Upgraded to atomic `.tmp` staging with `Files.move(..., ATOMIC_MOVE, REPLACE_EXISTING)` |
+| F-08 | NotificationService data directory hardcoding | Medium | `MainServer.java` L93 | RESOLVED | Passed configured `dataDir` to constructor |
+| F-09 | IDOR on Inspect Payout / Slashing | Medium | `MainServer.java` L498, L552 | RESOLVED | Enforced caller must be asset owner or admin |
+| F-10 | Support Ticket Resolution parameter alignment | Low | `MainServer.java` L1245 | RESOLVED | Passed `admin.getUserId()` instead of literal `"RESOLVED"` |
+| G-1 | RBAC bypass on unauthenticated dispute resolve | Medium | `MainServer.java` | RESOLVED | Changed guard to `admin == null \|\| !isUserAdmin(admin)` |
+| G-2 | SupportService has no unit test (TEST 13 missing) | Medium | `RentSphereVerificationTest.java` | RESOLVED | Added TEST 13 covering full ticket lifecycle & 24h SLA |
+| G-3 | Notifications not persisted (ephemeral on restart) | Low | `NotificationService.java` | RESOLVED | Implemented atomic persistence to `notifications_log.txt` + TEST 14 |
+| G-4 | WAL test entries pollute production audit file | Low | `RentSphereVerificationTest.java` | RESOLVED | Test WAL isolated to `data/test_wal/`, production WAL cleaned |
+| G-5 | Payment saga -- no atomic link between payment verify and reserve | Low (demo) | `MainServer.java`, `app.js` | DOCUMENTED | Acceptable in sandbox/demo pilot architecture |
+| G-6 | No responsive CSS breakpoints for mobile | Cosmetic | `frontend/css/styles.css` | RESOLVED | Added 992px, 768px, and 480px responsive rules |
 
 ---
 

@@ -21,6 +21,7 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
     protected String lockerCoordinate;     // Hub Compartment / Ground Slot (e.g., A1-H8)
     protected LeaseState currentState;     // GoF State Context
     protected List<String> serviceLogs;     // Mutable maintenance & dispatch history
+    protected int rentalDays = 1;          // Active reservation duration in days
 
     public RentableAsset(String id, String title, String ownerId, double baseDailyRate, 
                          double securityCollateral, String lockerCoordinate) {
@@ -34,6 +35,16 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
         this.currentState = new AvailableState();
         this.serviceLogs = new ArrayList<>();
         this.serviceLogs.add("Commissioning Log: QA verified at Goa University Rental Hub");
+        this.rentalDays = 1;
+    }
+
+    public int getRentalDays() {
+        return rentalDays > 0 ? rentalDays : 1;
+    }
+
+    public void setRentalDays(int rentalDays) {
+        this.rentalDays = Math.max(1, rentalDays);
+        touch();
     }
 
     public String getTitle() {

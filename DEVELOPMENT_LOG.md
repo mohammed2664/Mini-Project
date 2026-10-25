@@ -244,3 +244,22 @@
   7. **Automated Verification Milestone**:
      - Expanded test suite from 76 to **91 Tests across 14 Test Suites**: **91 / 91 Passed (100% Success, 0 Failures)**.
 
+- **Phase 6: Final Independent Engineering Audit, Gap Detection & Remediation (2026-10-25)**:
+  1. **Independent Verification & Defect Detection (Findings F-01 through F-10)**:
+     - Discovered **F-01 (CRITICAL - Multi-Day Escrow Math Invariant)**: In `MainServer.java`, `handleReserve` locked tariff for `days > 1`, but `handleInspectApprove`, `handleInspectSlash`, and `handleDisputeResolve` hardcoded 1-day tariff, trapping remaining funds in renter escrow and underpaying hosts. Remediated: Added `rentalDays` to `RentableAsset`, serialized across all 4 leaf classes, restored in `FlatFilePersistenceEngine`, and calculated tariff for active duration before resetting to 1.
+     - Discovered **F-02 (HIGH - CWE-285 Admin RBAC Bypass)**: `handleAdminUsers`, `handleAdminUserStatus`, and `handleSupportReply` evaluated `caller != null && !isUserAdmin(caller)` which evaluated to false when `caller == null`, leaking all user credentials and allowing unauthenticated suspensions. Remediated: Enforced `caller == null || !isUserAdmin(caller)` returning HTTP 403 Forbidden.
+     - Discovered **F-03 (HIGH - CWE-285 Missing Auth on Locker Solenoids)**: `handleAdminDeviceState` had no session check. Remediated: Enforced admin authorization check returning HTTP 403 Forbidden.
+     - Discovered **F-04 (HIGH - CWE-200 Information Leakage / IDOR)**: `handleDisputes` (GET) and `handleSupportTickets` (GET) fell into `else` returning all platform records to unauthenticated visitors. Remediated: Enforced `user == null` returning HTTP 401 Unauthorized.
+     - Discovered **F-05 (MEDIUM - Physical Smart Hub Collision)**: `handleOnboard` and `handleCloneListing` lacked occupancy verification. Remediated: Added `comp.isOccupied()` check and Row H ground slot invariant validation before assignment.
+     - Discovered **F-06 (MEDIUM - Input Validation)**: Enforced `1 <= rentalDays <= 90` and non-blank renter IDs in `handleReserve`.
+     - Discovered **F-07 (MEDIUM - Persistence Crash Resilience)**: Upgraded `FlatFilePersistenceEngine` to write atomically via `.tmp` staging and `Files.move(..., ATOMIC_MOVE, REPLACE_EXISTING)`.
+     - Discovered **F-08 (MEDIUM - Configuration)**: Wired configured `dataDir` into `NotificationService` constructor in `MainServer.java`.
+     - Discovered **F-09 (MEDIUM - IDOR on Inspect Payout / Slashing)**: Verified caller is asset owner or platform administrator.
+     - Discovered **F-10 (LOW - Audit Attribution)**: Corrected `handleSupportReply` parameter alignment to pass acting administrator ID.
+  2. **Automated Verification Milestone**:
+     - Added **Test Suite 15 (14 Tests)** covering multi-day escrow invariant math, zero trapped escrow, physical bay collision prevention, support ticket admin resolution audit attribution, and atomic staging reload.
+     - Expanded test suite from 91 to **105 Tests across 15 Test Suites**: **105 / 105 Passed (100% Success, 0 Failures)**.
+  3. **Live Server & Static Verification**:
+     - Live HTTP verification via `curl` confirmed HTTP 403 Forbidden on unauthenticated `/api/admin/users` and `/api/admin/device/state`, HTTP 401 Unauthorized on `/api/disputes` and `/api/support/tickets`, and HTTP 200 OK on authenticated admin calls.
+     - Full zero-database and pure Java SE 17+/25 constraints preserved with zero external JAR dependencies.
+

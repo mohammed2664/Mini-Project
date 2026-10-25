@@ -65,8 +65,8 @@ public class EventAudioAndLighting extends EventAndCreatorAsset {
     @Override
     public String serializeToPipe() {
         String logs = String.join(",", serviceLogs);
-        String extra = String.format("soundDb=%d;mics=%d;rgb=%b;protection=%s;kitCount=%d",
-                maxSoundDbRating, wirelessMicsCount, hasDmxOrRgb, protectionTier, accessoryKitCount);
+        String extra = String.format("soundDb=%d;mics=%d;rgb=%b;protection=%s;kitCount=%d;days=%d",
+                maxSoundDbRating, wirelessMicsCount, hasDmxOrRgb, protectionTier, accessoryKitCount, rentalDays);
         return String.join("|",
                 id, title, category, "EventAudioAndLighting", ownerId, renterId,
                 currentState.getStateName(), String.format("%.2f", baseDailyRate),
