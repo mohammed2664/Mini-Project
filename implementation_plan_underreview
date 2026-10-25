@@ -1,0 +1,145 @@
+# RentSphere: Architectural Blueprint & Implementation Plan
+**Project Title**: RentSphere: A Decentralized Peer-to-Peer (P2P) Asset Rental & 8x8 Micro-Storage Engine  
+**Institution**: Goa University — Department of Computer Science & Technology  
+**Program**: Master of Computer Applications (MCA) — Object-Oriented Technology (OOT) Lab Mini-Project  
+**Status**: `PROPOSED` (Awaiting User Review & Approval)
+
+---
+
+## 1. Executive Summary & Design Principles
+
+RentSphere is an industry-grade, zero-database, pure Object-Oriented full-stack web application with an integrated 8x8 physical micro-storage grid engine. Built specifically to fulfill and exceed all five MCA OOT Lab syllabus assignments for Goa University, RentSphere demonstrates high-fidelity software engineering:
+
+- **Zero-Database Architecture**: Replaces heavyweight SQL/ORM bloat with thread-safe `ConcurrentHashMap` in-memory domain stores backed by human-readable, pipe-delimited flat files (`data/*.txt`) and an append-only Write-Ahead Log (`audit_wal.txt`).
+- **Pure Java OOP**: Clean, explicit inheritance, polymorphism, encapsulation, and GoF behavioral patterns without opaque framework magic.
+- **Fail-Fast Defense**: State transitions and physical locker allocations are guarded by a 4-Gate Pipeline short-circuiting on the first invariant violation.
+- **Mandatory Quarantine Invariant**: Returning an active lease triggers inspection quarantine before collateral release or asset relisting, preventing fraudulent gear returns.
+- **Meta-OOP RTTI & Memory Verification**: Live Java reflection inspector exposes runtime class hierarchies, while deep vs. shallow cloning proves memory reference isolation using real `System.identityHashCode()`.
+- **"Warm Horizon Marketplace" Aesthetics**: Modern, responsive web frontend with Primary Brand Teal (`#0D9488`, `#0A5C4D`), Warm Amber (`#F59E0B`), Emerald Green (`#10B981`), Quarantine Crimson (`#EF4444`), and Slate (`#64748B`).
+
+---
+
+## 2. Four-Member Team Ownership & Syllabus Mapping
+
+| Member | Subsystem & Role | Syllabus Assignments Covered | Key Deliverables |
+| :--- | :--- | :--- | :--- |
+| **Mohammed Faaris Khan** | **Subsystem 1: Core Behavioral Engine** | Assignment 1 (Pipeline Architecture) & Assignment 2 (State Pattern) | 4-Stage GoF `LeaseState` pattern, Mandatory Quarantine Invariant, 4-Gate `FailFastPipeline`, Polyglot C++20 Core (`polyglot/cpp/rentsphere_core.cpp`) |
+| **Ketan Gurudas Naik** | **Subsystem 2: Escrow Vault & 5-Tier Domain Model** | Assignment 2 (5-Tier Inheritance Hierarchy & Polymorphic Escrow) | 5-Tier Domain Model (`model/`), Double-Entry `EscrowVault`, Dynamic Marketplace Catalog UI, Polyglot C# Core (`polyglot/csharp/RentSphereCore.cs`) |
+| **Nikhil Bhaiju** | **Subsystem 3: 10-Point Meta-OOP & NIRF Portal** | Assignment 4 (Meta-OOP & Generics) & Assignment 3 (Formal UML) | `GenericRepository<T>`, Live RTTI `ReflectionInspector`, Deep vs. Shallow Cloner, NIRF Institutional Composite Score Portal, 5 Mermaid UML Diagrams, Polyglot Python 3.12 Core (`polyglot/python/rentsphere_core.py`) |
+| **Deepak Dev** | **Subsystem 4: 8x8 Smart Locker Grid & Persistence** | Assignment 5 (Physical Grid Matrix & File Persistence) | 64-Bay `SmartLockerGrid8x8`, Standalone Java Swing Desktop Console (`SwingLockerConsole.java`), Row 7 Heavy-Agri Spatial Invariant, Deterministic `FlatFilePersistenceEngine` (`data/*.txt`) |
+
+---
+
+## 3. Complete Proposed Folder Architecture
+
+```text
+c:\Users\user\OneDrive\Desktop\MCA\OOT-MINIPROJECT\
+├── .gitignore                                      <- Git exclusion rules for Java SE & IDE artifacts
+├── DEVELOPMENT_LOG.md                              <- Chronological engineering audit ledger
+├── IMPLEMENTATION_PLAN.md                          <- Project root blueprint
+├── pom.xml                                         <- Maven descriptor for Spring Boot starter web
+│
+├── config/
+│   └── rentsphere.properties                       <- Port, grid dimensions, security deposit rates
+│
+├── data/                                           <- Pipe-delimited flat file storage (Zero DB)
+│   ├── assets_ledger.txt                           <- Master asset inventory ledger
+│   ├── locker_grid_8x8.txt                         <- 64-bay locker compartment states & telemetry
+│   ├── escrow_vault.txt                            <- Double-entry wallet balances & locked funds
+│   └── audit_wal.txt                               <- Append-only Write-Ahead Log of all events
+│
+├── backend/
+│   └── src/
+│       └── rentsphere/
+│           ├── model/                              <- [Assignment 2] 5-Tier Inheritance Hierarchy
+│           │   ├── AbstractDomainEntity.java       <- Tier 1: Base domain entity with UUID & timestamps
+│           │   ├── RentableAsset.java              <- Tier 2: State context, base rates, cloneable hooks
+│           │   ├── SectoralAsset.java              <- Tier 3: Industry sector, seasonal demand multiplier
+│           │   ├── TourismAsset.java               <- Tier 4: Waterproof IP rating, corrosion factor
+│           │   ├── AgricultureAsset.java           <- Tier 4: Soil type compatibility, power kW rating
+│           │   ├── AutonomousMarineDrone.java      <- Tier 5: Underwater drone leaf class
+│           │   ├── SubmersibleActionRig.java       <- Tier 5: Marine action camera rig leaf class
+│           │   ├── PrecisionRotaryTiller.java      <- Tier 5: Heavy agricultural machinery leaf class
+│           │   └── OpticalSoilSpectrometer.java    <- Tier 5: Precision soil scanner leaf class
+│           │
+│           ├── state/                              <- [Assignment 2] 4-Stage GoF State Pattern
+│           │   ├── LeaseState.java                 <- Interface defining transition contracts
+│           │   ├── AvailableState.java             <- Gear ready for rental
+│           │   ├── ReservedEscrowState.java        <- Escrow locked, OTP generated, awaiting pickup
+│           │   ├── ActiveLeaseState.java           <- Asset actively deployed in field
+│           │   └── InspectionQuarantineState.java  <- Mandatory Quarantine before return to available
+│           │
+│           ├── pipeline/                           <- [Assignment 1] 4-Gate Fail-Fast Verification
+│           │   ├── VerificationGate.java           <- Common gate interface
+│           │   ├── GateResult.java                 <- Execution verdict with gate index & diagnostic
+│           │   ├── PipelineContext.java            <- State payload passed across gates
+│           │   ├── KycIdentityGate.java            <- Gate 1: Identity & anti-self-rental rule
+│           │   ├── StateLegalityGate.java          <- Gate 2: Pre-condition transition legality
+│           │   ├── EscrowSolvencyGate.java         <- Gate 3: Wallet liquidity vs. tariff + deposit
+│           │   ├── LockerSpatialGate.java          <- Gate 4: 8x8 compartment availability & Row 7 heavy rule
+│           │   └── FailFastPipeline.java           <- Sequential short-circuiting orchestrator
+│           │
+│           ├── escrow/                             <- [Assignment 2] Double-Entry Escrow Engine
+│           │   ├── EscrowAccount.java              <- User wallet, locked escrow, and earned collateral
+│           │   ├── EscrowTransaction.java          <- Immutable escrow ledger entry
+│           │   └── EscrowVault.java                <- Thread-safe locking, payout, and slashing engine
+│           │
+│           ├── locker/                             <- [Assignment 5] 8x8 Smart Micro-Storage Grid
+│           │   ├── CompartmentSize.java            <- S, M, L, XL_HEAVY_AGRI size tiers
+│           │   ├── LockerCompartment.java          <- Physical bay state, OTP PIN, sensor telemetry
+│           │   ├── SmartLockerGrid8x8.java         <- 64-bay coordinate engine (A1..H8) & Row 7 invariants
+│           │   └── SwingLockerConsole.java         <- Standalone Java Swing 8x8 desktop matrix GUI
+│           │
+│           ├── meta/                               <- [Assignment 4] Meta-OOP, Reflection & NIRF Portal
+│           │   ├── GenericRepository.java          <- Generic repository with predicate wildcard filters
+│           │   ├── ReflectionInspector.java        <- java.lang.reflect RTTI inspector for 5-tier classes
+│           │   ├── PrototypeCloner.java            <- Deep vs. Shallow cloning with identityHashCode
+│           │   └── NirfAnalyticsPortal.java        <- Ministry of Education NIRF composite score engine
+│           │
+│           ├── persistence/                        <- [Assignment 5] Deterministic Flat-File I/O
+│           │   └── FlatFilePersistenceEngine.java  <- Thread-safe sync to data/*.txt and audit_wal.txt
+│           │
+│           └── api/                                <- Dual-Mode REST API & Web UI Server
+│               ├── MainServer.java                 <- Embedded Java SE HTTP server (port 8080)
+│               ├── MarketplaceController.java      <- Asset listing, onboarding, and lifecycle endpoints
+│               ├── LockerController.java           <- 8x8 locker status, OTP, and telemetry endpoints
+│               ├── MetaController.java             <- RTTI reflection, clone benchmark, and NIRF endpoints
+│               └── AuditController.java            <- Live WAL feed, escrow accounts, and system KPIs
+│
+├── frontend/                                       <- Single-Page Web Application (Warm Horizon Theme)
+│   ├── index.html                                  <- 5-view responsive SPA interface
+│   ├── css/
+│   │   └── styles.css                              <- Warm Horizon design system & 8x8 grid CSS
+│   └── js/
+│       └── app.js                                  <- REST client, DOM rendering, and real-time updates
+│
+├── polyglot/                                       <- Multi-Language Reference Implementations
+│   ├── cpp/
+│   │   └── rentsphere_core.cpp                     <- C++20 State Machine & 4-Gate Pipeline
+│   ├── csharp/
+│   │   └── RentSphereCore.cs                       <- C# Double-Entry Escrow & Polymorphism
+│   └── python/
+│       └── rentsphere_core.py                      <- Python 3.12 Introspection, Cloner & NIRF
+│
+├── docs/                                           <- [Assignment 3] Formal Architecture Specifications
+│   └── UML_DIAGRAMS.md                             <- 5 complete Mermaid.js UML diagrams
+│
+└── tests/                                          <- Automated Verification Test Suite
+    └── RentSphereVerificationTest.java             <- End-to-end test suite verifying all 5 assignments
+```
+
+---
+
+## 4. Phase 3 Step-by-Step Execution Sequence
+
+Once you click **Proceed** or approve:
+1. **Step 1 — Folder Architecture**: Build directory tree and log `STATUS: [ACCEPTED]` in `DEVELOPMENT_LOG.md`.
+2. **Step 2 — Core Config & Seed `.txt` Files**: Generate `config/rentsphere.properties` and realistic seed records in `data/assets_ledger.txt`, `data/locker_grid_8x8.txt`, `data/escrow_vault.txt`, and `data/audit_wal.txt`.
+3. **Step 3 — Full Backend & Frontend Implementation**:
+   - Write all Java classes across `backend/src/rentsphere/{model,state,pipeline,escrow,locker,meta,persistence,api}`.
+   - Build the 5 interactive web views in `frontend/index.html`, `frontend/css/styles.css`, and `frontend/js/app.js`.
+   - Write polyglot references (`cpp`, `csharp`, `python`) and `docs/UML_DIAGRAMS.md`.
+4. **Step 4 — Automated Validation & Server Launch**:
+   - Compile and run `tests/RentSphereVerificationTest.java` verifying all 5 syllabus assignments pass.
+   - Start `MainServer` on port `8080` for live web interaction at `http://localhost:8080`.
+   - Record final test verdicts in `DEVELOPMENT_LOG.md`.
