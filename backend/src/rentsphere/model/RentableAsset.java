@@ -4,23 +4,23 @@ import rentsphere.state.AvailableState;
 import rentsphere.state.LeaseState;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * Tier 2: Rentable Asset
- * Holds GoF State context, rates, locker coordinate, and cloning hooks.
- * MCA OOT Lab - Assignment 2 & Assignment 4 (Cloning)
+ * Core rental context holding GoF LeaseState, INR rates, assigned Hub Bay,
+ * and Prototype Pattern cloning hooks.
+ * MCA OOT Lab - Assignment 2 (5-Tier Inheritance Hierarchy & State Pattern)
  */
 public abstract class RentableAsset extends AbstractDomainEntity implements Cloneable {
     protected String title;
     protected String ownerId;
     protected String renterId;
-    protected double baseDailyRate;
-    protected double securityCollateral;
-    protected String lockerCoordinate;
-    protected LeaseState currentState;
-    protected List<String> maintenanceLogs;
+    protected double baseDailyRate;        // In Indian Rupees (₹ INR)
+    protected double securityCollateral;    // Refundable Security Deposit in ₹ INR
+    protected String lockerCoordinate;     // Hub Compartment / Ground Slot (e.g., A1-H8)
+    protected LeaseState currentState;     // GoF State Context
+    protected List<String> serviceLogs;     // Mutable maintenance & dispatch history
 
     public RentableAsset(String id, String title, String ownerId, double baseDailyRate, 
                          double securityCollateral, String lockerCoordinate) {
@@ -32,8 +32,8 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
         this.securityCollateral = securityCollateral;
         this.lockerCoordinate = lockerCoordinate;
         this.currentState = new AvailableState();
-        this.maintenanceLogs = new ArrayList<>();
-        this.maintenanceLogs.add("Commissioning Log: Asset certified at Goa Central Depot");
+        this.serviceLogs = new ArrayList<>();
+        this.serviceLogs.add("Commissioning Log: QA verified at Goa University Rental Hub");
     }
 
     public String getTitle() {
@@ -99,17 +99,26 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
         touch();
     }
 
-    public List<String> getMaintenanceLogs() {
-        return maintenanceLogs;
+    public List<String> getServiceLogs() {
+        return serviceLogs;
     }
 
-    public void addMaintenanceLog(String entry) {
-        this.maintenanceLogs.add(entry);
+    // Backwards-compatible alias for reflection / meta tooling
+    public List<String> getMaintenanceLogs() {
+        return serviceLogs;
+    }
+
+    public void addServiceLog(String entry) {
+        this.serviceLogs.add(entry);
         touch();
     }
 
+    public void addMaintenanceLog(String entry) {
+        addServiceLog(entry);
+    }
+
     // ========================================================================
-    // POLYMORPHIC RATE & COLLATERAL FORMULAS (Assignment 2)
+    // POLYMORPHIC RATE & COLLATERAL FORMULAS (INR ₹)
     // ========================================================================
     public abstract double calculateDailyRentalTariff(int rentalDays);
 
@@ -123,11 +132,11 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
     }
 
     // ========================================================================
-    // SHALLOW VS DEEP CLONING (Assignment 4)
+    // PROTOTYPE PATTERN: SHALLOW VS DEEP CLONING (Assignment 4)
     // ========================================================================
     /**
      * Shallow Clone: Uses standard Object.clone().
-     * The cloned instance shares the maintenanceLogs reference with the parent!
+     * The cloned instance shares the serviceLogs list reference with the parent!
      */
     public RentableAsset shallowClone() {
         try {
@@ -138,13 +147,13 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
     }
 
     /**
-     * Deep Clone: Deeply duplicates internal mutable objects (maintenanceLogs).
-     * Guarantees total memory isolation.
+     * Deep Clone: Deeply duplicates internal mutable objects (serviceLogs).
+     * Guarantees total memory isolation for multi-unit inventory duplicate listings.
      */
     public RentableAsset deepClone() {
         try {
             RentableAsset cloned = (RentableAsset) super.clone();
-            cloned.maintenanceLogs = new ArrayList<>(this.maintenanceLogs);
+            cloned.serviceLogs = new ArrayList<>(this.serviceLogs);
             return cloned;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Deep clone failed", e);

@@ -2,16 +2,16 @@
  * RentSphere Core Engine - C# Polyglot Reference Implementation
  * Author: Ketan Gurudas Naik (Subsystem 2 Lead)
  * Institution: Goa University - MCA Object-Oriented Technology Lab
+ * Currency: Indian Rupees (₹ INR)
  * 
  * Features:
- *  - 5-Tier Domain Model with Polymorphic Formulas
- *  - Double-Entry Escrow Vault with Thread-Safe Locking & Slashing
- *  - LINQ-Based Catalog Queries
+ *  - 5-Tier Domain Model with Polymorphic Tariff Formulas & Ground Bay Constraints
+ *  - Double-Entry Escrow Vault with Thread-Safe Locking, Clean Refund, & Damage Slashing (₹ INR)
+ *  - Prototype Deep vs Shallow Cloning for Multi-Unit Inventory Isolation
  */
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace RentSphere.Core
 {
@@ -32,14 +32,15 @@ namespace RentSphere.Core
         public abstract string SerializeToPipe();
     }
 
+    // Tier 2: Core Rentable Asset (INR Currency)
     public class RentableAsset : AbstractDomainEntity, ICloneable
     {
         public string Title { get; }
         public string OwnerId { get; }
         public string RenterId { get; set; } = string.Empty;
-        public double BaseDailyRate { get; }
-        public double SecurityCollateral { get; }
-        public string LockerCoordinate { get; }
+        public double BaseDailyRate { get; }         // ₹ INR
+        public double SecurityCollateral { get; }    // ₹ INR Refundable Deposit
+        public string LockerCoordinate { get; }     // e.g. "A2", "H2"
         public string State { get; set; } = "AVAILABLE";
         public List<string> MaintenanceLogs { get; } = new List<string>();
 
@@ -52,6 +53,8 @@ namespace RentSphere.Core
             BaseDailyRate = baseDailyRate;
             SecurityCollateral = securityCollateral;
             LockerCoordinate = lockerCoordinate;
+            MaintenanceLogs.Add("Factory Calibration Complete");
+            MaintenanceLogs.Add("Initial Safety Audit Verified");
         }
 
         public virtual double CalculateDailyTariff(int rentalDays) => BaseDailyRate * rentalDays;
@@ -59,13 +62,13 @@ namespace RentSphere.Core
         public virtual double CalculateDamagePenalty(double damageSeverityPct) 
             => SecurityCollateral * (damageSeverityPct / 100.0);
 
+        // Shallow clone shares maintenance log list
         public object Clone()
         {
-            var clone = (RentableAsset)MemberwiseClone();
-            // Shallow clone shares list reference; deep clone allocates new list
-            return clone;
+            return (RentableAsset)MemberwiseClone();
         }
 
+        // Deep clone creates isolated maintenance logs for multi-unit inventory
         public RentableAsset DeepClone()
         {
             var clone = (RentableAsset)MemberwiseClone();
@@ -77,78 +80,125 @@ namespace RentSphere.Core
         public override string SerializeToPipe() => $"{Id}|{Title}|{OwnerId}|{State}|{BaseDailyRate}";
     }
 
-    public class SectoralAsset : RentableAsset
+    // Tier 3: Categorized Rental Asset
+    public class CategorizedRentalAsset : RentableAsset
     {
-        public string Sector { get; } // "TOURISM" or "AGRICULTURE"
-        public double SeasonalDemandMultiplier { get; }
+        public string Category { get; }
+        public double LateFeeMultiplier { get; }
+        public string ProtectionPlanTier { get; }
 
-        public SectoralAsset(string id, string title, string ownerId, double baseDailyRate,
-                             double securityCollateral, string lockerCoordinate, string sector, double multiplier)
+        public CategorizedRentalAsset(string id, string title, string ownerId, double baseDailyRate,
+                                     double securityCollateral, string lockerCoordinate, string category,
+                                     double lateFeeMultiplier, string protectionPlanTier)
             : base(id, title, ownerId, baseDailyRate, securityCollateral, lockerCoordinate)
         {
-            Sector = sector;
-            SeasonalDemandMultiplier = multiplier;
-        }
-
-        public override double CalculateDailyTariff(int rentalDays) 
-            => BaseDailyRate * SeasonalDemandMultiplier * rentalDays;
-    }
-
-    public class TourismAsset : SectoralAsset
-    {
-        public string IpRating { get; }
-        public double SaltwaterCorrosionFactor { get; }
-
-        public TourismAsset(string id, string title, string ownerId, double baseDailyRate,
-                            double securityCollateral, string lockerCoordinate, double multiplier,
-                            string ipRating, double corrosionFactor)
-            : base(id, title, ownerId, baseDailyRate, securityCollateral, lockerCoordinate, "TOURISM", multiplier)
-        {
-            IpRating = ipRating;
-            SaltwaterCorrosionFactor = corrosionFactor;
+            Category = category;
+            LateFeeMultiplier = lateFeeMultiplier;
+            ProtectionPlanTier = protectionPlanTier;
         }
     }
 
-    public class AgricultureAsset : SectoralAsset
+    // Tier 4A: Event and Creator Asset
+    public class EventAndCreatorAsset : CategorizedRentalAsset
     {
-        public string SoilType { get; }
-        public double PowerKw { get; }
-        public bool IsHeavyMachinery { get; }
+        public string IndoorOutdoorRating { get; }
+        public string WattageOrBatterySpec { get; }
+        public int AccessoryKitCount { get; }
 
-        public AgricultureAsset(string id, string title, string ownerId, double baseDailyRate,
-                                double securityCollateral, string lockerCoordinate, double multiplier,
-                                string soilType, double powerKw, bool isHeavy)
-            : base(id, title, ownerId, baseDailyRate, securityCollateral, lockerCoordinate, "AGRICULTURE", multiplier)
+        public EventAndCreatorAsset(string id, string title, string ownerId, double baseDailyRate,
+                                   double securityCollateral, string lockerCoordinate, string category,
+                                   double lateFeeMultiplier, string protectionPlanTier,
+                                   string indoorOutdoorRating, string wattageOrBatterySpec, int accessoryKitCount)
+            : base(id, title, ownerId, baseDailyRate, securityCollateral, lockerCoordinate,
+                   category, lateFeeMultiplier, protectionPlanTier)
         {
-            SoilType = soilType;
-            PowerKw = powerKw;
-            IsHeavyMachinery = isHeavy;
+            IndoorOutdoorRating = indoorOutdoorRating;
+            WattageOrBatterySpec = wattageOrBatterySpec;
+            AccessoryKitCount = accessoryKitCount;
         }
     }
 
-    public class AutonomousMarineDrone : TourismAsset
+    // Tier 4B: Utility and Mobility Asset
+    public class UtilityAndMobilityAsset : CategorizedRentalAsset
     {
-        public double MaxDepthMeters { get; }
-        public bool SonarEquipped { get; }
+        public string PowerOrEngineSpec { get; }
+        public string SafetyCertification { get; }
+        public bool RequiresGroundBay { get; }
 
-        public AutonomousMarineDrone(string id, string title, string ownerId, double baseDailyRate,
-                                     double securityCollateral, string lockerCoordinate, double multiplier,
-                                     string ipRating, double corrosionFactor, double depth, bool sonar)
-            : base(id, title, ownerId, baseDailyRate, securityCollateral, lockerCoordinate, multiplier, ipRating, corrosionFactor)
+        public UtilityAndMobilityAsset(string id, string title, string ownerId, double baseDailyRate,
+                                      double securityCollateral, string lockerCoordinate, string category,
+                                      double lateFeeMultiplier, string protectionPlanTier,
+                                      string powerOrEngineSpec, string safetyCertification, bool requiresGroundBay)
+            : base(id, title, ownerId, baseDailyRate, securityCollateral, lockerCoordinate,
+                   category, lateFeeMultiplier, protectionPlanTier)
         {
-            MaxDepthMeters = depth;
-            SonarEquipped = sonar;
+            PowerOrEngineSpec = powerOrEngineSpec;
+            SafetyCertification = safetyCertification;
+            RequiresGroundBay = requiresGroundBay;
+        }
+    }
+
+    // Tier 5 Concrete: Camera & Optics Gear
+    public class CameraAndOpticsGear : EventAndCreatorAsset
+    {
+        public double SensorResolutionMp { get; }
+        public bool Is4kOr8kVideo { get; }
+
+        public CameraAndOpticsGear(string id, string title, string ownerId, double baseDailyRate,
+                                   double securityCollateral, string lockerCoordinate, double lateFeeMultiplier,
+                                   string protectionPlanTier, double sensorResolutionMp, bool is4kOr8kVideo)
+            : base(id, title, ownerId, baseDailyRate, securityCollateral, lockerCoordinate, "CAMERAS",
+                   lateFeeMultiplier, protectionPlanTier, "Studio/Outdoor", "Dual NP-FZ100", 4)
+        {
+            SensorResolutionMp = sensorResolutionMp;
+            Is4kOr8kVideo = is4kOr8kVideo;
         }
 
         public override double CalculateDailyTariff(int rentalDays)
         {
-            double depthSurcharge = 1.0 + (MaxDepthMeters / 500.0);
-            return BaseDailyRate * SeasonalDemandMultiplier * depthSurcharge * rentalDays;
+            double resolutionFactor = Is4kOr8kVideo ? 1.15 : 1.0;
+            return BaseDailyRate * resolutionFactor * rentalDays;
+        }
+
+        public override double CalculateRequiredCollateral()
+        {
+            return (SensorResolutionMp >= 30.0) ? SecurityCollateral * 1.20 : SecurityCollateral;
+        }
+
+        public override string SerializeToPipe()
+        {
+            return $"{Id}|{Title}|CAMERAS|CameraAndOpticsGear|{OwnerId}|{RenterId}|{LockerCoordinate}|{BaseDailyRate}";
+        }
+    }
+
+    // Tier 5 Concrete: Event & Mobility Vehicle (Row H Ground Bay)
+    public class EventAndMobilityVehicle : UtilityAndMobilityAsset
+    {
+        public int SeatingCapacity { get; }
+        public string FuelOrChargingType { get; }
+
+        public EventAndMobilityVehicle(string id, string title, string ownerId, double baseDailyRate,
+                                      double securityCollateral, string lockerCoordinate, double lateFeeMultiplier,
+                                      string protectionPlanTier, int seatingCapacity, string fuelOrChargingType)
+            : base(id, title, ownerId, baseDailyRate, securityCollateral, lockerCoordinate, "MOBILITY_VEHICLES",
+                   lateFeeMultiplier, protectionPlanTier, "1.2L Engine / Electric Motor", "ARAI 5-Star", true)
+        {
+            SeatingCapacity = seatingCapacity;
+            FuelOrChargingType = fuelOrChargingType;
+        }
+
+        public override double CalculateDailyTariff(int rentalDays) => BaseDailyRate * rentalDays;
+
+        public override double CalculateRequiredCollateral() => SecurityCollateral * 1.20; // 20% vehicle transit deposit
+
+        public override string SerializeToPipe()
+        {
+            return $"{Id}|{Title}|MOBILITY_VEHICLES|EventAndMobilityVehicle|{OwnerId}|{RenterId}|{LockerCoordinate}|{BaseDailyRate}";
         }
     }
 
     // ========================================================================
-    // DOUBLE-ENTRY ESCROW VAULT SUBSYSTEM
+    // DOUBLE-ENTRY ESCROW VAULT SUBSYSTEM (₹ INR)
     // ========================================================================
     public class EscrowAccount
     {
@@ -187,7 +237,7 @@ namespace RentSphere.Core
             }
         }
 
-        // Lock funds on reservation
+        // Lock funds on reservation in ₹ INR
         public bool LockEscrow(string renterId, string ownerId, double rentalTariff, double securityCollateral)
         {
             lock (_lock)
@@ -198,12 +248,12 @@ namespace RentSphere.Core
 
                 renter.WalletBalance -= total;
                 renter.LockedEscrow += total;
-                Console.WriteLine($"[ESCROW LOCKED] User: {renter.UserName} | Locked: ${total:F2} (Tariff: ${rentalTariff:F2}, Deposit: ${securityCollateral:F2})");
+                Console.WriteLine($"[ESCROW LOCKED] User: {renter.UserName} | Locked: ₹{total:N2} (Tariff: ₹{rentalTariff:N2}, Deposit: ₹{securityCollateral:N2})");
                 return true;
             }
         }
 
-        // Release funds upon clean inspection approval
+        // Release funds upon clean inspection approval in ₹ INR
         public bool ReleasePayoutClean(string renterId, string ownerId, double rentalTariff, double securityCollateral)
         {
             lock (_lock)
@@ -217,12 +267,12 @@ namespace RentSphere.Core
                 owner.WalletBalance += rentalTariff;       // Pay rental fee to owner
                 owner.EarnedRevenue += rentalTariff;
 
-                Console.WriteLine($"[ESCROW RELEASE CLEAN] Refunded Deposit ${securityCollateral:F2} to {renter.UserName} | Paid Fee ${rentalTariff:F2} to {owner.UserName}");
+                Console.WriteLine($"[ESCROW RELEASE CLEAN] Refunded Deposit ₹{securityCollateral:N2} to {renter.UserName} | Paid Fee ₹{rentalTariff:N2} to {owner.UserName}");
                 return true;
             }
         }
 
-        // Slash collateral upon damage flagged
+        // Slash collateral upon damage flagged in ₹ INR
         public bool SlashCollateral(string renterId, string ownerId, double rentalTariff, double securityCollateral, double damagePenalty)
         {
             lock (_lock)
@@ -240,7 +290,7 @@ namespace RentSphere.Core
                 owner.WalletBalance += (rentalTariff + penalty);
                 owner.EarnedRevenue += (rentalTariff + penalty);
 
-                Console.WriteLine($"[ESCROW SLASHED] Slashed ${penalty:F2} damage penalty awarded to {owner.UserName} | Refunded ${refundedDeposit:F2} to {renter.UserName}");
+                Console.WriteLine($"[ESCROW SLASHED] Slashed ₹{penalty:N2} damage penalty awarded to {owner.UserName} | Refunded ₹{refundedDeposit:N2} to {renter.UserName}");
                 return true;
             }
         }
@@ -254,33 +304,33 @@ namespace RentSphere.Core
         public static void Main()
         {
             Console.WriteLine("=========================================================");
-            Console.WriteLine("  RentSphere Core Engine - C# Reference Verification");
+            Console.WriteLine("  RentSphere Core Engine - C# Reference Verification (₹ INR)");
             Console.WriteLine("=========================================================");
 
             var vault = new EscrowVault();
-            vault.RegisterAccount("host_faaris", "Mohammed Faaris Khan (Host)", 5000.0);
-            vault.RegisterAccount("renter_ketan", "Ketan Naik (Renter)", 8000.0);
+            vault.RegisterAccount("host_faaris", "Mohammed Faaris Khan (Host)", 25000.0);
+            vault.RegisterAccount("renter_ketan", "Ketan Naik (Renter)", 45000.0);
 
-            var drone = new AutonomousMarineDrone(
-                "AST-001", "Goa Coastal Deep-Survey Drone", "host_faaris",
-                1200.0, 3000.0, "F2", 1.25, "IP68", 1.15, 150.0, true
+            var camera = new CameraAndOpticsGear(
+                "AST-001", "Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit", "host_faaris",
+                1200.0, 5000.0, "A2", 1.25, "PREMIUM_ALL_RISK", 33.0, true
             );
 
-            double tariff = drone.CalculateDailyTariff(2);
-            double collateral = drone.CalculateRequiredCollateral();
+            double tariff = camera.CalculateDailyTariff(2);
+            double collateral = camera.CalculateRequiredCollateral();
 
-            Console.WriteLine($"Asset: {drone.Title} | 2-Day Tariff: ${tariff:F2} | Collateral: ${collateral:F2}");
+            Console.WriteLine($"Asset: {camera.Title} | 2-Day Tariff: ₹{tariff:N2} | Collateral: ₹{collateral:N2}");
 
             // Lock Escrow
             vault.LockEscrow("renter_ketan", "host_faaris", tariff, collateral);
 
             // Simulate Quarantine Return and Slashing 20% Damage
-            double damagePenalty = drone.CalculateDamagePenalty(20.0);
+            double damagePenalty = camera.CalculateDamagePenalty(20.0);
             vault.SlashCollateral("renter_ketan", "host_faaris", tariff, collateral, damagePenalty);
 
             var renter = vault.GetAccount("renter_ketan");
             var host = vault.GetAccount("host_faaris");
-            Console.WriteLine($"Final Balances -> Renter: ${renter.WalletBalance:F2} | Host: ${host.WalletBalance:F2}");
+            Console.WriteLine($"Final Balances -> Renter: ₹{renter.WalletBalance:N2} | Host: ₹{host.WalletBalance:N2}");
         }
     }
 }

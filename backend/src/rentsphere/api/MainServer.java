@@ -1,17 +1,15 @@
 package rentsphere.api;
 
 import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import rentsphere.escrow.EscrowAccount;
 import rentsphere.escrow.EscrowVault;
-import rentsphere.locker.CompartmentSize;
 import rentsphere.locker.LockerCompartment;
 import rentsphere.locker.SmartLockerGrid8x8;
 import rentsphere.meta.GenericRepository;
-import rentsphere.meta.NirfAnalyticsPortal;
 import rentsphere.meta.PrototypeCloner;
 import rentsphere.meta.ReflectionInspector;
+import rentsphere.meta.TrustScoreEngine;
 import rentsphere.model.*;
 import rentsphere.pipeline.FailFastPipeline;
 import rentsphere.pipeline.GateResult;
@@ -31,6 +29,7 @@ import java.util.concurrent.Executors;
 /**
  * RentSphere Main Server - Pure Java SE REST API & Static Web Server.
  * Zero External Dependencies (Runs on standard JDK 17+ / 25).
+ * Native Indian Rupee (₹ INR) currency across all transactions.
  * 
  * Serves:
  *  - Single-Page Web Application on http://localhost:8080/
@@ -64,7 +63,7 @@ public class MainServer {
     }
 
     private void loadPersistentState() {
-        System.out.println("[BOOT] Initializing RentSphere Zero-Database Engine...");
+        System.out.println("[BOOT] Initializing RentSphere Zero-Database Engine (INR ₹)...");
         persistenceEngine.loadAssets(assetRepo);
         persistenceEngine.loadLockers(lockerGrid);
         persistenceEngine.loadEscrow(escrowVault);
@@ -85,21 +84,24 @@ public class MainServer {
         server.createContext("/api/assets/inspect-approve", this::handleInspectApprove);
         server.createContext("/api/assets/inspect-slash", this::handleInspectSlash);
         server.createContext("/api/assets/onboard", this::handleOnboard);
+        server.createContext("/api/assets/clone", this::handleCloneListing);
         server.createContext("/api/lockers", this::handleLockers);
         server.createContext("/api/lockers/verify-otp", this::handleVerifyOtp);
         server.createContext("/api/lockers/telemetry", this::handleTelemetry);
         server.createContext("/api/escrow/accounts", this::handleAccounts);
         server.createContext("/api/wal", this::handleWal);
         server.createContext("/api/meta/reflect", this::handleReflect);
-        server.createContext("/api/meta/clone", this::handleClone);
-        server.createContext("/api/meta/nirf", this::handleNirf);
+        server.createContext("/api/meta/clone", this::handleCloneBenchmark);
+        server.createContext("/api/trust-score", this::handleTrustScore);
+        // Compatibility alias
+        server.createContext("/api/meta/nirf", this::handleTrustScore);
 
         // Context: Static frontend file delivery (Root handler)
         server.createContext("/", this::handleStaticFiles);
 
         server.start();
         System.out.println("=================================================================");
-        System.out.println("  RentSphere P2P Engine & 8x8 Smart Micro-Storage Grid ACTIVE");
+        System.out.println("  RentSphere P2P Engine & 8x8 Smart Pickup Hub ACTIVE (INR ₹)");
         System.out.println("  Web UI:   http://localhost:" + port + "/");
         System.out.println("  REST API: http://localhost:" + port + "/api/health");
         System.out.println("  Platform: Pure Java SE (Zero External Dependencies)");
@@ -133,7 +135,7 @@ public class MainServer {
                 .filter(a -> "ACTIVE_LEASE".equals(a.getCurrentState().getStateName())).count();
 
         String json = String.format(Locale.US,
-                "{\"status\":\"UP\",\"appName\":\"RentSphere P2P Engine\",\"totalAssets\":%d," +
+                "{\"status\":\"UP\",\"appName\":\"RentSphere P2P Hub\",\"currency\":\"INR (₹)\",\"totalAssets\":%d," +
                 "\"activeLeases\":%d,\"inQuarantine\":%d,\"lockedEscrowCapital\":%.2f," +
                 "\"totalLockerBays\":%d,\"runtime\":\"Java SE %s\"}",
                 assetRepo.count(), activeLeaseCount, inQuarantineCount, lockedTotal,
@@ -188,7 +190,6 @@ public class MainServer {
 
         GateResult verdict = pipeline.verify(ctx);
         if (!verdict.isPassed()) {
-            // Pipeline Short-Circuit
             persistenceEngine.appendWal(assetId, "RESERVE_BLOCKED", asset.getCurrentState().getStateName(),
                     asset.getCurrentState().getStateName(), renterId, 
                     "Blocked at Gate " + verdict.getGateIndex() + " (" + verdict.getGateName() + "): " + verdict.getDiagnostic());
@@ -199,7 +200,6 @@ public class MainServer {
             return;
         }
 
-        // All 4 gates passed: Execute state transition and lock escrow
         double tariff = asset.calculateDailyRentalTariff(days);
         double collateral = asset.calculateRequiredCollateral();
 
@@ -212,7 +212,6 @@ public class MainServer {
         String prevState = asset.getCurrentState().getStateName();
         asset.getCurrentState().reserve(asset, renterId);
 
-        // Update locker bay compartment
         LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
         String otp = "000000";
         if (comp != null) {
@@ -220,18 +219,17 @@ public class MainServer {
             otp = comp.generateNewOtp();
         }
 
-        asset.addMaintenanceLog("Reserved for " + days + " days by " + renterId + " (Escrow: $" + (tariff + collateral) + ")");
+        asset.addServiceLog("Reserved for " + days + " days by " + renterId + " (Escrow: ₹" + (tariff + collateral) + ")");
 
-        // Persist to flat files and WAL
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.saveEscrow(escrowVault);
         persistenceEngine.appendWal(assetId, "RESERVE", prevState, asset.getCurrentState().getStateName(), renterId,
-                String.format("Escrow locked $%.2f. OTP %s generated for bay %s", (tariff + collateral), otp, asset.getLockerCoordinate()));
+                String.format("Escrow locked ₹%.2f. OTP %s generated for bay %s", (tariff + collateral), otp, asset.getLockerCoordinate()));
 
         String res = String.format(Locale.US,
                 "{\"success\":true,\"state\":\"%s\",\"assetId\":\"%s\",\"otpPin\":\"%s\",\"lockerBay\":\"%s\"," +
-                "\"tariff\":%.2f,\"collateral\":%.2f,\"message\":\"Reservation successful! Escrow locked. Present OTP at locker bay to unlock.\"}",
+                "\"tariff\":%.2f,\"collateral\":%.2f,\"message\":\"Reservation successful! Escrow locked. Present OTP at Hub Bay to unlock.\"}",
                 asset.getCurrentState().getStateName(), assetId, otp, asset.getLockerCoordinate(), tariff, collateral);
 
         sendJsonResponse(exchange, 200, res);
@@ -256,11 +254,10 @@ public class MainServer {
         RentableAsset asset = optAsset.get();
         LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
         if (comp == null || !comp.verifyOtp(otp)) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Invalid 6-Digit OTP passcode for Bay " + asset.getLockerCoordinate() + "\"}");
+            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Invalid 6-Digit Pickup OTP passcode for Bay " + asset.getLockerCoordinate() + "\"}");
             return;
         }
 
-        // Execute State Transition: RESERVED_ESCROW -> ACTIVE_LEASE
         String prevState = asset.getCurrentState().getStateName();
         try {
             asset.getCurrentState().pickup(asset);
@@ -269,19 +266,18 @@ public class MainServer {
             return;
         }
 
-        // Compartment is now open and vacated
         comp.setOccupied(false);
         comp.setStatus("DISPATCHED_ACTIVE");
         comp.setWeightKg(0.0);
-        asset.addMaintenanceLog("Asset picked up from bay " + comp.getBayId() + " via OTP verification.");
+        asset.addServiceLog("Asset retrieved from Hub Bay " + comp.getBayId() + " via OTP verification.");
 
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.appendWal(assetId, "PICKUP", prevState, asset.getCurrentState().getStateName(), asset.getRenterId(),
-                "Asset unlocked via OTP " + otp + ". Bay " + comp.getBayId() + " now empty in-field.");
+                "Unlocked via OTP " + otp + ". Bay " + comp.getBayId() + " vacated for active rental.");
 
         String res = String.format(
-                "{\"success\":true,\"state\":\"%s\",\"assetId\":\"%s\",\"message\":\"Compartment unlocked! Gear successfully retrieved.\"}",
+                "{\"success\":true,\"state\":\"%s\",\"assetId\":\"%s\",\"message\":\"Hub compartment unlocked! Equipment retrieved successfully.\"}",
                 asset.getCurrentState().getStateName(), assetId);
         sendJsonResponse(exchange, 200, res);
     }
@@ -313,23 +309,22 @@ public class MainServer {
             return;
         }
 
-        // Lock locker bay into Quarantine mode
         LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
         if (comp != null) {
             comp.setOccupied(true);
             comp.setStatus("QUARANTINE_LOCKED");
-            comp.setWeightKg(15.0); // Simulated return weight
+            comp.setWeightKg(8.5);
         }
 
-        asset.addMaintenanceLog("Deposited in Bay " + asset.getLockerCoordinate() + ". MANDATORY QUARANTINE: Awaiting host inspection.");
+        asset.addServiceLog("Returned to Hub Bay " + asset.getLockerCoordinate() + ". MANDATORY INSPECTION: Deposit held.");
 
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.appendWal(assetId, "RETURN", prevState, asset.getCurrentState().getStateName(), asset.getRenterId(),
-                "MANDATORY QUARANTINE ENFORCED: Gear returned to bay " + asset.getLockerCoordinate() + ". Collateral held.");
+                "MANDATORY QUARANTINE: Item returned to Bay " + asset.getLockerCoordinate() + ". Security deposit held pending inspection.");
 
         String res = String.format(
-                "{\"success\":true,\"state\":\"%s\",\"assetId\":\"%s\",\"message\":\"Asset returned to locker. MANDATORY QUARANTINE active: Collateral held until host approval.\"}",
+                "{\"success\":true,\"state\":\"%s\",\"assetId\":\"%s\",\"message\":\"Item returned to Hub Bay. Mandatory Inspection active: Deposit held until host checks condition.\"}",
                 asset.getCurrentState().getStateName(), assetId);
         sendJsonResponse(exchange, 200, res);
     }
@@ -363,7 +358,6 @@ public class MainServer {
             return;
         }
 
-        // Release escrow clean
         escrowVault.releasePayoutClean(renterId, asset.getOwnerId(), assetId, tariff, collateral);
 
         LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
@@ -371,17 +365,17 @@ public class MainServer {
             comp.setStatus("ONLINE_READY");
         }
 
-        asset.addMaintenanceLog("Clean Inspection Approved by " + hostId + ". 100% deposit refunded. Gear restored to AVAILABLE.");
+        asset.addServiceLog("Clean Inspection Approved by " + hostId + ". 100% deposit refunded. Restored to AVAILABLE.");
 
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.saveEscrow(escrowVault);
         persistenceEngine.appendWal(assetId, "INSPECT_APPROVE", prevState, asset.getCurrentState().getStateName(), hostId,
-                String.format("Clean return approved. Slashed $0. Refunded $%.2f collateral to %s. Paid $%.2f to owner.",
+                String.format("Clean return approved. Slashed ₹0. Refunded ₹%.2f deposit to %s. Paid ₹%.2f to host.",
                         collateral, renterId, tariff));
 
         String res = String.format(Locale.US,
-                "{\"success\":true,\"state\":\"%s\",\"message\":\"Inspection Approved! 100%% Collateral ($%.2f) refunded to renter. $%.2f rental fee paid to owner.\"}",
+                "{\"success\":true,\"state\":\"%s\",\"message\":\"Clean Return Approved! Full deposit (₹%.2f) refunded to renter. ₹%.2f rental fee transferred to host.\"}",
                 asset.getCurrentState().getStateName(), collateral, tariff);
         sendJsonResponse(exchange, 200, res);
     }
@@ -417,7 +411,6 @@ public class MainServer {
             return;
         }
 
-        // Execute Escrow Slashing
         escrowVault.slashCollateral(renterId, asset.getOwnerId(), assetId, tariff, collateral, slashingPenalty);
 
         LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
@@ -426,18 +419,18 @@ public class MainServer {
         }
 
         double netRefund = Math.max(0.0, collateral - slashingPenalty);
-        asset.addMaintenanceLog(String.format(Locale.US, "Damage Slashed: %.1f%% penalty ($%.2f) deducted from collateral. Repair scheduled.", damagePct, slashingPenalty));
+        asset.addServiceLog(String.format(Locale.US, "Damage Slashed: %.1f%% penalty (₹%.2f) deducted from deposit. Restored to AVAILABLE.", damagePct, slashingPenalty));
 
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.saveEscrow(escrowVault);
         persistenceEngine.appendWal(assetId, "INSPECT_SLASH", prevState, asset.getCurrentState().getStateName(), hostId,
-                String.format(Locale.US, "Damage flagged (%.1f%%). Slashed $%.2f to owner. Refunded $%.2f net deposit to %s.",
+                String.format(Locale.US, "Damage flagged (%.1f%%). Slashed ₹%.2f to host. Refunded ₹%.2f net deposit to %s.",
                         damagePct, slashingPenalty, netRefund, renterId));
 
         String res = String.format(Locale.US,
                 "{\"success\":true,\"state\":\"%s\",\"slashedPenalty\":%.2f,\"refundedCollateral\":%.2f," +
-                "\"message\":\"Damage Slashing Executed: $%.2f deducted from deposit for repairs. $%.2f net refund returned to renter.\"}",
+                "\"message\":\"Damage Slashing Executed: ₹%.2f deducted from deposit for repairs. ₹%.2f net refund returned to renter.\"}",
                 asset.getCurrentState().getStateName(), slashingPenalty, netRefund, slashingPenalty, netRefund);
         sendJsonResponse(exchange, 200, res);
     }
@@ -449,44 +442,49 @@ public class MainServer {
         }
 
         Map<String, String> b = parseJsonBody(exchange);
-        String leafClass = b.getOrDefault("leafClass", "AutonomousMarineDrone");
-        String title = b.getOrDefault("title", "New Asset");
+        String leafClass = b.getOrDefault("leafClass", "CameraAndOpticsGear");
+        String title = b.getOrDefault("title", "New Equipment");
         String ownerId = b.getOrDefault("ownerId", "host_faaris");
         String bay = b.getOrDefault("lockerBay", "A1").toUpperCase();
         double baseRate = parseDouble(b.get("baseDailyRate"), 500.0);
-        double collateral = parseDouble(b.get("securityCollateral"), 1500.0);
+        double collateral = parseDouble(b.get("securityCollateral"), 2000.0);
 
         String assetId = "AST-" + (100 + assetRepo.count() + 1);
         RentableAsset newAsset;
 
-        if ("AutonomousMarineDrone".equalsIgnoreCase(leafClass)) {
-            newAsset = new AutonomousMarineDrone(
-                    assetId, title, ownerId, baseRate, collateral, bay, 1.20, "Marine Comprehensive",
-                    "IP68", 1.10, parseDouble(b.get("depth"), 100.0), Boolean.parseBoolean(b.get("sonar"))
+        if ("CameraAndOpticsGear".equalsIgnoreCase(leafClass)) {
+            newAsset = new CameraAndOpticsGear(
+                    assetId, title, ownerId, baseRate, collateral, bay,
+                    1.20, "Creator Comprehensive", "Studio & Outdoor", "Dual Batteries", 3,
+                    parseDouble(b.get("sensorMp"), 24.2), Boolean.parseBoolean(b.getOrDefault("is4k", "true")),
+                    b.getOrDefault("mount", "Standard Mount")
             );
-        } else if ("SubmersibleActionRig".equalsIgnoreCase(leafClass)) {
-            newAsset = new SubmersibleActionRig(
-                    assetId, title, ownerId, baseRate, collateral, bay, 1.10, "Standard Cover",
-                    "IP68", 1.05, b.getOrDefault("stabilization", "GimbalTriple"),
-                    Boolean.parseBoolean(b.get("is8k")), parseDouble(b.get("depth"), 40.0)
+        } else if ("EventAudioAndLighting".equalsIgnoreCase(leafClass)) {
+            newAsset = new EventAudioAndLighting(
+                    assetId, title, ownerId, baseRate, collateral, bay,
+                    1.25, "Event Pro Shield", "Indoor/Outdoor Sound", "240W RMS", 4,
+                    parseInt(b.get("soundDb"), 104), parseInt(b.get("mics"), 2),
+                    Boolean.parseBoolean(b.getOrDefault("rgb", "true"))
             );
-        } else if ("PrecisionRotaryTiller".equalsIgnoreCase(leafClass)) {
-            newAsset = new PrecisionRotaryTiller(
-                    assetId, title, ownerId, baseRate, collateral, bay, 1.15, "Agri Machinery Protect",
-                    b.getOrDefault("soil", "Laterite"), parseDouble(b.get("kw"), 40.0),
-                    parseInt(b.get("rpm"), 2800), parseDouble(b.get("width"), 180.0)
+        } else if ("PowerToolEquipment".equalsIgnoreCase(leafClass)) {
+            newAsset = new PowerToolEquipment(
+                    assetId, title, ownerId, baseRate, collateral, bay,
+                    1.15, "Standard Utility Shield", b.getOrDefault("power", "600W Motor"),
+                    "ISI Certified", Boolean.parseBoolean(b.getOrDefault("cordless", "false")),
+                    parseInt(b.get("bits"), 50)
             );
         } else {
-            newAsset = new OpticalSoilSpectrometer(
-                    assetId, title, ownerId, baseRate, collateral, bay, 1.05, "Precision Sensor Bond",
-                    b.getOrDefault("soil", "Alluvial"), parseDouble(b.get("kw"), 2.0),
-                    parseInt(b.get("bands"), 16), parseDouble(b.get("accuracy"), 98.0)
+            newAsset = new EventAndMobilityVehicle(
+                    assetId, title, ownerId, baseRate, collateral, bay,
+                    1.30, "Commercial Vehicle Cover", b.getOrDefault("power", "1.2L Engine"),
+                    "ARAI Certified", parseInt(b.get("seats"), 5), b.getOrDefault("fuel", "Petrol"),
+                    Boolean.parseBoolean(b.getOrDefault("auto", "true"))
             );
         }
 
-        // Validate Row 7 Heavy-Agri rule
-        if (!lockerGrid.validateHeavyAgriPlacement(newAsset, bay)) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Heavy Agricultural Machinery must be assigned to Row H (Row 7). Specified bay: " + bay + "\"}");
+        // Validate Row H Ground Slot Invariant
+        if (!lockerGrid.validateGroundSlotPlacement(newAsset, bay)) {
+            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Vehicles and heavy event gear must be assigned to Row H Ground Slots (H1-H8). Specified bay: " + bay + "\"}");
             return;
         }
 
@@ -498,7 +496,61 @@ public class MainServer {
         persistenceEngine.appendWal(assetId, "ONBOARD_ASSET", "NONE", "AVAILABLE", ownerId,
                 "Onboarded new " + leafClass + " in Bay " + bay);
 
-        sendJsonResponse(exchange, 201, "{\"success\":true,\"assetId\":\"" + assetId + "\",\"message\":\"Asset successfully onboarded into 8x8 Smart Locker Matrix!\"}");
+        sendJsonResponse(exchange, 201, "{\"success\":true,\"assetId\":\"" + assetId + "\",\"message\":\"Listing successfully added to RentSphere!\"}");
+    }
+
+    private void handleCloneListing(HttpExchange exchange) throws IOException {
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendResponse(exchange, 405, "{\"error\":\"Method Not Allowed\"}");
+            return;
+        }
+
+        Map<String, String> b = parseJsonBody(exchange);
+        String sourceId = b.get("assetId");
+        String targetBay = b.getOrDefault("targetBay", "").toUpperCase();
+
+        Optional<RentableAsset> opt = assetRepo.findById(sourceId);
+        if (opt.isEmpty()) {
+            sendJsonResponse(exchange, 404, "{\"error\":\"Source asset not found\"}");
+            return;
+        }
+
+        RentableAsset source = opt.get();
+        // Prototype Deep Clone: Total heap isolation of serviceLogs!
+        RentableAsset clone = source.deepClone();
+        String newId = "AST-" + (100 + assetRepo.count() + 1);
+
+        // Find available bay if not specified
+        if (targetBay.isBlank()) {
+            targetBay = lockerGrid.getAllCompartments().stream()
+                    .filter(c -> !c.isOccupied() && lockerGrid.validateGroundSlotPlacement(clone, c.getBayId()))
+                    .map(LockerCompartment::getBayId)
+                    .findFirst().orElse("A1");
+        }
+
+        try {
+            java.lang.reflect.Field idField = AbstractDomainEntity.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(clone, newId);
+        } catch (Exception ignored) {}
+
+        clone.setTitle(source.getTitle() + " (Unit #" + (assetRepo.count() + 1) + ")");
+        clone.setLockerCoordinate(targetBay);
+        clone.setRenterId("");
+        clone.setState(new rentsphere.state.AvailableState());
+        clone.addServiceLog("Duplicated via Prototype Deep Clone from " + sourceId + " with isolated service history.");
+
+        assetRepo.save(clone);
+        lockerGrid.assignAssetToBay(clone, targetBay);
+
+        persistenceEngine.saveAssets(assetRepo);
+        persistenceEngine.saveLockers(lockerGrid);
+        persistenceEngine.appendWal(newId, "CLONE_ASSET", "NONE", "AVAILABLE", clone.getOwnerId(),
+                "Duplicated via Prototype Deep Clone from " + sourceId + " into Bay " + targetBay);
+
+        sendJsonResponse(exchange, 201, String.format(
+                "{\"success\":true,\"assetId\":\"%s\",\"targetBay\":\"%s\",\"message\":\"Multi-Unit Listing successfully cloned with isolated service history!\"}",
+                newId, targetBay));
     }
 
     private void handleLockers(HttpExchange exchange) throws IOException {
@@ -553,7 +605,7 @@ public class MainServer {
         Map<String, String> b = parseJsonBody(exchange);
         String bayId = b.get("bayId");
         double temp = parseDouble(b.get("tempC"), 24.0);
-        double hum = parseDouble(b.get("humidityPct"), 45.0);
+        double hum = parseDouble(b.get("humidityPct"), 48.0);
         double weight = parseDouble(b.get("weightKg"), 0.0);
 
         boolean updated = lockerGrid.updateTelemetry(bayId, temp, hum, weight);
@@ -627,7 +679,6 @@ public class MainServer {
 
         ReflectionInspector.InspectionReport report = ReflectionInspector.inspect(opt.get());
 
-        // Serialize report to JSON
         StringBuilder sb = new StringBuilder("{");
         sb.append("\"className\":\"").append(report.getClassName()).append("\",");
         sb.append("\"packageName\":\"").append(report.getPackageName()).append("\",");
@@ -667,7 +718,7 @@ public class MainServer {
         sendJsonResponse(exchange, 200, sb.toString());
     }
 
-    private void handleClone(HttpExchange exchange) throws IOException {
+    private void handleCloneBenchmark(HttpExchange exchange) throws IOException {
         if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
             sendResponse(exchange, 405, "{\"error\":\"Method Not Allowed\"}");
             return;
@@ -697,41 +748,41 @@ public class MainServer {
         sendJsonResponse(exchange, 200, json);
     }
 
-    private void handleNirf(HttpExchange exchange) throws IOException {
+    private void handleTrustScore(HttpExchange exchange) throws IOException {
         if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
             sendResponse(exchange, 405, "{\"error\":\"Method Not Allowed\"}");
             return;
         }
 
         Map<String, String> b = parseJsonBody(exchange);
-        String name = b.getOrDefault("institutionName", "Goa University - Dept of CST (MCA)");
-        double tlr = parseDouble(b.get("tlr"), 78.5);
-        double rp = parseDouble(b.get("rp"), 64.2);
-        double go = parseDouble(b.get("go"), 82.0);
-        double oi = parseDouble(b.get("oi"), 70.5);
-        double pr = parseDouble(b.get("pr"), 65.0);
+        String name = b.getOrDefault("memberName", "Goa University Community Host");
+        double condition = parseDouble(b.get("conditionHistory"), 88.0);
+        double punctuality = parseDouble(b.get("punctualityRate"), 92.0);
+        double escrow = parseDouble(b.get("escrowCompletion"), 95.0);
+        double peer = parseDouble(b.get("peerRating"), 90.0);
+        double kyc = parseDouble(b.get("kycTier"), 100.0);
 
-        double deltaTlr = parseDouble(b.get("deltaTlr"), 5.0);
-        double deltaRp = parseDouble(b.get("deltaRp"), 8.0);
-        double deltaGo = parseDouble(b.get("deltaGo"), 3.0);
-        double deltaOi = parseDouble(b.get("deltaOi"), 2.0);
-        double deltaPr = parseDouble(b.get("deltaPr"), 5.0);
+        double deltaCondition = parseDouble(b.get("deltaCondition"), 5.0);
+        double deltaPunctuality = parseDouble(b.get("deltaPunctuality"), 4.0);
+        double deltaEscrow = parseDouble(b.get("deltaEscrow"), 2.0);
+        double deltaPeer = parseDouble(b.get("deltaPeer"), 3.0);
+        double deltaKyc = parseDouble(b.get("deltaKyc"), 0.0);
 
-        NirfAnalyticsPortal.InstitutionMetrics baseline = new NirfAnalyticsPortal.InstitutionMetrics(name, tlr, rp, go, oi, pr);
-        NirfAnalyticsPortal.SimulationResult sim = NirfAnalyticsPortal.simulateWhatIf(baseline, deltaTlr, deltaRp, deltaGo, deltaOi, deltaPr);
+        TrustScoreEngine.TrustMetrics baseline = new TrustScoreEngine.TrustMetrics("USR-MEMBER", name, condition, punctuality, escrow, peer, kyc);
+        TrustScoreEngine.SimulationResult sim = TrustScoreEngine.simulateWhatIf(baseline, deltaCondition, deltaPunctuality, deltaEscrow, deltaPeer, deltaKyc);
 
         String json = String.format(Locale.US,
-                "{\"institutionName\":\"%s\",\"baselineScore\":%.2f,\"baselineTier\":\"%s\"," +
+                "{\"memberName\":\"%s\",\"baselineScore\":%.2f,\"baselineTier\":\"%s\"," +
                 "\"simulatedScore\":%.2f,\"simulatedTier\":\"%s\",\"scoreDelta\":%.2f," +
                 "\"policyRecommendation\":\"%s\"}",
                 escapeJson(name), sim.baselineScore, sim.baselineTier,
-                sim.simulatedScore, sim.simulatedTier, sim.scoreDelta, escapeJson(sim.policyRecommendation));
+                sim.simulatedScore, sim.simulatedTier, sim.scoreDelta, escapeJson(sim.recommendation));
 
         sendJsonResponse(exchange, 200, json);
     }
 
     // ========================================================================
-    // STATIC FILE HANDLER (Single-Page Web Application Delivery)
+    // STATIC FILE HANDLER
     // ========================================================================
     private void handleStaticFiles(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
@@ -739,12 +790,10 @@ public class MainServer {
             path = "/index.html";
         }
 
-        // Strip leading slash
         if (path.startsWith("/")) path = path.substring(1);
 
         Path filePath = frontendPath.resolve(path).normalize();
         if (!filePath.startsWith(frontendPath) || !Files.exists(filePath) || Files.isDirectory(filePath)) {
-            // Fallback to index.html for Single Page Application routing
             filePath = frontendPath.resolve("index.html");
         }
 
@@ -776,7 +825,7 @@ public class MainServer {
     }
 
     // ========================================================================
-    // JSON & HTTP UTILITIES (Zero External Dependencies)
+    // JSON & HTTP UTILITIES
     // ========================================================================
     private void sendJsonResponse(HttpExchange exchange, int statusCode, String json) throws IOException {
         byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
@@ -804,7 +853,6 @@ public class MainServer {
         Map<String, String> map = new HashMap<>();
         if (body.startsWith("{") && body.endsWith("}")) {
             body = body.substring(1, body.length() - 1);
-            // Simple robust regex-free JSON key-value extractor for flat payloads
             String[] pairs = body.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
             for (String pair : pairs) {
                 String[] kv = pair.split(":(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)", 2);
@@ -839,30 +887,31 @@ public class MainServer {
         sb.append(String.format(Locale.US, "\"requiredCollateral\":%.2f,", a.calculateRequiredCollateral()));
         sb.append("\"lockerCoordinate\":\"").append(a.getLockerCoordinate()).append("\",");
 
-        if (a instanceof SectoralAsset) {
-            SectoralAsset s = (SectoralAsset) a;
-            sb.append("\"sector\":\"").append(s.getSector()).append("\",");
-            sb.append(String.format(Locale.US, "\"seasonalMultiplier\":%.2f,", s.getSeasonalDemandMultiplier()));
-            sb.append("\"insuranceTier\":\"").append(escapeJson(s.getInsuranceTier())).append("\",");
+        if (a instanceof CategorizedRentalAsset) {
+            CategorizedRentalAsset cat = (CategorizedRentalAsset) a;
+            sb.append("\"category\":\"").append(cat.getCategory()).append("\",");
+            sb.append(String.format(Locale.US, "\"lateFeeMultiplier\":%.2f,", cat.getLateFeeMultiplier()));
+            sb.append("\"protectionTier\":\"").append(escapeJson(cat.getProtectionTier())).append("\",");
         }
 
-        if (a instanceof TourismAsset) {
-            TourismAsset t = (TourismAsset) a;
-            sb.append("\"ipRating\":\"").append(t.getWaterproofIpRating()).append("\",");
-            sb.append(String.format(Locale.US, "\"corrosionFactor\":%.2f,", t.getSaltwaterCorrosionFactor()));
+        if (a instanceof EventAndCreatorAsset) {
+            EventAndCreatorAsset ev = (EventAndCreatorAsset) a;
+            sb.append("\"indoorOutdoorRating\":\"").append(escapeJson(ev.getIndoorOutdoorRating())).append("\",");
+            sb.append("\"wattageOrBatterySpec\":\"").append(escapeJson(ev.getWattageOrBatterySpec())).append("\",");
+            sb.append("\"accessoryKitCount\":").append(ev.getAccessoryKitCount()).append(",");
         }
 
-        if (a instanceof AgricultureAsset) {
-            AgricultureAsset ag = (AgricultureAsset) a;
-            sb.append("\"soilType\":\"").append(escapeJson(ag.getCompatibleSoilType())).append("\",");
-            sb.append(String.format(Locale.US, "\"powerKw\":%.1f,", ag.getPowerKwRating()));
-            sb.append("\"heavyMachinery\":").append(ag.isHeavyMachineryFlag()).append(",");
+        if (a instanceof UtilityAndMobilityAsset) {
+            UtilityAndMobilityAsset um = (UtilityAndMobilityAsset) a;
+            sb.append("\"powerOrEngineSpec\":\"").append(escapeJson(um.getPowerOrEngineSpec())).append("\",");
+            sb.append("\"safetyCertification\":\"").append(escapeJson(um.getSafetyCertification())).append("\",");
+            sb.append("\"requiresGroundBay\":").append(um.isRequiresGroundBay()).append(",");
         }
 
-        sb.append("\"maintenanceLogs\":[");
-        for (int i = 0; i < a.getMaintenanceLogs().size(); i++) {
+        sb.append("\"serviceLogs\":[");
+        for (int i = 0; i < a.getServiceLogs().size(); i++) {
             if (i > 0) sb.append(",");
-            sb.append("\"").append(escapeJson(a.getMaintenanceLogs().get(i))).append("\"");
+            sb.append("\"").append(escapeJson(a.getServiceLogs().get(i))).append("\"");
         }
         sb.append("]}");
         return sb.toString();
@@ -923,8 +972,6 @@ public class MainServer {
         try {
             MainServer server = new MainServer(port, "data", "frontend");
             server.start();
-
-            // Keep main thread alive
             Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
         } catch (IOException e) {
             System.err.println("[FATAL] Could not start server on port " + port + ": " + e.getMessage());

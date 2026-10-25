@@ -2,11 +2,12 @@
 RentSphere Core Engine - Python 3.12 Polyglot Reference Implementation
 Author: Nikhil Bhaiju (Subsystem 3 Lead)
 Institution: Goa University - MCA Object-Oriented Technology Lab
+Currency: Indian Rupees (₹ INR)
 
 Features:
- - 5-Tier Domain Model with Dynamic Introspection
- - Deep vs Shallow Cloning Memory Verification (id() analysis)
- - Ministry of Education NIRF Composite Score Calculation Engine
+ - 5-Tier Domain Model with Dynamic Introspection & Ground Bay Constraint
+ - Prototype Deep vs Shallow Cloning Memory Verification (id() pointer analysis)
+ - RentSphere Trust & Reliability Scoring Engine (Weighted Composite Metric)
 """
 
 import copy
@@ -15,7 +16,7 @@ import time
 from typing import List, Dict, Any
 
 # ============================================================================
-# ASSIGNMENT 2: 5-TIER DOMAIN HIERARCHY
+# 5-TIER DOMAIN HIERARCHY
 # ============================================================================
 
 class AbstractDomainEntity:
@@ -28,20 +29,20 @@ class AbstractDomainEntity:
         raise NotImplementedError()
 
 class RentableAsset(AbstractDomainEntity):
-    """Tier 2: Rentable Asset with State and Maintenance Log Reference"""
+    """Tier 2: Rentable Asset with State and Maintenance Log Reference (₹ INR)"""
     def __init__(self, entity_id: str, title: str, owner_id: str, 
                  base_daily_rate: float, security_collateral: float, locker_coordinate: str):
         super().__init__(entity_id)
         self.title = title
         self.owner_id = owner_id
         self.renter_id = ""
-        self.base_daily_rate = base_daily_rate
-        self.security_collateral = security_collateral
-        self.locker_coordinate = locker_coordinate
+        self.base_daily_rate = base_daily_rate          # ₹ INR
+        self.security_collateral = security_collateral  # ₹ INR Refundable Deposit
+        self.locker_coordinate = locker_coordinate      # e.g., "A2", "H2"
         self.state = "AVAILABLE"
-        self.maintenance_logs: List[str] = [
+        self.service_logs: List[str] = [
             "Factory Calibration Complete",
-            "Initial Firmware v1.0.0 Flashed"
+            "Safety Certification Audited"
         ]
 
     def calculate_daily_rental_tariff(self, rental_days: int) -> float:
@@ -59,46 +60,85 @@ class RentableAsset(AbstractDomainEntity):
     def deep_clone(self) -> "RentableAsset":
         return copy.deepcopy(self)
 
-class SectoralAsset(RentableAsset):
-    """Tier 3: Sector Classification (Tourism vs Agriculture)"""
+class CategorizedRentalAsset(RentableAsset):
+    """Tier 3: Category Classification & Late Fee Multiplier"""
     def __init__(self, entity_id: str, title: str, owner_id: str,
                  base_daily_rate: float, security_collateral: float, locker_coordinate: str,
-                 sector: str, seasonal_multiplier: float):
+                 category: str, late_fee_multiplier: float, protection_plan_tier: str):
         super().__init__(entity_id, title, owner_id, base_daily_rate, security_collateral, locker_coordinate)
-        self.sector = sector
-        self.seasonal_demand_multiplier = seasonal_multiplier
+        self.category = category
+        self.late_fee_multiplier = late_fee_multiplier
+        self.protection_plan_tier = protection_plan_tier
 
-    def calculate_daily_rental_tariff(self, rental_days: int) -> float:
-        return self.base_daily_rate * self.seasonal_demand_multiplier * rental_days
-
-class TourismAsset(SectoralAsset):
-    """Tier 4: Tourism Specialized Gear"""
+class EventAndCreatorAsset(CategorizedRentalAsset):
+    """Tier 4A: Event and Creator Equipment"""
     def __init__(self, entity_id: str, title: str, owner_id: str,
                  base_daily_rate: float, security_collateral: float, locker_coordinate: str,
-                 seasonal_multiplier: float, ip_rating: str, corrosion_factor: float):
-        super().__init__(entity_id, title, owner_id, base_daily_rate, security_collateral, locker_coordinate, "TOURISM", seasonal_multiplier)
-        self.ip_rating = ip_rating
-        self.saltwater_corrosion_factor = corrosion_factor
+                 category: str, late_fee_multiplier: float, protection_plan_tier: str,
+                 indoor_outdoor_rating: str, wattage_or_battery_spec: str, accessory_kit_count: int):
+        super().__init__(entity_id, title, owner_id, base_daily_rate, security_collateral, locker_coordinate,
+                         category, late_fee_multiplier, protection_plan_tier)
+        self.indoor_outdoor_rating = indoor_outdoor_rating
+        self.wattage_or_battery_spec = wattage_or_battery_spec
+        self.accessory_kit_count = accessory_kit_count
 
-class AutonomousMarineDrone(TourismAsset):
-    """Tier 5: Concrete Leaf Drone Class"""
+class UtilityAndMobilityAsset(CategorizedRentalAsset):
+    """Tier 4B: Utility and Mobility Equipment"""
     def __init__(self, entity_id: str, title: str, owner_id: str,
                  base_daily_rate: float, security_collateral: float, locker_coordinate: str,
-                 seasonal_multiplier: float, ip_rating: str, corrosion_factor: float,
-                 max_depth_meters: float, sonar_equipped: bool):
-        super().__init__(entity_id, title, owner_id, base_daily_rate, security_collateral, locker_coordinate, seasonal_multiplier, ip_rating, corrosion_factor)
-        self.max_depth_meters = max_depth_meters
-        self.sonar_equipped = sonar_equipped
+                 category: str, late_fee_multiplier: float, protection_plan_tier: str,
+                 power_or_engine_spec: str, safety_certification: str, requires_ground_bay: bool):
+        super().__init__(entity_id, title, owner_id, base_daily_rate, security_collateral, locker_coordinate,
+                         category, late_fee_multiplier, protection_plan_tier)
+        self.power_or_engine_spec = power_or_engine_spec
+        self.safety_certification = safety_certification
+        self.requires_ground_bay = requires_ground_bay
+
+class CameraAndOpticsGear(EventAndCreatorAsset):
+    """Tier 5 Concrete: DSLR/Mirrorless Cameras, Lenses & Gimbals"""
+    def __init__(self, entity_id: str, title: str, owner_id: str,
+                 base_daily_rate: float, security_collateral: float, locker_coordinate: str,
+                 late_fee_multiplier: float, protection_plan_tier: str,
+                 sensor_resolution_mp: float, is_4k_or_8k: bool):
+        super().__init__(entity_id, title, owner_id, base_daily_rate, security_collateral, locker_coordinate,
+                         "CAMERAS", late_fee_multiplier, protection_plan_tier,
+                         "Studio/Outdoor", "Dual NP-FZ100", 4)
+        self.sensor_resolution_mp = sensor_resolution_mp
+        self.is_4k_or_8k = is_4k_or_8k
 
     def calculate_daily_rental_tariff(self, rental_days: int) -> float:
-        depth_surcharge = 1.0 + (self.max_depth_meters / 500.0)
-        return self.base_daily_rate * self.seasonal_demand_multiplier * depth_surcharge * rental_days
+        resolution_factor = 1.15 if self.is_4k_or_8k else 1.0
+        return self.base_daily_rate * resolution_factor * rental_days
+
+    def calculate_required_collateral(self) -> float:
+        return self.security_collateral * 1.20 if self.sensor_resolution_mp >= 30.0 else self.security_collateral
 
     def serialize_to_pipe(self) -> str:
-        return f"{self.id}|{self.title}|TOURISM|AutonomousMarineDrone|{self.owner_id}|{self.renter_id}|{self.locker_coordinate}|{self.base_daily_rate}"
+        return f"{self.id}|{self.title}|CAMERAS|CameraAndOpticsGear|{self.owner_id}|{self.renter_id}|{self.locker_coordinate}|{self.base_daily_rate}"
+
+class EventAndMobilityVehicle(UtilityAndMobilityAsset):
+    """Tier 5 Concrete: Wedding/Event Cars & Campus Electric Scooters (Row H Ground Bay)"""
+    def __init__(self, entity_id: str, title: str, owner_id: str,
+                 base_daily_rate: float, security_collateral: float, locker_coordinate: str,
+                 late_fee_multiplier: float, protection_plan_tier: str,
+                 seating_capacity: int, fuel_or_charging_type: str):
+        super().__init__(entity_id, title, owner_id, base_daily_rate, security_collateral, locker_coordinate,
+                         "MOBILITY_VEHICLES", late_fee_multiplier, protection_plan_tier,
+                         "1.2L Engine / Electric Motor", "ARAI 5-Star", True)
+        self.seating_capacity = seating_capacity
+        self.fuel_or_charging_type = fuel_or_charging_type
+
+    def calculate_daily_rental_tariff(self, rental_days: int) -> float:
+        return self.base_daily_rate * rental_days
+
+    def calculate_required_collateral(self) -> float:
+        return self.security_collateral * 1.20
+
+    def serialize_to_pipe(self) -> str:
+        return f"{self.id}|{self.title}|MOBILITY_VEHICLES|EventAndMobilityVehicle|{self.owner_id}|{self.renter_id}|{self.locker_coordinate}|{self.base_daily_rate}"
 
 # ============================================================================
-# ASSIGNMENT 4: DYNAMIC INTROSPECTION & CLONING BENCHMARK
+# DYNAMIC INTROSPECTION & PROTOTYPE CLONING BENCHMARK
 # ============================================================================
 
 def inspect_runtime_entity(entity: Any) -> Dict[str, Any]:
@@ -120,57 +160,58 @@ def benchmark_cloning_memory(original: RentableAsset):
 
     print("\n--- Shallow vs Deep Cloning Memory Isolation Benchmark ---")
     print(f"Original Object ID:        {hex(id(original))}")
-    print(f"Original Logs Reference ID: {hex(id(original.maintenance_logs))}")
+    print(f"Original Logs Reference ID: {hex(id(original.service_logs))}")
     print(f"Shallow Object ID:         {hex(id(shallow))} (Distinct Object)")
-    print(f"Shallow Logs Reference ID: {hex(id(shallow.maintenance_logs))} (SHARED Reference - Shallow)")
+    print(f"Shallow Logs Reference ID: {hex(id(shallow.service_logs))} (SHARED Reference - Mutates Original)")
     print(f"Deep Object ID:            {hex(id(deep))} (Distinct Object)")
-    print(f"Deep Logs Reference ID:    {hex(id(deep.maintenance_logs))} (ISOLATED Reference - Deep)")
+    print(f"Deep Logs Reference ID:    {hex(id(deep.service_logs))} (ISOLATED Reference - Safe for Multi-Unit)")
 
     # Mutate shallow clone
-    shallow.maintenance_logs.append("MUTATION_VIA_SHALLOW_CLONE")
+    shallow.service_logs.append("MUTATION_VIA_SHALLOW_CLONE")
     print(f"\nAfter appending to shallow clone:")
-    print(f"Original Logs Count: {len(original.maintenance_logs)} -> Contains 'MUTATION_VIA_SHALLOW_CLONE': {'MUTATION_VIA_SHALLOW_CLONE' in original.maintenance_logs}")
+    print(f"Original Logs Count: {len(original.service_logs)} -> Contains 'MUTATION_VIA_SHALLOW_CLONE': {'MUTATION_VIA_SHALLOW_CLONE' in original.service_logs}")
 
     # Mutate deep clone
-    deep.maintenance_logs.append("MUTATION_VIA_DEEP_CLONE")
+    deep.service_logs.append("MUTATION_VIA_DEEP_CLONE")
     print(f"After appending to deep clone:")
-    print(f"Original Logs Count: {len(original.maintenance_logs)} -> Contains 'MUTATION_VIA_DEEP_CLONE': {'MUTATION_VIA_DEEP_CLONE' in original.maintenance_logs}")
+    print(f"Original Logs Count: {len(original.service_logs)} -> Contains 'MUTATION_VIA_DEEP_CLONE': {'MUTATION_VIA_DEEP_CLONE' in original.service_logs}")
 
 # ============================================================================
-# ASSIGNMENT 4: NIRF INSTITUTIONAL ANALYTICS ENGINE
+# RENTSPHERE TRUST & RELIABILITY SCORING ENGINE (₹ INR)
 # ============================================================================
 
-class NirfCompositeScoreCalculator:
+class RentSphereTrustScoreEngine:
     """
-    Ministry of Education NIRF Composite Score Formula:
-    Score = (TLR * 0.30) + (RP * 0.30) + (GO * 0.20) + (OI * 0.10) + (PR * 0.10)
+    Weighted Composite Trust Metric:
+    Score = (Condition * 0.30) + (On-Time * 0.30) + (Escrow * 0.20) + (Peer Rating * 0.10) + (KYC * 0.10)
     """
     WEIGHTS = {
-        "TLR": 0.30,  # Teaching, Learning & Resources
-        "RP":  0.30,  # Research and Professional Practice
-        "GO":  0.20,  # Graduation Outcomes
-        "OI":  0.10,  # Outreach and Inclusivity
-        "PR":  0.10   # Peer Perception
+        "CONDITION": 0.30,   # Asset Maintenance & Condition History
+        "ON_TIME":   0.30,   # Punctuality and On-Time Return Ratio
+        "ESCROW":    0.20,   # Successful Escrow Transaction Completion
+        "RATING":    0.10,   # Peer Community Review Score
+        "KYC":       0.10    # Identity & Hub Verification Tier
     }
 
     @staticmethod
-    def calculate_score(tlr: float, rp: float, go: float, oi: float, pr: float) -> Dict[str, Any]:
-        composite = (tlr * 0.30) + (rp * 0.30) + (go * 0.20) + (oi * 0.10) + (pr * 0.10)
+    def calculate_trust_score(condition: float, on_time: float, escrow: float, 
+                              rating: float, kyc: float) -> Dict[str, Any]:
+        composite = (condition * 0.30) + (on_time * 0.30) + (escrow * 0.20) + (rating * 0.10) + (kyc * 0.10)
         
-        tier = "Tier 3 Regional"
-        if composite >= 75.0:
-            tier = "Top 10 National Excellence"
-        elif composite >= 60.0:
-            tier = "Tier 1 High Performance"
-        elif composite >= 45.0:
-            tier = "Tier 2 Promising Institution"
+        tier = "Bronze Community Member"
+        if composite >= 85.0:
+            tier = "Diamond SuperHost / Elite Verified"
+        elif composite >= 70.0:
+            tier = "Gold Verified Trusted"
+        elif composite >= 50.0:
+            tier = "Silver Reliable Member"
 
         return {
-            "tlr": tlr,
-            "rp": rp,
-            "go": go,
-            "oi": oi,
-            "pr": pr,
+            "condition": condition,
+            "on_time": on_time,
+            "escrow": escrow,
+            "rating": rating,
+            "kyc": kyc,
             "composite_score": round(composite, 2),
             "tier_badge": tier
         }
@@ -180,25 +221,25 @@ class NirfCompositeScoreCalculator:
 # ============================================================================
 if __name__ == "__main__":
     print("=========================================================")
-    print("  RentSphere Core Engine - Python 3.12 Polyglot Reference")
+    print("  RentSphere Core Engine - Python 3.12 Polyglot Reference (₹ INR)")
     print("=========================================================")
 
-    drone = AutonomousMarineDrone(
-        "AST-001", "Goa Coastal Deep-Survey Drone", "host_faaris",
-        1200.0, 3000.0, "F2", 1.25, "IP68", 1.15, 150.0, True
+    camera = CameraAndOpticsGear(
+        "AST-001", "Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit", "host_faaris",
+        1200.0, 5000.0, "A2", 1.25, "PREMIUM_ALL_RISK", 33.0, True
     )
 
     # 1. RTTI Introspection
-    reflection_info = inspect_runtime_entity(drone)
+    reflection_info = inspect_runtime_entity(camera)
     print("\n[RTTI INTROSPECTION] Class Hierarchy:")
     print(" -> ".join(reflection_info["mro_inheritance_chain"]))
 
     # 2. Cloning Benchmark
-    benchmark_cloning_memory(drone)
+    benchmark_cloning_memory(camera)
 
-    # 3. NIRF Composite Calculation
-    print("\n--- NIRF Composite Score Calculation ---")
-    nirf_report = NirfCompositeScoreCalculator.calculate_score(
-        tlr=78.5, rp=64.2, go=82.0, oi=70.5, pr=65.0
+    # 3. Trust Score Calculation
+    print("\n--- RentSphere Trust & Reliability Score ---")
+    trust_report = RentSphereTrustScoreEngine.calculate_trust_score(
+        condition=92.0, on_time=95.0, escrow=88.0, rating=90.0, kyc=95.0
     )
-    print(f"Goa University MCA Simulation: Composite Score = {nirf_report['composite_score']} | Tier: {nirf_report['tier_badge']}")
+    print(f"Mohammed Faaris Khan: Trust Score = {trust_report['composite_score']}/100 | Tier: {trust_report['tier_badge']}")

@@ -446,6 +446,40 @@ body {
     align-items: flex-start;
 }
 
+/* Category Filter Pills Bar */
+.category-pills-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.cat-pill {
+    padding: 6px 16px;
+    border-radius: var(--radius-pill);
+    background: #FFFFFF;
+    border: 1px solid var(--slate-200);
+    color: var(--slate-700);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.cat-pill:hover {
+    background: var(--slate-100);
+    border-color: var(--slate-300);
+}
+
+.cat-pill.active {
+    background: var(--brand-teal);
+    border-color: var(--brand-teal);
+    color: #FFFFFF;
+    box-shadow: 0 2px 6px var(--brand-teal-glow);
+}
+
 .tier-badge {
     font-size: 11px;
     font-weight: 700;
@@ -453,8 +487,18 @@ body {
     border-radius: 4px;
     display: inline-block;
 }
+.tier-cameras { background: #EDE9FE; color: #6D28D9; }
+.tier-audio { background: #FEF3C7; color: #B45309; }
+.tier-tools { background: #CCFBF1; color: #0F766E; }
+.tier-vehicles { background: #FFE4E6; color: #BE123C; }
 .tier-tourism { background: #E0F2FE; color: #0369A1; }
 .tier-agriculture { background: #FEF3C7; color: #B45309; }
+
+.tier-pill-small {
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    display: inline-block;
+}
 
 .state-badge {
     font-size: 11px;
@@ -613,7 +657,7 @@ body {
 .dot-reserved { background: var(--warm-amber); }
 .dot-active { background: var(--slate-500); }
 .dot-quarantine { background: var(--crimson); }
-.dot-heavy { background: var(--brand-teal-dark); }
+.dot-heavy, .dot-ground { background: var(--brand-teal-dark); border: 1px dashed var(--warm-amber); }
 
 /* The 8x8 Grid Canvas */
 .grid-8x8 {
@@ -680,10 +724,22 @@ body {
     animation: pulseAlert 2s infinite;
 }
 
-.bay-heavy {
+.bay-heavy, .bay-ground {
     background: var(--brand-teal-dark);
     color: #FFFFFF;
     border: 1px dashed var(--warm-amber);
+}
+
+.host-studio-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+@media (max-width: 992px) {
+    .host-studio-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 @keyframes pulseAlert {

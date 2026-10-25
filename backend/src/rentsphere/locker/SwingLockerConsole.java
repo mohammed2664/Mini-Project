@@ -35,7 +35,7 @@ public class SwingLockerConsole extends JFrame {
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         titleLabel.setForeground(Color.WHITE);
 
-        JLabel subtitleLabel = new JLabel("Click any bay (A1–H8) to inspect telemetry, size tiers, and active assets. Row H reserved for Heavy Agri.");
+        JLabel subtitleLabel = new JLabel("Click any bay (A1–H8) to inspect telemetry, size tiers, and active assets. Row H reserved for Vehicles & Heavy Event Gear.");
         subtitleLabel.setFont(new Font("SansSerif", Font.PLAIN, 12));
         subtitleLabel.setForeground(new Color(204, 251, 241));
 
@@ -75,7 +75,7 @@ public class SwingLockerConsole extends JFrame {
         footer.add(createLegendPill("Reserved / Escrow", new Color(245, 158, 11)));
         footer.add(createLegendPill("Active Lease (Field)", new Color(100, 116, 139)));
         footer.add(createLegendPill("Quarantine Locked", new Color(239, 68, 68)));
-        footer.add(createLegendPill("Row H: Heavy Agri XL", new Color(10, 92, 77)));
+        footer.add(createLegendPill("Row H: Ground Vehicles XL", new Color(10, 92, 77)));
 
         root.add(footer, BorderLayout.SOUTH);
         setContentPane(root);
@@ -87,13 +87,13 @@ public class SwingLockerConsole extends JFrame {
         Color fg = Color.WHITE;
 
         if (comp.getRow() == 7) {
-            // Row 7 Heavy Agri indicator
+            // Row 7 Ground Vehicle indicator
             if ("QUARANTINE_LOCKED".equals(status)) {
                 bg = new Color(239, 68, 68);
             } else if ("RESERVED_LOCKED".equals(status)) {
                 bg = new Color(245, 158, 11);
             } else {
-                bg = new Color(10, 92, 77); // Deep teal for Heavy Agri Row H
+                bg = new Color(10, 92, 77); // Deep teal for Ground Slots Row H
             }
         } else {
             switch (status) {
@@ -151,7 +151,7 @@ public class SwingLockerConsole extends JFrame {
                 comp.getBayId(), comp.getRow(), (char) ('A' + comp.getRow()), comp.getCol(),
                 comp.getSizeTier().getDescription(), comp.getStatus(), comp.isOccupied(),
                 assetDisplay, comp.getOtpPin(), comp.getTempC(), comp.getHumidityPct(), comp.getWeightKg(),
-                (comp.getRow() == 7 ? "NOTE: Row 7 (Row H) is strictly reserved for Heavy-Agri machinery." : "Standard equipment compartment.")
+                (comp.getRow() == 7 ? "NOTE: Row 7 (Row H) is strictly reserved for Vehicles and Heavy Event Gear." : "Standard equipment compartment.")
         );
 
         JOptionPane.showMessageDialog(this, message, "Compartment Inspector — Bay " + comp.getBayId(), JOptionPane.INFORMATION_MESSAGE);

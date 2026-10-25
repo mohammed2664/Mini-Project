@@ -1,10 +1,11 @@
 package rentsphere.pipeline;
 
-import rentsphere.model.AgricultureAsset;
+import rentsphere.model.UtilityAndMobilityAsset;
 
 /**
- * Gate 4: Locker Spatial Gate
- * Validates compartment coordinate validity and enforces the Row 7 Heavy-Agri Spatial Invariant.
+ * Gate 4: Locker & Hub Bay Spatial Gate
+ * Validates compartment coordinate validity and enforces the Row H Ground Parking Slot Invariant.
+ * Vehicles and heavy equipment requiring ground access cannot be placed in upper lockers (Rows A-G).
  * MCA OOT Lab - Assignment 1 & Assignment 5
  */
 public class LockerSpatialGate implements VerificationGate {
@@ -27,7 +28,7 @@ public class LockerSpatialGate implements VerificationGate {
         }
 
         if (bay == null || bay.trim().length() < 2) {
-            return GateResult.failure(4, getGateName(), "Locker bay coordinate is empty or unassigned.");
+            return GateResult.failure(4, getGateName(), "Hub bay coordinate is empty or unassigned.");
         }
 
         bay = bay.trim().toUpperCase();
@@ -39,18 +40,18 @@ public class LockerSpatialGate implements VerificationGate {
 
         if (rowIndex < 0 || rowIndex > 7 || colIndex < 0 || colIndex > 7) {
             return GateResult.failure(4, getGateName(), 
-                    "Invalid 8x8 Smart Locker Coordinate '" + bay + "'. Row must be A-H and Column 1-8.");
+                    "Invalid 8x8 Smart Hub Coordinate '" + bay + "'. Row must be A-H and Column 1-8.");
         }
 
-        // ENFORCE ROW 7 HEAVY-AGRI SPATIAL INVARIANT
-        if (ctx.getAsset() instanceof AgricultureAsset) {
-            AgricultureAsset agri = (AgricultureAsset) ctx.getAsset();
-            if (agri.isHeavyMachineryFlag()) {
+        // ENFORCE ROW H GROUND PARKING / HEAVY ACCESS SPATIAL INVARIANT
+        if (ctx.getAsset() instanceof UtilityAndMobilityAsset) {
+            UtilityAndMobilityAsset utilAsset = (UtilityAndMobilityAsset) ctx.getAsset();
+            if (utilAsset.isRequiresGroundBay()) {
                 if (rowIndex != 7) { // Row 7 corresponds to 'H'
                     return GateResult.failure(4, getGateName(), 
-                            "Heavy Agricultural Machinery Spatial Invariant: Heavy implement '" + agri.getTitle() + 
-                            "' is physically barred from Row " + rowChar + 
-                            ". Heavy gear must be assigned exclusively to XL bays in Row H (Row 7).");
+                            "Ground Bay Spatial Invariant: Vehicle/Heavy Event Item '" + utilAsset.getTitle() + 
+                            "' is physically barred from Upper Locker Bay " + rowChar + 
+                            ". Mobility gear and vehicles must be parked exclusively in Row H Ground Slots (H1–H8).");
                 }
             }
         }

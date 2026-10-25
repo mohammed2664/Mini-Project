@@ -2,11 +2,12 @@
  * RentSphere Core Engine - C++20 Polyglot Reference Implementation
  * Author: Mohammed Faaris Khan (Subsystem 1 Lead)
  * Institution: Goa University - MCA Object-Oriented Technology Lab
+ * Currency: Indian Rupees (₹ INR)
  * 
  * Features:
- *  - 5-Tier Domain Inheritance Hierarchy
+ *  - 5-Tier Domain Inheritance Hierarchy (Realistic Local/Event Categories)
  *  - 4-Stage GoF State Pattern with Mandatory Quarantine Invariant
- *  - 4-Gate Fail-Fast Verification Pipeline
+ *  - 4-Gate Fail-Fast Verification Pipeline (Row H Ground Slot Spatial Invariant)
  */
 
 #include <iostream>
@@ -18,10 +19,6 @@
 #include <stdexcept>
 
 namespace rentsphere {
-
-// ============================================================================
-// ASSIGNMENT 2: 5-TIER DOMAIN INHERITANCE HIERARCHY
-// ============================================================================
 
 // Tier 1: Abstract Base Domain Entity
 class AbstractDomainEntity {
@@ -41,17 +38,17 @@ public:
 // Forward declaration of GoF LeaseState
 class LeaseState;
 
-// Tier 2: Rentable Asset with GoF State Context
+// Tier 2: Rentable Asset with GoF State Context & INR Rates
 class RentableAsset : public AbstractDomainEntity {
 protected:
     std::string title;
     std::string ownerId;
     std::string renterId;
-    double baseDailyRate;
-    double securityCollateral;
+    double baseDailyRate;        // ₹ INR
+    double securityCollateral;    // ₹ INR Refundable Deposit
     std::string lockerCoordinate;
     std::shared_ptr<LeaseState> state;
-    std::vector<std::string> maintenanceLogs;
+    std::vector<std::string> serviceLogs;
 
 public:
     RentableAsset(std::string id, std::string title, std::string ownerId, 
@@ -77,103 +74,108 @@ public:
     const std::string& getTitle() const { return title; }
 };
 
-// Tier 3: Sectoral Asset (Tourism vs Agriculture classification)
-class SectoralAsset : public RentableAsset {
+// Tier 3: Categorized Rental Asset
+class CategorizedRentalAsset : public RentableAsset {
 protected:
-    std::string sector; // "TOURISM" or "AGRICULTURE"
-    double seasonalDemandMultiplier;
+    std::string category; // "CAMERAS", "AUDIO_LIGHTING", "POWER_TOOLS", "MOBILITY_VEHICLES"
+    double lateFeeMultiplier;
+    std::string protectionTier;
 public:
-    SectoralAsset(std::string id, std::string title, std::string ownerId, 
-                  double baseRate, double collateral, std::string lockerBay,
-                  std::string sectorType, double multiplier)
+    CategorizedRentalAsset(std::string id, std::string title, std::string ownerId, 
+                           double baseRate, double collateral, std::string lockerBay,
+                           std::string cat, double multiplier, std::string protection)
         : RentableAsset(id, title, ownerId, baseRate, collateral, lockerBay),
-          sector(std::move(sectorType)), seasonalDemandMultiplier(multiplier) {}
+          category(std::move(cat)), lateFeeMultiplier(multiplier), protectionTier(std::move(protection)) {}
 
-    double calculateDailyRentalTariff(int rentalDays) const override {
-        return baseDailyRate * seasonalDemandMultiplier * rentalDays;
-    }
-    const std::string& getSector() const { return sector; }
+    const std::string& getCategory() const { return category; }
 };
 
-// Tier 4A: Tourism Asset (Marine & Coastal Operations)
-class TourismAsset : public SectoralAsset {
+// Tier 4A: Event and Creator Equipment
+class EventAndCreatorAsset : public CategorizedRentalAsset {
 protected:
-    std::string ipRating;
-    double saltwaterCorrosionFactor;
+    std::string indoorOutdoorRating;
+    std::string wattageOrBatterySpec;
+    int accessoryKitCount;
 public:
-    TourismAsset(std::string id, std::string title, std::string ownerId, 
-                 double baseRate, double collateral, std::string lockerBay,
-                 double multiplier, std::string ip, double corrosionFactor)
-        : SectoralAsset(id, title, ownerId, baseRate, collateral, lockerBay, "TOURISM", multiplier),
-          ipRating(std::move(ip)), saltwaterCorrosionFactor(corrosionFactor) {}
+    EventAndCreatorAsset(std::string id, std::string title, std::string ownerId, 
+                         double baseRate, double collateral, std::string lockerBay,
+                         std::string cat, double multiplier, std::string protection,
+                         std::string rating, std::string wattage, int kitCount)
+        : CategorizedRentalAsset(id, title, ownerId, baseRate, collateral, lockerBay, cat, multiplier, protection),
+          indoorOutdoorRating(std::move(rating)), wattageOrBatterySpec(std::move(wattage)), accessoryKitCount(kitCount) {}
 };
 
-// Tier 4B: Agriculture Asset (Soil & Farming Operations)
-class AgricultureAsset : public SectoralAsset {
+// Tier 4B: Utility and Mobility Equipment
+class UtilityAndMobilityAsset : public CategorizedRentalAsset {
 protected:
-    std::string soilType;
-    double powerKwRating;
-    bool heavyMachineryFlag;
+    std::string powerOrEngineSpec;
+    std::string safetyCertification;
+    bool requiresGroundBay;
 public:
-    AgricultureAsset(std::string id, std::string title, std::string ownerId, 
-                     double baseRate, double collateral, std::string lockerBay,
-                     double multiplier, std::string soil, double kw, bool heavy)
-        : SectoralAsset(id, title, ownerId, baseRate, collateral, lockerBay, "AGRICULTURE", multiplier),
-          soilType(std::move(soil)), powerKwRating(kw), heavyMachineryFlag(heavy) {}
+    UtilityAndMobilityAsset(std::string id, std::string title, std::string ownerId, 
+                            double baseRate, double collateral, std::string lockerBay,
+                            std::string cat, double multiplier, std::string protection,
+                            std::string engine, std::string cert, bool groundBay)
+        : CategorizedRentalAsset(id, title, ownerId, baseRate, collateral, lockerBay, cat, multiplier, protection),
+          powerOrEngineSpec(std::move(engine)), safetyCertification(std::move(cert)), requiresGroundBay(groundBay) {}
 
-    bool isHeavyMachinery() const { return heavyMachineryFlag; }
+    bool isRequiresGroundBay() const { return requiresGroundBay; }
 };
 
-// Tier 5: Concrete Leaf - Autonomous Marine Drone
-class AutonomousMarineDrone : public TourismAsset {
+// Tier 5: Concrete Leaf - Camera & Optics Gear
+class CameraAndOpticsGear : public EventAndCreatorAsset {
 private:
-    double maxDepthMeters;
-    bool sonarEquipped;
+    double sensorResolutionMp;
+    bool is4kOr8kVideo;
 public:
-    AutonomousMarineDrone(std::string id, std::string title, std::string ownerId, 
-                          double baseRate, double collateral, std::string lockerBay,
-                          double multiplier, std::string ip, double corrosionFactor,
-                          double depth, bool sonar)
-        : TourismAsset(id, title, ownerId, baseRate, collateral, lockerBay, multiplier, ip, corrosionFactor),
-          maxDepthMeters(depth), sonarEquipped(sonar) {}
+    CameraAndOpticsGear(std::string id, std::string title, std::string ownerId, 
+                        double baseRate, double collateral, std::string lockerBay,
+                        double multiplier, std::string protection, double sensorMp, bool is4k)
+        : EventAndCreatorAsset(id, title, ownerId, baseRate, collateral, lockerBay, "CAMERAS", multiplier, protection,
+                               "Studio/Outdoor", "Dual NP-FZ100", 4),
+          sensorResolutionMp(sensorMp), is4kOr8kVideo(is4k) {}
 
     double calculateDailyRentalTariff(int rentalDays) const override {
-        double depthFactor = 1.0 + (maxDepthMeters / 500.0);
-        return baseDailyRate * seasonalDemandMultiplier * depthFactor * rentalDays;
+        double resolutionFactor = is4kOr8kVideo ? 1.15 : 1.0;
+        return baseDailyRate * resolutionFactor * rentalDays;
+    }
+    double calculateRequiredCollateral() const override {
+        return (sensorResolutionMp >= 30.0) ? securityCollateral * 1.20 : securityCollateral;
     }
     std::string serializeToPipe() const override {
-        return id + "|" + title + "|TOURISM|AutonomousMarineDrone|" + ownerId + "|" + 
+        return id + "|" + title + "|CAMERAS|CameraAndOpticsGear|" + ownerId + "|" + 
                renterId + "|" + lockerCoordinate + "|" + std::to_string(baseDailyRate);
     }
 };
 
-// Tier 5: Concrete Leaf - Precision Rotary Tiller (Heavy Agri)
-class PrecisionRotaryTiller : public AgricultureAsset {
+// Tier 5: Concrete Leaf - Event & Mobility Vehicle (Row H Ground Slot)
+class EventAndMobilityVehicle : public UtilityAndMobilityAsset {
 private:
-    int bladeRpm;
-    double workingWidthCm;
+    int seatingCapacity;
+    std::string fuelOrChargingType;
 public:
-    PrecisionRotaryTiller(std::string id, std::string title, std::string ownerId, 
-                          double baseRate, double collateral, std::string lockerBay,
-                          double multiplier, std::string soil, double kw,
-                          int rpm, double widthCm)
-        : AgricultureAsset(id, title, ownerId, baseRate, collateral, lockerBay, multiplier, soil, kw, true),
-          bladeRpm(rpm), workingWidthCm(widthCm) {}
+    EventAndMobilityVehicle(std::string id, std::string title, std::string ownerId, 
+                           double baseRate, double collateral, std::string lockerBay,
+                           double multiplier, std::string protection, int seats, std::string fuel)
+        : UtilityAndMobilityAsset(id, title, ownerId, baseRate, collateral, lockerBay, "MOBILITY_VEHICLES",
+                                 multiplier, protection, "1.2L Engine", "ARAI 5-Star", true),
+          seatingCapacity(seats), fuelOrChargingType(std::move(fuel)) {}
 
     double calculateDailyRentalTariff(int rentalDays) const override {
-        double powerMultiplier = 1.0 + (powerKwRating / 100.0);
-        return baseDailyRate * seasonalDemandMultiplier * powerMultiplier * rentalDays;
+        return baseDailyRate * rentalDays;
+    }
+    double calculateRequiredCollateral() const override {
+        return securityCollateral * 1.20; // 20% insurance deposit
     }
     std::string serializeToPipe() const override {
-        return id + "|" + title + "|AGRICULTURE|PrecisionRotaryTiller|" + ownerId + "|" + 
+        return id + "|" + title + "|MOBILITY_VEHICLES|EventAndMobilityVehicle|" + ownerId + "|" + 
                renterId + "|" + lockerCoordinate + "|" + std::to_string(baseDailyRate);
     }
 };
 
 // ============================================================================
-// ASSIGNMENT 2: 4-STAGE GoF STATE PATTERN & MANDATORY QUARANTINE INVARIANT
+// 4-STAGE GoF STATE PATTERN
 // ============================================================================
-
 class LeaseState {
 public:
     virtual ~LeaseState() = default;
@@ -201,11 +203,6 @@ public:
     }
 };
 
-class AvailableState;
-class ReservedEscrowState;
-class ActiveLeaseState;
-class InspectionQuarantineState;
-
 class AvailableState : public LeaseState {
 public:
     std::string getStateName() const override { return "AVAILABLE"; }
@@ -224,8 +221,6 @@ class ActiveLeaseState : public LeaseState {
 public:
     std::string getStateName() const override { return "ACTIVE_LEASE"; }
     bool canReturn() const override { return true; }
-    // MANDATORY QUARANTINE INVARIANT:
-    // Returns MUST enter InspectionQuarantineState, NEVER AvailableState directly!
     void initiateReturn(RentableAsset& ctx) override;
 };
 
@@ -238,7 +233,6 @@ public:
     void slashInspection(RentableAsset& ctx, double penalty) override;
 };
 
-// Implementation of state transitions
 inline void AvailableState::reserve(RentableAsset& ctx, const std::string& renterId) {
     ctx.setRenterId(renterId);
     ctx.setState(std::make_shared<ReservedEscrowState>());
@@ -247,25 +241,24 @@ inline void AvailableState::reserve(RentableAsset& ctx, const std::string& rente
 
 inline void ReservedEscrowState::pickup(RentableAsset& ctx) {
     ctx.setState(std::make_shared<ActiveLeaseState>());
-    std::cout << "[STATE] " << ctx.getTitle() << " transitioned RESERVED_ESCROW -> ACTIVE_LEASE (In-Use)" << std::endl;
+    std::cout << "[STATE] " << ctx.getTitle() << " transitioned RESERVED_ESCROW -> ACTIVE_LEASE (In-Field)" << std::endl;
 }
 
 inline void ActiveLeaseState::initiateReturn(RentableAsset& ctx) {
-    // Enforcement of mandatory quarantine
     ctx.setState(std::make_shared<InspectionQuarantineState>());
-    std::cout << "[STATE INVARIANT] " << ctx.getTitle() << " returned to locker. MANDATORY QUARANTINE active!" << std::endl;
+    std::cout << "[STATE INVARIANT] " << ctx.getTitle() << " returned to hub. MANDATORY QUARANTINE ACTIVE (Deposit held in ₹)!" << std::endl;
 }
 
 inline void InspectionQuarantineState::approveInspection(RentableAsset& ctx) {
     ctx.setRenterId("");
     ctx.setState(std::make_shared<AvailableState>());
-    std::cout << "[STATE] Inspection approved clean. Collateral released. Transitioned -> AVAILABLE" << std::endl;
+    std::cout << "[STATE] Inspection approved clean. Full deposit refunded. Transitioned -> AVAILABLE" << std::endl;
 }
 
 inline void InspectionQuarantineState::slashInspection(RentableAsset& ctx, double penalty) {
     ctx.setRenterId("");
     ctx.setState(std::make_shared<AvailableState>());
-    std::cout << "[STATE] Damage flagged. Slashed $" << penalty << " from escrow. Transitioned -> AVAILABLE" << std::endl;
+    std::cout << "[STATE] Damage flagged. Deducted ₹" << penalty << " from deposit. Transitioned -> AVAILABLE" << std::endl;
 }
 
 inline RentableAsset::RentableAsset(std::string id, std::string title, std::string ownerId, 
@@ -275,9 +268,8 @@ inline RentableAsset::RentableAsset(std::string id, std::string title, std::stri
       state(std::make_shared<AvailableState>()) {}
 
 // ============================================================================
-// ASSIGNMENT 1: 4-GATE FAIL-FAST VERIFICATION PIPELINE
+// 4-GATE FAIL-FAST VERIFICATION PIPELINE
 // ============================================================================
-
 struct PipelineContext {
     std::shared_ptr<RentableAsset> asset;
     std::string renterId;
@@ -307,7 +299,6 @@ public:
     virtual GateResult execute(const PipelineContext& ctx) = 0;
 };
 
-// Gate 1: KYC Identity Verification & Anti-Self-Rental Gate
 class KycIdentityGate : public VerificationGate {
 public:
     GateResult execute(const PipelineContext& ctx) override {
@@ -315,31 +306,23 @@ public:
             return GateResult::failure(1, "KycIdentityGate", "Renter KYC identity is not verified");
         }
         if (ctx.renterId == ctx.asset->getOwnerId()) {
-            return GateResult::failure(1, "KycIdentityGate", "Anti-self-rental rule: Owner cannot lease own asset");
+            return GateResult::failure(1, "KycIdentityGate", "Anti-self-rental rule: Host cannot rent own item");
         }
         return GateResult::success(1, "KycIdentityGate");
     }
 };
 
-// Gate 2: State Legality Gate
 class StateLegalityGate : public VerificationGate {
 public:
     GateResult execute(const PipelineContext& ctx) override {
         auto state = ctx.asset->getState();
         if (ctx.requestedAction == "RESERVE" && !state->canReserve()) {
-            return GateResult::failure(2, "StateLegalityGate", "Asset is not in AVAILABLE state (Current: " + state->getStateName() + ")");
-        }
-        if (ctx.requestedAction == "PICKUP" && !state->canPickup()) {
-            return GateResult::failure(2, "StateLegalityGate", "Asset is not in RESERVED_ESCROW state");
-        }
-        if (ctx.requestedAction == "RETURN" && !state->canReturn()) {
-            return GateResult::failure(2, "StateLegalityGate", "Asset is not in ACTIVE_LEASE state");
+            return GateResult::failure(2, "StateLegalityGate", "Item is not in AVAILABLE state (Current: " + state->getStateName() + ")");
         }
         return GateResult::success(2, "StateLegalityGate");
     }
 };
 
-// Gate 3: Escrow Solvency Gate
 class EscrowSolvencyGate : public VerificationGate {
 public:
     GateResult execute(const PipelineContext& ctx) override {
@@ -349,40 +332,33 @@ public:
 
         if (ctx.renterWalletBalance < totalRequired) {
             return GateResult::failure(3, "EscrowSolvencyGate", 
-                "Insufficient funds: Required $" + std::to_string(totalRequired) + 
-                " (Tariff: $" + std::to_string(tariff) + " + Deposit: $" + std::to_string(deposit) + 
-                "), but wallet has $" + std::to_string(ctx.renterWalletBalance));
+                "Insufficient funds: Required ₹" + std::to_string(totalRequired) + 
+                ", but wallet has ₹" + std::to_string(ctx.renterWalletBalance));
         }
         return GateResult::success(3, "EscrowSolvencyGate");
     }
 };
 
-// Gate 4: Locker Spatial Gate & Row 7 Heavy-Agri Spatial Rule
 class LockerSpatialGate : public VerificationGate {
 public:
     GateResult execute(const PipelineContext& ctx) override {
         if (ctx.targetLockerBay.empty()) {
-            return GateResult::failure(4, "LockerSpatialGate", "Locker bay coordinate cannot be empty");
+            return GateResult::failure(4, "LockerSpatialGate", "Bay coordinate cannot be empty");
         }
         char rowChar = ctx.targetLockerBay[0];
         int rowIndex = rowChar - 'A';
-        if (rowIndex < 0 || rowIndex > 7) {
-            return GateResult::failure(4, "LockerSpatialGate", "Invalid bay row: " + std::string(1, rowChar));
-        }
 
-        // Heavy-Agri spatial invariant
-        auto agriAsset = std::dynamic_pointer_cast<AgricultureAsset>(ctx.asset);
-        if (agriAsset && agriAsset->isHeavyMachinery()) {
-            if (rowIndex != 7) { // Row 7 corresponds to 'H'
+        auto util = std::dynamic_pointer_cast<UtilityAndMobilityAsset>(ctx.asset);
+        if (util && util->isRequiresGroundBay()) {
+            if (rowIndex != 7) { // Row 7 corresponds to Row H Ground Slot
                 return GateResult::failure(4, "LockerSpatialGate", 
-                    "Heavy Agricultural Machinery violation: Must be located in Row H (Row 7). Specified: " + ctx.targetLockerBay);
+                    "Ground Slot Spatial Invariant: Vehicle/Heavy gear must be parked in Row H (H1–H8). Specified: " + ctx.targetLockerBay);
             }
         }
         return GateResult::success(4, "LockerSpatialGate");
     }
 };
 
-// Sequential Fail-Fast Pipeline Orchestrator
 class FailFastPipeline {
 private:
     std::vector<std::unique_ptr<VerificationGate>> gates;
@@ -398,12 +374,10 @@ public:
         for (const auto& gate : gates) {
             GateResult result = gate->execute(ctx);
             if (!result.passed) {
-                // Short-circuit on first failure
                 std::cout << "[FAIL-FAST SHORT CIRCUIT] Gate " << result.gateIndex << " (" 
                           << result.gateName << ") FAILED: " << result.diagnostic << std::endl;
                 return result;
             }
-            std::cout << "[GATE PASS] Gate " << result.gateIndex << " (" << result.gateName << ") validated." << std::endl;
         }
         return GateResult::success(0, "AllGatesPassed");
     }
@@ -411,60 +385,35 @@ public:
 
 } // namespace rentsphere
 
-// ============================================================================
-// C++20 POLYGLOT TEST HARNESS
-// ============================================================================
 int main() {
     std::cout << "=========================================================" << std::endl;
-    std::cout << "  RentSphere Core Engine - C++20 Reference Verification" << std::endl;
+    std::cout << "  RentSphere Core Engine (INR ₹) - C++20 Reference" << std::endl;
     std::cout << "=========================================================" << std::endl;
 
     using namespace rentsphere;
 
-    // Create Tier 5 Leaf instance: Autonomous Marine Drone
-    auto drone = std::make_shared<AutonomousMarineDrone>(
-        "AST-001", "Goa Coastal Deep-Survey Drone", "host_faaris",
-        1200.0, 3000.0, "F2", 1.25, "IP68", 1.15, 150.0, true
+    auto camera = std::make_shared<CameraAndOpticsGear>(
+        "AST-101", "Sony Alpha A7 IV Kit", "host_faaris",
+        1200.0, 5000.0, "A2", 1.20, "Creator Comprehensive", 33.0, true
     );
 
-    std::cout << "[ASSET] Created: " << drone->getTitle() << " | Daily Rate: $" 
-              << drone->calculateDailyRentalTariff(1) << " | Collateral: $" 
-              << drone->calculateRequiredCollateral() << std::endl;
+    std::cout << "[ITEM] " << camera->getTitle() << " | Daily Rent: ₹" 
+              << camera->calculateDailyRentalTariff(1) << " | Deposit: ₹" 
+              << camera->calculateRequiredCollateral() << std::endl;
 
-    // Pipeline verification
     FailFastPipeline pipeline;
     PipelineContext ctx{
-        drone,
-        "renter_ketan",
-        "RESERVE",
-        5000.0, // Wallet balance
-        "F2",
-        true,   // KYC verified
-        1       // 1 day rental
+        camera, "renter_deepak", "RESERVE", 25000.0, "A2", true, 2
     };
 
-    std::cout << "\n--- Testing Fail-Fast Pipeline (Valid Case) ---" << std::endl;
     auto verdict = pipeline.verify(ctx);
     if (verdict.passed) {
-        drone->getState()->reserve(*drone, ctx.renterId);
-        drone->getState()->pickup(*drone);
-        // Test mandatory quarantine invariant
-        drone->getState()->initiateReturn(*drone);
-        drone->getState()->approveInspection(*drone);
+        camera->getState()->reserve(*camera, ctx.renterId);
+        camera->getState()->pickup(*camera);
+        camera->getState()->initiateReturn(*camera);
+        camera->getState()->approveInspection(*camera);
     }
 
-    std::cout << "\n--- Testing Gate 4 Short-Circuit (Heavy Agri Spatial Rule) ---" << std::endl;
-    auto tiller = std::make_shared<PrecisionRotaryTiller>(
-        "AST-003", "Mandovi Power Rotary Tiller 55HP", "host_nikhil",
-        800.0, 2500.0, "C3", // Invalid Row: C (Row 2), heavy agri must be Row H (Row 7)
-        1.10, "Laterite", 41.0, 2800, 180.0
-    );
-
-    PipelineContext invalidAgriCtx{
-        tiller, "renter_deepak", "RESERVE", 10000.0, "C3", true, 2
-    };
-    pipeline.verify(invalidAgriCtx);
-
-    std::cout << "\nRentSphere C++20 Core Verification Complete." << std::endl;
+    std::cout << "\nRentSphere C++20 Verification Complete." << std::endl;
     return 0;
 }

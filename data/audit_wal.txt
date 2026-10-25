@@ -1,7 +1,8 @@
-2026-10-25T10:00:00.000Z|WAL-001|SYS-INIT|SYSTEM_BOOT|NONE|ONLINE|system|RentSphere flat-file storage engine initialized with 64 locker compartments
-2026-10-25T10:15:00.000Z|WAL-002|AST-101|ONBOARD_ASSET|NONE|AVAILABLE|host_faaris|Registered AutonomousMarineDrone 'Goa Deep-Survey Marine Drone Alpha' in Bay F2
-2026-10-25T10:20:00.000Z|WAL-003|AST-103|ONBOARD_ASSET|NONE|AVAILABLE|host_ketan|Registered PrecisionRotaryTiller 'Mandovi 55HP Heavy Rotary Tiller' in Bay H1 (Row 7 Heavy Rule Validated)
-2026-10-25T10:30:00.000Z|WAL-004|AST-105|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_deepak|4-Gate Fail-Fast Pipeline passed. Escrow locked $5500.00. OTP 492108 generated for Bay G4
-2026-10-25T11:00:00.000Z|WAL-005|AST-106|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_nikhil|OTP 339102 verified at Bay A4. Asset picked up. State transitioned to ACTIVE_LEASE
-2026-10-25T11:45:00.000Z|WAL-006|AST-107|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_priya|MANDATORY QUARANTINE INVARIANT: Asset returned to Bay H4. Held for host damage inspection
-2026-10-25T10:09:14.814723700Z|WAL-0CE004E0|TEST-ASSET|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed
+2026-10-25T10:00:00.000Z|WAL-001|SYS-INIT|SYSTEM_BOOT|NONE|ONLINE|system|RentSphere flat-file storage engine initialized with 64 Hub Bays in INR (₹)
+2026-10-25T10:15:00.000Z|WAL-002|AST-101|ONBOARD_ASSET|NONE|AVAILABLE|host_faaris|Registered CameraAndOpticsGear 'Sony Alpha A7 IV Kit' in Bay A2 (Rate: ₹1,200/day, Deposit: ₹5,000)
+2026-10-25T10:20:00.000Z|WAL-003|AST-107|ONBOARD_ASSET|NONE|AVAILABLE|host_ketan|Registered EventAndMobilityVehicle 'Maruti Suzuki Fronx' in Ground Slot H2 (Row H Ground Invariant Verified)
+2026-10-25T10:30:00.000Z|WAL-004|AST-104|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_nikhil|4-Gate Fail-Fast Pipeline passed. Escrow locked ₹4,450.00. OTP 492108 generated for Bay D2
+2026-10-25T11:00:00.000Z|WAL-005|AST-105|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_deepak|OTP 339102 verified at Bay A4. Bosch Impact Drill retrieved. State transitioned to ACTIVE_LEASE
+2026-10-25T11:45:00.000Z|WAL-006|AST-108|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_priya|MANDATORY QUARANTINE: Ather 450X returned to Ground Slot H4. Security deposit ₹2,000 held pending condition check
+2026-10-25T11:00:24.796753700Z|WAL-B9847480|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)
+2026-10-25T11:06:12.091800800Z|WAL-DCD2596C|TEST-CAM|UNIT_TEST|NONE|ONLINE|test_runner|Automated verification test completed (INR currency)

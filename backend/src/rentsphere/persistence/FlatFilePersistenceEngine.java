@@ -18,7 +18,7 @@ import java.util.*;
 /**
  * Deterministic Zero-Database Flat File Persistence Engine.
  * Synchronizes domain state deterministically with human-readable, pipe-delimited
- * flat files in data/ (*.txt) and an append-only Write-Ahead Log (WAL).
+ * flat files in data/ (*.txt) and an append-only Write-Ahead Log (WAL) in Indian Rupees (₹).
  * MCA OOT Lab - Assignment 5 (File I/O & Audit Logging)
  */
 public class FlatFilePersistenceEngine {
@@ -62,7 +62,7 @@ public class FlatFilePersistenceEngine {
 
                     String id = parts[0];
                     String title = parts[1];
-                    String sector = parts[2];
+                    String category = parts[2];
                     String leafClass = parts[3];
                     String ownerId = parts[4];
                     String renterId = parts[5];
@@ -83,7 +83,7 @@ public class FlatFilePersistenceEngine {
                         if (!logs.isBlank()) {
                             for (String logEntry : logs.split(",")) {
                                 if (!logEntry.isBlank()) {
-                                    asset.addMaintenanceLog(logEntry.trim());
+                                    asset.addServiceLog(logEntry.trim());
                                 }
                             }
                         }
@@ -110,7 +110,7 @@ public class FlatFilePersistenceEngine {
     }
 
     // ========================================================================
-    // 8x8 SMART LOCKER GRID FLAT FILE I/O
+    // 8x8 SMART LOCKER & GROUND PARKING GRID FLAT FILE I/O
     // ========================================================================
     public void loadLockers(SmartLockerGrid8x8 grid) {
         synchronized (fileLock) {
@@ -133,8 +133,8 @@ public class FlatFilePersistenceEngine {
                     String assetId = parts[5];
                     String status = parts[6];
                     String otp = parts[7];
-                    double temp = parseDouble(parts[8], 23.5);
-                    double hum = parseDouble(parts[9], 45.0);
+                    double temp = parseDouble(parts[8], 24.0);
+                    double hum = parseDouble(parts[9], 48.0);
                     double weight = parseDouble(parts[10], 0.0);
 
                     LockerCompartment comp = new LockerCompartment(
@@ -251,46 +251,48 @@ public class FlatFilePersistenceEngine {
     }
 
     // ========================================================================
-    // HELPER FACTORIES
+    // FACTORY DISPATCHER FOR 4 CONCRETE TIER 5 CLASSES
     // ========================================================================
     private RentableAsset constructAsset(String leafClass, String id, String title, String ownerId, 
                                          double baseRate, double collateral, String lockerBay, 
                                          Map<String, String> extra) {
-        double multiplier = parseDouble(extra.get("multiplier"), 1.15);
+        String protection = extra.getOrDefault("protection", "Standard Shield");
 
         switch (leafClass) {
-            case "AutonomousMarineDrone":
-                double depth = parseDouble(extra.get("depth"), 100.0);
-                boolean sonar = Boolean.parseBoolean(extra.get("sonar"));
-                String ip = extra.getOrDefault("ip", "IP68");
-                double corrosion = parseDouble(extra.get("corrosion"), 1.10);
-                return new AutonomousMarineDrone(id, title, ownerId, baseRate, collateral, lockerBay,
-                        multiplier, "Tier-1 Marine Comprehensive", ip, corrosion, depth, sonar);
+            case "CameraAndOpticsGear":
+                double sensorMp = parseDouble(extra.get("sensorMp"), 24.2);
+                boolean is4k = Boolean.parseBoolean(extra.getOrDefault("is4k", "true"));
+                String mount = extra.getOrDefault("mount", "Sony E-Mount");
+                int kitCount = parseInt(extra.get("kitCount"), 3);
+                return new CameraAndOpticsGear(id, title, ownerId, baseRate, collateral, lockerBay,
+                        1.20, protection, "Studio & Outdoor Weather-Sealed", "Dual NP-FZ100 Batteries", kitCount,
+                        sensorMp, is4k, mount);
 
-            case "SubmersibleActionRig":
-                String stabilization = extra.getOrDefault("stabilization", "GimbalTriple");
-                double rigDepth = parseDouble(extra.get("depth"), 50.0);
-                boolean is8k = Boolean.parseBoolean(extra.get("is8k"));
-                String rigIp = extra.getOrDefault("ip", "IP68");
-                double rigCorrosion = parseDouble(extra.get("corrosion"), 1.05);
-                return new SubmersibleActionRig(id, title, ownerId, baseRate, collateral, lockerBay,
-                        multiplier, "Standard Tourism Cover", rigIp, rigCorrosion, stabilization, is8k, rigDepth);
+            case "EventAudioAndLighting":
+                int soundDb = parseInt(extra.get("soundDb"), 104);
+                int mics = parseInt(extra.get("mics"), 2);
+                boolean rgb = Boolean.parseBoolean(extra.getOrDefault("rgb", "true"));
+                int audioKit = parseInt(extra.get("kitCount"), 4);
+                return new EventAudioAndLighting(id, title, ownerId, baseRate, collateral, lockerBay,
+                        1.25, protection, "High-Output Event Grade", "240W RMS AC/Battery", audioKit,
+                        soundDb, mics, rgb);
 
-            case "PrecisionRotaryTiller":
-                int rpm = parseInt(extra.get("rpm"), 2500);
-                double width = parseDouble(extra.get("width"), 160.0);
-                String soil = extra.getOrDefault("soil", "Laterite");
-                double kw = parseDouble(extra.get("kw"), 35.0);
-                return new PrecisionRotaryTiller(id, title, ownerId, baseRate, collateral, lockerBay,
-                        multiplier, "Agri Machinery Protection", soil, kw, rpm, width);
+            case "PowerToolEquipment":
+                String power = extra.getOrDefault("power", "600W Impact Motor");
+                String safety = extra.getOrDefault("safety", "ISI Certified 220V");
+                boolean cordless = Boolean.parseBoolean(extra.getOrDefault("cordless", "false"));
+                int bits = parseInt(extra.get("bits"), 50);
+                return new PowerToolEquipment(id, title, ownerId, baseRate, collateral, lockerBay,
+                        1.15, protection, power, safety, cordless, bits);
 
-            case "OpticalSoilSpectrometer":
-                int bands = parseInt(extra.get("bands"), 16);
-                double accuracy = parseDouble(extra.get("accuracy"), 98.0);
-                String specSoil = extra.getOrDefault("soil", "Alluvial");
-                double specKw = parseDouble(extra.get("kw"), 2.0);
-                return new OpticalSoilSpectrometer(id, title, ownerId, baseRate, collateral, lockerBay,
-                        multiplier, "Sensor Precision Bond", specSoil, specKw, bands, accuracy);
+            case "EventAndMobilityVehicle":
+                int seats = parseInt(extra.get("seats"), 5);
+                String fuel = extra.getOrDefault("fuel", "Petrol Automatic");
+                boolean auto = Boolean.parseBoolean(extra.getOrDefault("auto", "true"));
+                String engine = extra.getOrDefault("power", "1.2L DualJet VVT");
+                String cert = extra.getOrDefault("safety", "ARAI Certified 5-Star");
+                return new EventAndMobilityVehicle(id, title, ownerId, baseRate, collateral, lockerBay,
+                        1.30, protection, engine, cert, seats, fuel, auto);
 
             default:
                 return null;
@@ -354,6 +356,6 @@ public class FlatFilePersistenceEngine {
         if (row <= 2) return CompartmentSize.SMALL;
         if (row <= 4) return CompartmentSize.MEDIUM;
         if (row <= 6) return CompartmentSize.LARGE;
-        return CompartmentSize.XL_HEAVY_AGRI;
+        return CompartmentSize.XL_GROUND_SLOT;
     }
 }

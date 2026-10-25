@@ -1,7 +1,7 @@
 package rentsphere.locker;
 
-import rentsphere.model.AgricultureAsset;
 import rentsphere.model.RentableAsset;
+import rentsphere.model.UtilityAndMobilityAsset;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,9 +10,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 8x8 Smart Locker Micro-Storage Matrix Engine.
+ * 8x8 Smart Locker & Ground Parking Hub Engine.
  * Manages 64 physical bays arranged in Rows 0..7 (A..H) and Cols 0..7 (1..8).
- * Enforces size limits and the Row 7 Heavy-Agri Spatial Invariant.
+ * Enforces size limits and the Row H Ground Parking Slot Spatial Invariant.
  * MCA OOT Lab - Assignment 5
  */
 public class SmartLockerGrid8x8 {
@@ -38,14 +38,14 @@ public class SmartLockerGrid8x8 {
             } else if (r <= 6) {
                 size = CompartmentSize.LARGE;
             } else {
-                size = CompartmentSize.XL_HEAVY_AGRI;
+                size = CompartmentSize.XL_GROUND_SLOT;
             }
 
             for (int c = 0; c < COLS; c++) {
                 String bayId = "" + rowChar + (c + 1);
                 LockerCompartment comp = new LockerCompartment(
                         bayId, r, c, size, false, "", "AVAILABLE",
-                        "000000", 23.5, 45.0, 0.0
+                        "000000", 24.0, 48.0, 0.0
                 );
                 matrix[r][c] = comp;
                 bayLookup.put(bayId, comp);
@@ -85,32 +85,37 @@ public class SmartLockerGrid8x8 {
     }
 
     /**
-     * Enforces Row 7 Heavy-Agri Spatial Rule:
-     * Heavy agricultural machinery is physically barred from Rows 0..6 (A..G)
-     * and MUST be stored in Row 7 (Row H).
+     * Enforces Row H Ground Parking Slot Spatial Invariant:
+     * Mobility vehicles and heavy event rigs are physically barred from upper lockers (Rows A-G)
+     * and MUST be assigned to Row H Ground Slots (H1-H8).
      */
-    public boolean validateHeavyAgriPlacement(RentableAsset asset, String bayId) {
+    public boolean validateGroundSlotPlacement(RentableAsset asset, String bayId) {
         if (bayId == null || bayId.trim().length() < 2) return false;
         char rowChar = bayId.trim().toUpperCase().charAt(0);
         int rowIndex = rowChar - 'A';
 
-        if (asset instanceof AgricultureAsset) {
-            AgricultureAsset agri = (AgricultureAsset) asset;
-            if (agri.isHeavyMachineryFlag()) {
-                return rowIndex == 7; // Only Row 7 (H) allowed
+        if (asset instanceof UtilityAndMobilityAsset) {
+            UtilityAndMobilityAsset utilAsset = (UtilityAndMobilityAsset) asset;
+            if (utilAsset.isRequiresGroundBay()) {
+                return rowIndex == 7; // Only Row 7 (Row H Ground Slot) allowed
             }
         }
         return true;
     }
 
+    // Backwards-compatible alias for previous test runner
+    public boolean validateHeavyAgriPlacement(RentableAsset asset, String bayId) {
+        return validateGroundSlotPlacement(asset, bayId);
+    }
+
     /**
-     * Assigns an asset to a bay, generates an unlock OTP, and updates compartment state.
+     * Assigns an asset to a hub bay, generates an unlock OTP, and updates compartment state.
      */
     public boolean assignAssetToBay(RentableAsset asset, String bayId) {
         LockerCompartment comp = getCompartment(bayId);
         if (comp == null) return false;
 
-        if (!validateHeavyAgriPlacement(asset, bayId)) {
+        if (!validateGroundSlotPlacement(asset, bayId)) {
             return false;
         }
 
@@ -125,7 +130,7 @@ public class SmartLockerGrid8x8 {
     }
 
     /**
-     * Simulates live IoT sensor telemetry readings for temperature, humidity, and load cell weight.
+     * Updates live IoT sensor telemetry readings for temperature, humidity, and load cell weight.
      */
     public boolean updateTelemetry(String bayId, double tempC, double humidityPct, double weightKg) {
         LockerCompartment comp = getCompartment(bayId);

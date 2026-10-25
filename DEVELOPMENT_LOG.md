@@ -148,3 +148,45 @@
 
 
 
+
+## Log Entry 006: Critical Product Rework — Cohesive Local P2P Rental & Smart Hub (₹ INR)
+- **Timestamp**: `2026-10-25T16:38:00+05:30`
+- **Author**: Principal Software Architect & Full MCA Engineering Team
+- **Status**: `STATUS: [ACCEPTED]`
+- **Architectural & Product Transformations**:
+  1. **Purged All Academic / Homework Labels**:
+     - Removed all "Assignment 2", "Assignment 4", "Tier 5 Leaf Class", "Meta-OOP Workbench", and "NIRF Institutional Ranking" labels across the backend, tests, and UI.
+     - Converted the platform into a cohesive, realistic Peer-to-Peer Rental & Smart Pickup Hub for Goa University and the local community.
+  2. **Indian Rupees (₹ / INR) Currency Standard**:
+     - Standardized all pricing, wallet balances, daily rental tariffs, security deposits, damage penalties, and audit ledger entries across Java models, `data/*.txt` files, and the Web UI to **Indian Rupees (₹ INR)**.
+  3. **Realistic 5-Tier Domain Model Hierarchy**:
+     - **Tier 1**: `AbstractDomainEntity.java` (Entity ID, creation timestamp, pipe serialization).
+     - **Tier 2**: `RentableAsset.java` (GoF State pattern context, INR base rate, refundable security deposit, assigned Hub Bay `A1`–`H8`, isolated service logs, prototype cloning).
+     - **Tier 3**: `CategorizedRentalAsset.java` (Category classification, late-fee multiplier, protection tier).
+     - **Tier 4**: `EventAndCreatorAsset.java` & `UtilityAndMobilityAsset.java` (`requiresGroundBay` spatial invariant).
+     - **Tier 5**: 4 Realistic Concrete Classes:
+       1. `CameraAndOpticsGear.java` (`CAMERAS` — DSLR, Mirrorless cameras, lenses, projectors).
+       2. `EventAudioAndLighting.java` (`AUDIO_LIGHTING` — JBL PartyBox speakers, PA systems, DJ controllers).
+       3. `PowerToolEquipment.java` (`POWER_TOOLS` — Bosch impact drills, Karcher pressure washers).
+       4. `EventAndMobilityVehicle.java` (`MOBILITY_VEHICLES` — Maruti Suzuki Fronx, Ather 450X scooters, enforcing Row H Ground Slots `H1`–`H8`).
+  4. **RentSphere Trust & Asset Reliability Composite Scoring Engine**:
+     - Replaced Ministry of Education university ranking with **RentSphere Trust & Reliability Score** (Score / 100):
+       - Asset Condition History: 30%
+       - On-Time Return Punctuality: 30%
+       - Escrow Completion Ratio: 20%
+       - Community Peer Reviews: 10%
+       - Identity / Hub Verification: 10%
+     - Deep-cloned What-If policy simulation guarantees baseline member metrics remain unmutated during experimentation.
+  5. **Host Studio & Multi-Unit Listing Cloner**:
+     - Built **Multi-Unit Listing Cloner** leveraging the Prototype Pattern: hosts can duplicate an existing gear listing into an available hub bay in 1 click.
+     - Deep Cloning guarantees total memory reference isolation of internal service logs (`System.identityHashCode()`), preventing shared mutable history across physical inventory units.
+     - Live JVM Object Inspector (`java.lang.reflect` RTTI) exposing runtime class hierarchies, declared fields, and method signatures.
+  6. **4 Cohesive Product Web UI Views (`frontend/`)**:
+     - **Tab 1: Explore Marketplace**: Category filter pills (`All Items`, `Cameras & Optics`, `Event Audio & Lighting`, `Power Tools & DIY`, `Wedding Cars & Mobility`), INR pricing, specs, and List Equipment modal.
+     - **Tab 2: Smart Pickup Hub & Parking (8x8 A1–H8)**: 64 physical bays with Row H Ground Vehicle bays, live temperature/humidity/weight telemetry, 6-digit OTP passcodes, and pickup/return controls.
+     - **Tab 3: Escrow Wallet & Returns**: Post-Return Inspection Queue for quarantine verification, damage deduction slider (0% to 100%), and live append-only audit ledger (`data/audit_wal.txt`).
+     - **Tab 4: Host Studio & System Diagnostics**: Multi-unit cloner with memory proof, Trust Score dial with interactive simulation sliders, and live reflection inspector.
+  7. **Automated Test Suite Verification**:
+     - `tests/RentSphereVerificationTest.java`: **42 / 42 Tests Passed (100% Success)**.
+     - Polyglot reference files (`polyglot/cpp/`, `polyglot/csharp/`, `polyglot/python/`) fully refactored for new domain classes, Trust Score formula, and INR currency.
+     - Browser Subagent verified all 4 tabs, category filtering, hub bay telemetry, escrow queue, and trust simulation with live recordings and screenshots.
