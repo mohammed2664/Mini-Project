@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentSphere: Decentralized P2P Asset Rental & 8x8 Micro-Storage Engine</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+    <!-- Header Navigation & Identity Bar -->
+    <header class="app-header">
+        <div class="header-top">
+            <div class="brand-wrapper">
+                <div class="brand-logo">🌐</div>
+                <div>
+                    <h1 class="brand-title">RentSphere</h1>
+                    <p class="brand-subtitle">P2P Asset Rental & 8x8 Micro-Storage Engine • Goa University MCA OOT Lab</p>
+                </div>
+            </div>
+
+            <div class="user-selector-bar">
+                <div class="active-user-badge">
+                    <span id="userRoleBadge" class="role-tag role-renter">RENTER</span>
+                    <label for="activeUserSelect" style="font-size:11px; color:var(--slate-500); font-weight:600;">Active Persona:</label>
+                    <select id="activeUserSelect" class="filter-select" style="padding:4px 8px; font-size:12px;">
+                        <option value="renter_deepak" selected>Deepak Dev (Renter)</option>
+                        <option value="renter_nikhil">Nikhil Bhaiju (Renter)</option>
+                        <option value="renter_priya">Priya Sharma (Renter)</option>
+                        <option value="host_faaris">Mohammed Faaris Khan (Host)</option>
+                        <option value="host_ketan">Ketan Gurudas Naik (Host)</option>
+                        <option value="inspector_almeida">Prof. Almeida (Inspector)</option>
+                    </select>
+                </div>
+
+                <div class="wallet-pill">
+                    <span>💳</span>
+                    <span>Wallet: $<span id="headerWalletBalance">8000.00</span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5 Subsystem View Navigation Pills -->
+        <nav class="nav-bar">
+            <button class="nav-pill active" data-view="catalogView">
+                <span>🛒</span> Marketplace & 5-Tier Catalog
+            </button>
+            <button class="nav-pill" data-view="lockerView">
+                <span>🗄️</span> 8x8 Smart Locker Matrix (A1–H8)
+            </button>
+            <button class="nav-pill" data-view="quarantineView">
+                <span>🛡️</span> Quarantine & Host Console
+            </button>
+            <button class="nav-pill" data-view="metaView">
+                <span>🔬</span> Meta-OOP Workbench (Assignment 4)
+            </button>
+            <button class="nav-pill" data-view="nirfView">
+                <span>📊</span> NIRF Institutional Ranking (Assignment 4)
+            </button>
+        </nav>
+    </header>
+
+    <!-- Main App Container -->
+    <main class="app-container">
+
+        <!-- Top KPI Stats Bar -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon teal">📦</div>
+                <div class="stat-meta">
+                    <h4>Total Listed Assets</h4>
+                    <div class="stat-value" id="kpiTotalAssets">8</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon amber">🔒</div>
+                <div class="stat-meta">
+                    <h4>Escrow Capital Locked</h4>
+                    <div class="stat-value">$<span id="kpiLockedEscrow">13000.00</span></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon emerald">🚀</div>
+                <div class="stat-meta">
+                    <h4>Active Leases in Field</h4>
+                    <div class="stat-value" id="kpiActiveLeases">1</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon crimson">⚠️</div>
+                <div class="stat-meta">
+                    <h4>Items in Quarantine</h4>
+                    <div class="stat-value" id="kpiInQuarantine">1</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 1: MARKETPLACE & 5-TIER ASSET CATALOG
+             ================================================================== -->
+        <section id="catalogView" class="view-section active">
+            <div class="catalog-toolbar">
+                <div class="search-filter-group">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Search gear by name, sector, or tier...">
+                    </div>
+                    <select id="sectorFilter" class="filter-select">
+                        <option value="ALL">All Sectors</option>
+                        <option value="TOURISM">Tourism Equipment</option>
+                        <option value="AGRICULTURE">Agricultural Machinery</option>
+                    </select>
+                    <select id="stateFilter" class="filter-select">
+                        <option value="ALL">All States</option>
+                        <option value="AVAILABLE">Available</option>
+                        <option value="RESERVED_ESCROW">Reserved (Escrow)</option>
+                        <option value="ACTIVE_LEASE">Active Lease</option>
+                        <option value="INSPECTION_QUARANTINE">Quarantine</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="openOnboardBtn">
+                    <span>➕</span> Onboard New Equipment
+                </button>
+            </div>
+
+            <!-- Dynamic Asset Cards Container -->
+            <div class="assets-grid" id="assetsGrid">
+                <!-- Rendered dynamically by app.js -->
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 2: 8x8 SMART LOCKER MATRIX (A1–H8)
+             ================================================================== -->
+        <section id="lockerView" class="view-section">
+            <div class="locker-matrix-container">
+                <!-- 64-Bay Interactive Matrix -->
+                <div class="grid-wrapper-card">
+                    <div class="matrix-header">
+                        <div>
+                            <h2 style="font-family:var(--font-heading); font-size:18px; font-weight:800;">
+                                8x8 Physical Micro-Storage Matrix (64 Compartments)
+                            </h2>
+                            <p style="font-size:12px; color:var(--slate-500);">
+                                Rows A–C: Small • Rows D–E: Medium • Rows F–G: Large • <strong>Row H: Heavy Agri XL</strong>
+                            </p>
+                        </div>
+                        <button class="btn-secondary" id="refreshGridBtn">🔄 Refresh Grid</button>
+                    </div>
+
+                    <div class="matrix-legend">
+                        <div class="legend-item"><div class="legend-dot dot-ready"></div> Ready / Available</div>
+                        <div class="legend-item"><div class="legend-dot dot-reserved"></div> Reserved (Escrow)</div>
+                        <div class="legend-item"><div class="legend-dot dot-active"></div> Active Lease</div>
+                        <div class="legend-item"><div class="legend-dot dot-quarantine"></div> Quarantine Locked</div>
+                        <div class="legend-item"><div class="legend-dot dot-heavy"></div> Row H: Heavy Agri XL</div>
+                    </div>
+
+                    <div class="grid-8x8" id="grid8x8Container">
+                        <!-- 64 Bay Cells Rendered Dynamically by app.js -->
+                    </div>
+                </div>
+
+                <!-- Compartment Inspector Side Deck -->
+                <div class="inspector-card" id="compartmentInspector">
+                    <div class="inspector-header">
+                        <div style="font-size:11px; text-transform:uppercase; color:var(--slate-400); font-weight:700;">Compartment Telemetry</div>
+                        <h3 class="inspector-title" id="inspectorBayId">Bay F2</h3>
+                        <div id="inspectorSizeTier" class="tier-badge tier-tourism" style="margin-top:6px;">LARGE</div>
+                    </div>
+
+                    <div class="telemetry-dials">
+                        <div class="dial-box">
+                            <div class="dial-label">Temp</div>
+                            <div class="dial-val"><span id="telTemp">22.4</span>°C</div>
+                        </div>
+                        <div class="dial-box">
+                            <div class="dial-label">Humidity</div>
+                            <div class="dial-val"><span id="telHum">45.2</span>%</div>
+                        </div>
+                        <div class="dial-box">
+                            <div class="dial-label">Weight</div>
+                            <div class="dial-val"><span id="telWeight">14.5</span>kg</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom:16px;">
+                        <label style="font-size:11px; color:var(--slate-500); font-weight:700; text-transform:uppercase;">Occupant Asset</label>
+                        <div id="inspectorAssetTitle" style="font-weight:700; font-size:14px; margin-top:2px;">Goa Deep-Survey Marine Drone Alpha</div>
+                        <div id="inspectorAssetId" style="font-size:11px; font-family:monospace; color:var(--slate-400);">AST-101</div>
+                    </div>
+
+                    <div class="otp-box">
+                        <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--warm-amber-dark);">6-Digit Pickup OTP Passcode</div>
+                        <div class="otp-val" id="inspectorOtp">101293</div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:auto;">
+                        <button class="btn-primary" id="pickupFromLockerBtn" style="justify-content:center;">
+                            <span>🔓</span> Unlock & Pickup Gear
+                        </button>
+                        <button class="btn-danger" id="returnToQuarantineBtn" style="justify-content:center;">
+                            <span>📦</span> Return Gear to Quarantine Bay
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 3: HOST & QUARANTINE INSPECTION CONSOLE
+             ================================================================== -->
+        <section id="quarantineView" class="view-section">
+            <!-- Quarantine Inspection Deck -->
+            <div class="quarantine-deck">
+                <div class="section-title-bar">
+                    <h2 class="section-title">
+                        <span>🛡️</span> Mandatory Quarantine Inspection Deck
+                    </h2>
+                    <span style="font-size:12px; color:var(--crimson); font-weight:600;">
+                        Mandatory Invariant: Assets cannot be relisted until host approves return or slashes damage.
+                    </span>
+                </div>
+
+                <div class="quarantine-cards-grid" id="quarantineCardsGrid">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+
+            <!-- Append-Only Flat File Write-Ahead Log (WAL) Viewer -->
+            <div class="wal-section" style="margin-top:30px;">
+                <div class="section-title-bar">
+                    <h2 class="section-title">
+                        <span>📝</span> Deterministic Flat-File Write-Ahead Log (<code style="font-size:14px; color:var(--brand-teal);">data/audit_wal.txt</code>)
+                    </h2>
+                    <button class="btn-secondary" id="refreshWalBtn">🔄 Refresh Audit Log</button>
+                </div>
+                <div class="wal-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>TX ID</th>
+                                <th>Entity</th>
+                                <th>Action</th>
+                                <th>Prev State</th>
+                                <th>New State</th>
+                                <th>Actor</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="walTableBody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 4: META-OOP LAB WORKBENCH (Assignment 4)
+             ================================================================== -->
+        <section id="metaView" class="view-section">
+            <div class="catalog-toolbar" style="margin-bottom:24px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <label style="font-weight:700; font-size:13px;">Target Asset to Inspect:</label>
+                    <select id="metaAssetSelect" class="filter-select">
+                        <!-- Populated dynamically -->
+                    </select>
+                </div>
+                <button class="btn-primary" id="runMetaBenchmarkBtn">
+                    <span>⚡</span> Execute Live Reflection & Memory Benchmark
+                </button>
+            </div>
+
+            <div class="meta-workbench-grid">
+                <!-- Reflection Inspector Card -->
+                <div class="workbench-card">
+                    <h3 style="font-family:var(--font-heading); font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                        <span>🔍</span> Live RTTI Reflection Inspector (<code>java.lang.reflect</code>)
+                    </h3>
+                    <p style="font-size:12px; color:var(--slate-500); margin-top:4px;">
+                        Examines dynamic class hierarchy, implemented interfaces, declared fields, and method signatures at runtime.
+                    </p>
+
+                    <div style="margin-top:16px;">
+                        <h4 style="font-size:11px; text-transform:uppercase; color:var(--slate-400); font-weight:700;">5-Tier Inheritance Chain:</h4>
+                        <div id="reflectionInheritanceChain" style="margin-top:6px; font-size:12px; font-weight:600; color:var(--brand-teal-dark);">
+                            Loading reflection tree...
+                        </div>
+                    </div>
+
+                    <div class="code-tree-box" id="reflectionDetailsBox">
+                        // Reflection inspection output will appear here
+                    </div>
+                </div>
+
+                <!-- Deep vs Shallow Prototype Cloner Card -->
+                <div class="workbench-card">
+                    <h3 style="font-family:var(--font-heading); font-size:16px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                        <span>🧬</span> Deep vs. Shallow Prototype Cloner (<code id="cloneObjectId">System.identityHashCode</code>)
+                    </h3>
+                    <p style="font-size:12px; color:var(--slate-500); margin-top:4px;">
+                        Proves that Shallow Cloning shares mutable list memory references, while Deep Cloning isolates heap memory completely.
+                    </p>
+
+                    <div class="memory-compare-grid">
+                        <div class="memory-card">
+                            <h4 style="font-size:12px; font-weight:700; color:var(--warm-amber-dark);">Shallow Clone (super.clone)</h4>
+                            <p style="font-size:11px; color:var(--slate-500); margin-top:4px;">Shares internal List reference:</p>
+                            <div style="margin-top:10px; font-size:11px;">
+                                <div>Clone Object ID: <span class="mem-address" id="shallowObjId">0x0000</span></div>
+                                <div>Logs Ref ID: <span class="mem-address" id="shallowLogsId" style="color:var(--crimson);">0x0000</span></div>
+                                <div style="margin-top:6px; font-weight:600; color:var(--crimson);" id="shallowSharedStatus">⚠️ SHARED HEAP REFERENCE</div>
+                            </div>
+                        </div>
+
+                        <div class="memory-card highlight">
+                            <h4 style="font-size:12px; font-weight:700; color:var(--brand-teal-dark);">Deep Clone (Isolated Copy)</h4>
+                            <p style="font-size:11px; color:var(--slate-500); margin-top:4px;">Allocates distinct new List:</p>
+                            <div style="margin-top:10px; font-size:11px;">
+                                <div>Clone Object ID: <span class="mem-address" id="deepObjId">0x0000</span></div>
+                                <div>Logs Ref ID: <span class="mem-address" id="deepLogsId" style="color:var(--emerald-dark);">0x0000</span></div>
+                                <div style="margin-top:6px; font-weight:600; color:var(--emerald-dark);" id="deepIsolatedStatus">✅ 100% ISOLATED MEMORY</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top:20px; background:var(--slate-50); padding:14px; border-radius:var(--radius-md); border:1px solid var(--slate-200);">
+                        <h5 style="font-size:11px; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Mutation Isolation Test Result</h5>
+                        <p id="cloningVerdictText" style="font-size:12px; color:var(--slate-800); margin-top:4px; font-weight:500;">
+                            Click "Execute Live Reflection & Memory Benchmark" above to test memory reference isolation.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================================================================
+             VIEW 5: NIRF INSTITUTIONAL RANKING PORTAL (Assignment 4)
+             ================================================================== -->
+        <section id="nirfView" class="view-section">
+            <div class="nirf-layout">
+                <!-- Dial & Score Result -->
+                <div class="nirf-dial-card">
+                    <h2 style="font-family:var(--font-heading); font-size:18px; font-weight:800;">
+                        Ministry of Education NIRF Composite Score
+                    </h2>
+                    <p style="font-size:12px; color:var(--slate-500); margin-top:2px;">
+                        Formula: <code>(0.30*TLR) + (0.30*RP) + (0.20*GO) + (0.10*OI) + (0.10*PR)</code>
+                    </p>
+
+                    <div class="score-circle">
+                        <div class="score-number" id="nirfCompositeScore">72.35</div>
+                        <div class="score-max">out of 100</div>
+                    </div>
+
+                    <div class="tier-pill-large" id="nirfTierBadge">
+                        Tier 1 High Performance
+                    </div>
+
+                    <div style="margin-top:24px; text-align:left; background:var(--slate-50); padding:16px; border-radius:var(--radius-md); border:1px solid var(--slate-200);">
+                        <h4 style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--slate-500);">Deep-Cloned What-If Policy Recommendation:</h4>
+                        <p id="nirfPolicyText" style="font-size:13px; font-weight:600; color:var(--slate-800); margin-top:4px;">
+                            Increasing Research (RP) by +8 points and Teaching (TLR) by +5 points projects advancement toward Top 10 National Excellence.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Sliders for What-If Simulation -->
+                <div class="workbench-card">
+                    <h3 style="font-family:var(--font-heading); font-size:16px; font-weight:800; margin-bottom:16px;">
+                        Simulate Policy Shifts (What-If Analysis)
+                    </h3>
+
+                    <div class="slider-group">
+                        <div class="slider-label-row">
+                            <span>Teaching, Learning & Resources (TLR - 30%)</span>
+                            <span id="valTlr">78.5</span>
+                        </div>
+                        <input type="range" class="damage-slider" id="sliderTlr" min="0" max="100" step="0.5" value="78.5">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label-row">
+                            <span>Research & Professional Practice (RP - 30%)</span>
+                            <span id="valRp">64.2</span>
+                        </div>
+                        <input type="range" class="damage-slider" id="sliderRp" min="0" max="100" step="0.5" value="64.2">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label-row">
+                            <span>Graduation Outcomes (GO - 20%)</span>
+                            <span id="valGo">82.0</span>
+                        </div>
+                        <input type="range" class="damage-slider" id="sliderGo" min="0" max="100" step="0.5" value="82.0">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label-row">
+                            <span>Outreach & Inclusivity (OI - 10%)</span>
+                            <span id="valOi">70.5</span>
+                        </div>
+                        <input type="range" class="damage-slider" id="sliderOi" min="0" max="100" step="0.5" value="70.5">
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label-row">
+                            <span>Peer Perception (PR - 10%)</span>
+                            <span id="valPr">65.0</span>
+                        </div>
+                        <input type="range" class="damage-slider" id="sliderPr" min="0" max="100" step="0.5" value="65.0">
+                    </div>
+
+                    <button class="btn-primary" id="recalcNirfBtn" style="width:100%; justify-content:center; margin-top:12px;">
+                        <span>📊</span> Re-simulate Composite Rank Score
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ======================================================================
+         MODALS: RESERVATION & ONBOARDING
+         ====================================================================== -->
+
+    <!-- Modal: Rent & Reserve Asset (with 4-Gate Fail-Fast Pipeline Feedback) -->
+    <div class="modal-overlay" id="reserveModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Rent & Reserve Equipment</h3>
+                <button class="modal-close-btn" id="closeReserveModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="reserveAssetId">
+                <div style="margin-bottom:16px;">
+                    <div id="modalAssetTitle" style="font-weight:700; font-size:16px;">Goa Deep-Survey Marine Drone Alpha</div>
+                    <div id="modalAssetBay" style="font-size:12px; color:var(--slate-500);">Target Bay: F2</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Rental Duration (Days):</label>
+                    <input type="number" class="form-control" id="rentalDaysInput" min="1" max="30" value="2">
+                </div>
+
+                <div style="background:var(--slate-50); padding:14px; border-radius:var(--radius-md); margin-bottom:20px; border:1px solid var(--slate-200);">
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+                        <span>Rental Tariff:</span>
+                        <strong id="modalTariffEstimate">$2400.00</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+                        <span>Required Security Deposit:</span>
+                        <strong id="modalCollateralEstimate">$3000.00</strong>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800; border-top:1px dashed var(--slate-300); padding-top:6px; color:var(--brand-teal-dark);">
+                        <span>Total Escrow Required:</span>
+                        <span id="modalTotalEscrow">$5400.00</span>
+                    </div>
+                </div>
+
+                <div style="font-size:11px; color:var(--slate-500); margin-bottom:16px;">
+                    ⚡ <strong>4-Gate Fail-Fast Verification Pipeline</strong> will execute upon submission:
+                    Gate 1 (KYC) &rarr; Gate 2 (State Legality) &rarr; Gate 3 (Escrow Solvency) &rarr; Gate 4 (Locker Spatial & Heavy Agri Rule).
+                </div>
+
+                <button class="btn-primary" id="confirmReserveBtn" style="width:100%; justify-content:center;">
+                    <span>🛡️</span> Submit to 4-Gate Pipeline & Lock Escrow
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Onboard New Equipment -->
+    <div class="modal-overlay" id="onboardModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title">Onboard Equipment into 8x8 Grid</h3>
+                <button class="modal-close-btn" id="closeOnboardModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Concrete Tier 5 Leaf Class:</label>
+                    <select class="form-control" id="onboardLeafClass">
+                        <option value="AutonomousMarineDrone">AutonomousMarineDrone (Tourism)</option>
+                        <option value="SubmersibleActionRig">SubmersibleActionRig (Tourism)</option>
+                        <option value="PrecisionRotaryTiller">PrecisionRotaryTiller (Agriculture - Heavy Agri)</option>
+                        <option value="OpticalSoilSpectrometer">OpticalSoilSpectrometer (Agriculture)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Asset Title:</label>
+                    <input type="text" class="form-control" id="onboardTitle" placeholder="e.g. Miramar Sea-Scanner Pro">
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                    <div class="form-group">
+                        <label>Base Daily Rate ($):</label>
+                        <input type="number" class="form-control" id="onboardRate" value="850">
+                    </div>
+                    <div class="form-group">
+                        <label>Security Deposit ($):</label>
+                        <input type="number" class="form-control" id="onboardCollateral" value="2500">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Target Locker Bay (A1–H8):</label>
+                    <input type="text" class="form-control" id="onboardBay" value="F3" style="text-transform:uppercase;">
+                    <div style="font-size:11px; color:var(--warm-amber-dark); margin-top:4px;">
+                        ⚠️ Note: PrecisionRotaryTiller is heavy machinery and MUST be assigned to Row H (Row 7).
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="confirmOnboardBtn" style="width:100%; justify-content:center; margin-top:8px;">
+                    <span>➕</span> Register in Ledger & Assign Locker Bay
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
