@@ -22,7 +22,7 @@ flowchart LR
         UC7(["Flag Damage & Slash Collateral"])
         UC8(["Onboard New Asset in 8x8 Grid"])
         UC9(["Live RTTI Reflection & Memory Benchmark"])
-        UC10(["NIRF Composite Rank Simulation"])
+        UC10(["RentSphere Trust Score Simulation"])
         UC11(["Append-Only Flat File WAL Audit"])
     end
 
@@ -90,54 +90,61 @@ classDiagram
     }
 
     %% Tier 3
-    class SectoralAsset {
-        #String sector
-        #double seasonalDemandMultiplier
-        #String insuranceTier
-        +getSector() String
-        +getSeasonalMultiplier() double
+    class CategorizedRentalAsset {
+        #String category
+        #String insuranceProtectionTier
+        #int accessoryKitCount
+        +getCategory() String
+        +getProtectionTier() String
     }
 
     %% Tier 4
-    class TourismAsset {
-        #String waterproofIpRating
-        #double saltwaterCorrosionFactor
-        +getIpRating() String
-        +getCorrosionFactor() double
+    class EventAndCreatorAsset {
+        #boolean highWattageOrBattery
+        #String indoorOutdoorRating
+        +isHighWattageOrBattery() boolean
+        +getIndoorOutdoorRating() String
     }
 
-    class AgricultureAsset {
-        #String compatibleSoilType
-        #double powerKwRating
-        #boolean heavyMachineryFlag
-        +isHeavyMachinery() boolean
-        +getPowerKw() double
+    class UtilityAndMobilityAsset {
+        #String powerOrEngineSpec
+        #String safetyCertification
+        #boolean requiresGroundBay
+        +requiresGroundBay() boolean
+        +getPowerOrEngineSpec() String
     }
 
     %% Tier 5 Concrete Leaves
-    class AutonomousMarineDrone {
-        -double maxDepthMeters
-        -boolean sonarEquipped
+    class CameraAndOpticsGear {
+        -double sensorResolutionMp
+        -boolean is4kOr8kCapable
+        -String lensMountType
         +calculateDailyRentalTariff(int days) double
         +calculateRequiredCollateral() double
     }
 
-    class SubmersibleActionRig {
-        -String lensStabilizationTier
-        -boolean 8kRecordingCapable
+    class EventAudioAndLighting {
+        -int soundOutputDecibels
+        -int wirelessMicCount
+        -boolean rgbLightingEnabled
         +calculateDailyRentalTariff(int days) double
+        +calculateRequiredCollateral() double
     }
 
-    class PrecisionRotaryTiller {
-        -int bladeRpm
-        -double workingWidthCm
+    class PowerToolEquipment {
+        -boolean isCordless
+        -int drillBitAccessoryCount
+        -String chuckOrMotorType
         +calculateDailyRentalTariff(int days) double
+        +calculateRequiredCollateral() double
     }
 
-    class OpticalSoilSpectrometer {
-        -int spectralBandsCount
-        -double nitrogenAccuracyPct
+    class EventAndMobilityVehicle {
+        -int seatingCapacity
+        -String fuelOrBatteryType
+        -boolean automaticTransmission
         +calculateDailyRentalTariff(int days) double
+        +calculateRequiredCollateral() double
     }
 
     %% GoF State Pattern
@@ -160,24 +167,26 @@ classDiagram
     class ReservedEscrowState
     class ActiveLeaseState
     class InspectionQuarantineState
+    class DisputedState
 
     %% Inheritance Relationships
     AbstractDomainEntity <|-- RentableAsset
-    RentableAsset <|-- SectoralAsset
-    SectoralAsset <|-- TourismAsset
-    SectoralAsset <|-- AgricultureAsset
+    RentableAsset <|-- CategorizedRentalAsset
+    CategorizedRentalAsset <|-- EventAndCreatorAsset
+    CategorizedRentalAsset <|-- UtilityAndMobilityAsset
 
-    TourismAsset <|-- AutonomousMarineDrone
-    TourismAsset <|-- SubmersibleActionRig
+    EventAndCreatorAsset <|-- CameraAndOpticsGear
+    EventAndCreatorAsset <|-- EventAudioAndLighting
 
-    AgricultureAsset <|-- PrecisionRotaryTiller
-    AgricultureAsset <|-- OpticalSoilSpectrometer
+    UtilityAndMobilityAsset <|-- PowerToolEquipment
+    UtilityAndMobilityAsset <|-- EventAndMobilityVehicle
 
     %% State Pattern Realizations & Association
     LeaseState <|.. AvailableState
     LeaseState <|.. ReservedEscrowState
     LeaseState <|.. ActiveLeaseState
     LeaseState <|.. InspectionQuarantineState
+    LeaseState <|.. DisputedState
     RentableAsset o-- LeaseState : currentState
 ```
 

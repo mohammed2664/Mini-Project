@@ -19,7 +19,24 @@
                 </div>
             </div>
 
+            <!-- Hub Location Switcher Pill (Google Stitch Alignment) -->
+            <div class="hub-location-pill" title="Active Smart Locker Micro-Grid Location">
+                <span class="hub-pin">📍</span>
+                <span class="hub-label">Hub:</span>
+                <select id="hubLocationSelect" class="hub-select" aria-label="Select Smart Locker Hub Location">
+                    <option value="panjim" selected>Panjim Central Hub (Solar)</option>
+                    <option value="margao">Margao Railway Station Bay</option>
+                    <option value="gu">Goa University (GU) Campus</option>
+                    <option value="calangute">Calangute Coastal Pod</option>
+                </select>
+            </div>
+
             <div class="user-selector-bar">
+                <!-- Academic Viva Mode Badge (Google Stitch Variant 3) -->
+                <div class="academic-badge" title="MCA Object-Oriented Technology Viva Lab Evaluation Mode">
+                    <span>🎓</span> Viva Lab v3.4
+                </div>
+
                 <!-- Notifications Bell -->
                 <div class="notif-wrapper">
                     <button class="icon-btn" id="notifBellBtn" title="In-App Notifications">
@@ -45,6 +62,9 @@
                 <!-- Auth / Login Trigger -->
                 <button class="btn-secondary" id="openAuthModalBtn" style="padding:6px 12px; font-size:12px;">
                     <span>👤</span> <span id="authButtonLabel">Sign In / Switch</span>
+                </button>
+                <button class="btn-secondary" id="signOutBtn" style="padding:6px 12px; font-size:12px; display:none;" title="Sign out of current account">
+                    <span>🚪</span> <span>Sign Out</span>
                 </button>
 
                 <div class="active-user-badge">
@@ -78,14 +98,68 @@
             <button class="nav-pill" data-view="escrowView">
                 <span>🛡️</span> Escrow Wallet & Returns
             </button>
-            <button class="nav-pill" data-view="hostView">
+            <button class="nav-pill" id="navHostTab" data-view="hostView">
                 <span>⚡</span> Host Studio & System Diagnostics
             </button>
-            <button class="nav-pill" data-view="adminSupportView">
+            <button class="nav-pill" id="navAdminTab" data-view="adminSupportView">
                 <span>⚖️</span> Admin & Grievance Hub
             </button>
         </nav>
     </header>
+
+    <!-- Sub-Navigation: 5-Stage Renter Journey Progress Timeline (Google Stitch Alignment) -->
+    <div class="journey-subnav-bar" id="renterJourneySubnav">
+        <div class="journey-container">
+            <!-- Stage 1 -->
+            <div class="journey-step active" id="journeyStep1" data-step="1" title="Browse available equipment across Goa Hubs">
+                <div class="step-circle" id="circleStep1">1</div>
+                <div class="step-text">
+                    <span class="step-name">1. Browse Equipment</span>
+                    <span class="step-desc" id="descStep1">Panjim, Margao, GU</span>
+                </div>
+            </div>
+            <div class="step-line" id="lineStep1"></div>
+
+            <!-- Stage 2 -->
+            <div class="journey-step" id="journeyStep2" data-step="2" title="Reserve with 4-Gate Fail-Fast Escrow Lock">
+                <div class="step-circle" id="circleStep2">2</div>
+                <div class="step-text">
+                    <span class="step-name">2. Reserve & Escrow</span>
+                    <span class="step-desc" id="descStep2">4-Gate Solvency Lock</span>
+                </div>
+            </div>
+            <div class="step-line" id="lineStep2"></div>
+
+            <!-- Stage 3 -->
+            <div class="journey-step" id="journeyStep3" data-step="3" title="Keyless Smart Locker Contactless Pickup">
+                <div class="step-circle" id="circleStep3">3</div>
+                <div class="step-text">
+                    <span class="step-name">3. Smart Locker Pickup</span>
+                    <span class="step-desc" id="descStep3">Assigned Bay • 6-Digit OTP</span>
+                </div>
+            </div>
+            <div class="step-line" id="lineStep3"></div>
+
+            <!-- Stage 4 -->
+            <div class="journey-step" id="journeyStep4" data-step="4" title="Equipment active in field">
+                <div class="step-circle" id="circleStep4">4</div>
+                <div class="step-text">
+                    <span class="step-name">4. Active Lease</span>
+                    <span class="step-desc" id="descStep4">In Field Usage</span>
+                </div>
+            </div>
+            <div class="step-line" id="lineStep4"></div>
+
+            <!-- Stage 5 -->
+            <div class="journey-step" id="journeyStep5" data-step="5" title="Mandatory Quarantine, Host Inspection, and Deposit Settlement">
+                <div class="step-circle" id="circleStep5">5</div>
+                <div class="step-text">
+                    <span class="step-name">5. Return & Auto-Refund</span>
+                    <span class="step-desc" id="descStep5">Quarantine & Host Check</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Main App Container -->
     <main class="app-container">
@@ -159,6 +233,9 @@
                 <button class="cat-pill" data-category="MOBILITY_VEHICLES">🚗 Wedding Cars & Mobility</button>
             </div>
 
+            <!-- Renter's Authenticated Active Rentals & Locker Pickups -->
+            <div id="renterActiveBookingsContainer" style="display:none; margin: 18px 0 22px 0;"></div>
+
             <div class="catalog-toolbar">
                 <div class="search-filter-group">
                     <div class="search-box">
@@ -194,74 +271,131 @@
                 <div class="grid-wrapper-card">
                     <div class="matrix-header">
                         <div>
-                            <h2 style="font-family:var(--font-heading); font-size:18px; font-weight:800;">
-                                8x8 Smart Pickup Hub & Parking Matrix (64 Bays)
+                            <h2 style="font-family:var(--font-heading); font-size:18px; font-weight:800; display:flex; align-items:center; gap:8px;">
+                                <span>🗄️</span> 8x8 Smart Pickup Hub & Parking Matrix (64 Bays)
                             </h2>
-                            <p style="font-size:12px; color:var(--slate-500);">
-                                Rows A–C: Small Gear Lockers • Rows D–G: Medium/Large Lockers • <strong>Row H: Ground Vehicle Slots H1–H8</strong>
+                            <p style="font-size:12px; color:var(--slate-500); margin-top:2px;">
+                                Rows A–C: Small Gear Lockers • Rows D–E: Medium Lockers • Rows F–G: Large Lockers • <strong>Row H: Ground Vehicle Slots H1–H8</strong>
                             </p>
                         </div>
-                        <div style="display:flex; gap:8px;">
-                            <span class="sim-badge" title="High-Fidelity Solenoid & Sensor Simulation">SIMULATED DEVICE ENGINE</span>
-                            <button class="btn-secondary" id="refreshGridBtn">🔄 Refresh Hub Sensors</button>
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <span class="sim-badge" title="Pure Java SE in-memory solenoid simulation engine">⚡ SIMULATED SOLENOID ENGINE</span>
+                            <span class="telemetry-badge" title="Virtual sensor telemetry from SimulatedLockerDevice">📡 SIMULATED SENSORS</span>
+                            <button class="btn-secondary" id="refreshGridBtn" style="padding:6px 12px; font-size:12px;">🔄 Refresh Sensors</button>
                         </div>
                     </div>
 
                     <div class="matrix-legend">
                         <div class="legend-item"><div class="legend-dot dot-ready"></div> Ready / Available</div>
-                        <div class="legend-item"><div class="legend-dot dot-reserved"></div> Reserved (Escrow)</div>
+                        <div class="legend-item"><div class="legend-dot dot-reserved"></div> Reserved (Escrow Locked)</div>
                         <div class="legend-item"><div class="legend-dot dot-active"></div> Out with Renter</div>
                         <div class="legend-item"><div class="legend-dot dot-quarantine"></div> Inspection Quarantine</div>
+                        <div class="legend-item"><div class="legend-dot dot-disputed"></div> In Dispute</div>
                         <div class="legend-item"><div class="legend-dot dot-ground"></div> Row H: Ground Vehicle Bay</div>
                     </div>
 
-                    <div class="grid-8x8" id="grid8x8Container">
-                        <!-- 64 Bay Cells Rendered Dynamically by app.js -->
+                    <div class="grid-8x8-wrapper">
+                        <!-- Column coordinate header 1 to 8 -->
+                        <div class="matrix-col-headers">
+                            <span class="matrix-col-header">Bay Col 1</span>
+                            <span class="matrix-col-header">Col 2</span>
+                            <span class="matrix-col-header">Col 3</span>
+                            <span class="matrix-col-header">Col 4</span>
+                            <span class="matrix-col-header">Col 5</span>
+                            <span class="matrix-col-header">Col 6</span>
+                            <span class="matrix-col-header">Col 7</span>
+                            <span class="matrix-col-header">Col 8</span>
+                        </div>
+                        <div class="grid-8x8" id="grid8x8Container" role="grid" aria-label="8 by 8 Smart Locker Grid with 64 physical compartments">
+                            <!-- 64 Bay Cells Rendered Dynamically by app.js -->
+                        </div>
                     </div>
                 </div>
 
                 <!-- Compartment Inspector Side Deck -->
                 <div class="inspector-card" id="compartmentInspector">
                     <div class="inspector-header">
-                        <div style="font-size:11px; text-transform:uppercase; color:var(--slate-400); font-weight:700;">Compartment & Slot Inspector</div>
-                        <h3 class="inspector-title" id="inspectorBayId">Bay A2</h3>
-                        <div id="inspectorSizeTier" class="tier-badge tier-cameras" style="margin-top:6px;">SMALL LOCKER</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="font-size:11px; text-transform:uppercase; color:var(--slate-400); font-weight:700;">Compartment & Slot Inspector</div>
+                            <span id="inspectorDeviceStateTag" class="state-pill state-available" style="font-size:10px;">ONLINE_READY</span>
+                        </div>
+                        <h3 class="inspector-title" id="inspectorBayId" style="margin-top:4px;">Bay A2</h3>
+                        <div id="inspectorSizeTier" class="tier-badge tier-cameras" style="margin-top:6px;">SMALL LOCKER (ROWS A–C)</div>
                     </div>
 
                     <div class="telemetry-dials">
                         <div class="dial-box">
-                            <div class="dial-label">Temp</div>
+                            <div class="dial-label">Temp (Simulated)</div>
                             <div class="dial-val"><span id="telTemp">24.2</span>°C</div>
                         </div>
                         <div class="dial-box">
-                            <div class="dial-label">Humidity</div>
+                            <div class="dial-label">Humidity (Sim.)</div>
                             <div class="dial-val"><span id="telHum">52.0</span>%</div>
                         </div>
                         <div class="dial-box">
-                            <div class="dial-label">Load</div>
+                            <div class="dial-label">Load Cell (Sim.)</div>
                             <div class="dial-val"><span id="telWeight">2.4</span>kg</div>
                         </div>
+                    </div>
+                    <div style="font-size:10px; color:var(--slate-400); text-align:center; margin:-12px 0 16px 0;">
+                        Virtual DHT22 & load cell telemetry • Refreshes every 8s
                     </div>
 
                     <div style="margin-bottom:16px;">
                         <label style="font-size:11px; color:var(--slate-500); font-weight:700; text-transform:uppercase;">Assigned Equipment</label>
                         <div id="inspectorAssetTitle" style="font-weight:700; font-size:14px; margin-top:2px;">Sony Alpha A7 IV Mirrorless Camera</div>
-                        <div id="inspectorAssetId" style="font-size:11px; font-family:monospace; color:var(--slate-400);">AST-101</div>
+                        <div id="inspectorAssetId" style="font-size:11px; font-family:monospace; color:var(--slate-400);">AST-101 • CameraAndOpticsGear</div>
+                        <div id="inspectorAssetOwner" style="font-size:11px; color:var(--slate-600); margin-top:2px;">Host: host_faaris</div>
                     </div>
 
-                    <div class="otp-box">
-                        <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--warm-amber-dark);">6-Digit Pickup OTP Passcode</div>
+                    <div class="otp-box" id="inspectorOtpBox">
+                        <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--warm-amber-dark);" id="inspectorOtpTitle">6-Digit Pickup OTP Passcode</div>
                         <div class="otp-val" id="inspectorOtp">348192</div>
-                        <div style="font-size:10px; color:var(--slate-500); margin-top:4px;">Protected by 3-attempt brute-force lockout (CWE-307)</div>
+                        <div style="font-size:10px; color:var(--slate-500); margin-top:4px;" id="inspectorOtpNotice">Protected by 3-attempt brute-force lockout (CWE-307)</div>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:10px; margin-top:auto;">
+                    <div id="inspectorLockoutAlert" style="display:none; margin-bottom:16px; padding:10px 12px; background:var(--crimson-light); border:1px solid rgba(239,68,68,0.3); border-radius:var(--radius-sm); font-size:11px; color:var(--crimson); font-weight:600;">
+                        ⚠️ Brute-force lockout active. Bay locked for 15 minutes (CWE-307 Defense).
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:10px;">
                         <button class="btn-primary" id="pickupFromLockerBtn" style="justify-content:center;">
                             <span>🔓</span> Verify OTP & Unlock Pickup
                         </button>
                         <button class="btn-danger" id="returnToQuarantineBtn" style="justify-content:center;">
                             <span>📦</span> Return Gear to Hub Bay
                         </button>
+                    </div>
+
+                    <!-- Admin Hardware Diagnostic & Solenoid Override (Simulated) -->
+                    <div class="inspector-admin-deck" id="inspectorAdminDeck" style="display:none; margin-top:16px; padding:14px; background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-md);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <h4 style="font-family:var(--font-heading); font-size:12px; font-weight:800; text-transform:uppercase; color:var(--slate-700); margin:0; display:flex; align-items:center; gap:5px;">
+                                <span>⚙️</span> Solenoid Override (Simulated)
+                            </h4>
+                            <span class="role-tag role-admin" style="font-size:9px;">ADMIN ONLY</span>
+                        </div>
+                        <p style="font-size:10px; color:var(--slate-500); margin:0 0 10px 0;">
+                            Lab simulation mode: Dispatches simulated door solenoid states to <code style="color:var(--brand-teal);">POST /api/admin/device/state</code>. No physical hardware is connected.
+                        </p>
+                        <div class="form-group" style="margin-bottom:8px;">
+                            <label style="font-size:11px; font-weight:700;">Simulated Solenoid State for <strong id="adminTargetBayLabel">Bay A2</strong>:</label>
+                            <select class="form-control" id="inspectorDeviceStateSelect" style="font-size:12px; padding:6px 10px; margin-top:3px;">
+                                <option value="ONLINE_READY">ONLINE_READY (Normal Operation)</option>
+                                <option value="DOOR_UNLOCKED">DOOR_UNLOCKED (Simulate Solenoid Disengage)</option>
+                                <option value="DOOR_JAMMED">DOOR_JAMMED (Simulate Jammed Solenoid Alert)</option>
+                                <option value="MAINTENANCE_MODE">MAINTENANCE_MODE (Simulate Out-of-Service)</option>
+                                <option value="OFFLINE">OFFLINE (Simulate Bus Disconnect)</option>
+                            </select>
+                        </div>
+                        <button class="btn-secondary" id="inspectorApplyStateBtn" style="width:100%; justify-content:center; font-size:11px; font-weight:700;">
+                            <span>⚡</span> Apply Simulated Solenoid State
+                        </button>
+                        <div id="adminDiagFeedback" style="display:none; margin-top:8px; font-size:11px; padding:6px 8px; border-radius:4px; font-weight:600;"></div>
+                    </div>
+
+                    <div class="inspector-admin-locked" id="inspectorAdminLocked" style="display:none; margin-top:16px; padding:10px 12px; background:var(--slate-50); border:1px dashed var(--slate-200); border-radius:var(--radius-md); font-size:11px; color:var(--slate-500); text-align:center;">
+                        <span>🔒</span> Hardware diagnostics reserved for Administrator persona.
                     </div>
                 </div>
             </div>
@@ -660,13 +794,19 @@
                 <div class="form-group">
                     <label style="font-size:12px; font-weight:700;">Payment & Authorization Method:</label>
                     <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
-                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-                            <input type="radio" name="paymentOption" value="wallet" checked>
-                            <span>Direct Escrow Wallet Lock (Instant Demo Balance)</span>
+                        <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer;">
+                            <input type="radio" name="paymentOption" value="wallet" checked style="margin-top:3px;">
+                            <div>
+                                <strong>Direct Escrow Wallet Lock</strong> (Pre-funded Account Balance)
+                                <div style="font-size:11px; color:var(--slate-500);">Locks rental tariff + collateral directly from your verified escrow wallet.</div>
+                            </div>
                         </label>
-                        <label style="display:flex; align-items:center; gap:8px; font-size:13px; cursor:pointer;">
-                            <input type="radio" name="paymentOption" value="gateway">
-                            <span>Indian Payment Gateway Sandbox (Simulated Razorpay / Cashfree UPI in ₹)</span>
+                        <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer; margin-top:4px;">
+                            <input type="radio" name="paymentOption" value="gateway" style="margin-top:3px;">
+                            <div>
+                                <strong>Indian Payment Gateway Simulation</strong> (Razorpay/UPI Sandbox Ledger)
+                                <div style="font-size:11px; color:var(--slate-500);">Simulates gateway HMAC signature. (Requires verified wallet balance to lock escrow).</div>
+                            </div>
                         </label>
                     </div>
                 </div>

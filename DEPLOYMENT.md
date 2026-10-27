@@ -41,11 +41,11 @@ javac -d bin -sourcepath "backend/src:tests" @sources.txt
 ```
 
 ### Step 3: Run the Automated Verification Suite
-Verify all 76 unit, integration, and security tests before launching the server:
+Verify all 105 unit, integration, and security tests before launching the server:
 ```bash
 java -cp bin tests.RentSphereVerificationTest
 ```
-*Expected Output:* `VERIFICATION SUMMARY: 76 / 76 TESTS PASSED (100% SUCCESS)`.
+*Expected Output:* `VERIFICATION SUMMARY: 105 / 105 TESTS PASSED (100% SUCCESS)`.
 
 ### Step 4: Launch the RentSphere Application Server
 ```bash

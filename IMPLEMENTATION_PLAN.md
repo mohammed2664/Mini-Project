@@ -56,14 +56,14 @@ c:\Users\user\OneDrive\Desktop\MCA\OOT-MINIPROJECT\
 │       └── rentsphere/
 │           ├── model/                              <- [Assignment 2] 5-Tier Inheritance Hierarchy
 │           │   ├── AbstractDomainEntity.java       <- Tier 1: Base domain entity with UUID & timestamps
-│           │   ├── RentableAsset.java              <- Tier 2: State context, base rates, cloneable hooks
-│           │   ├── SectoralAsset.java              <- Tier 3: Industry sector, seasonal demand multiplier
-│           │   ├── TourismAsset.java               <- Tier 4: Waterproof IP rating, corrosion factor
-│           │   ├── AgricultureAsset.java           <- Tier 4: Soil type compatibility, power kW rating
-│           │   ├── AutonomousMarineDrone.java      <- Tier 5: Underwater drone leaf class
-│           │   ├── SubmersibleActionRig.java       <- Tier 5: Marine action camera rig leaf class
-│           │   ├── PrecisionRotaryTiller.java      <- Tier 5: Heavy agricultural machinery leaf class
-│           │   └── OpticalSoilSpectrometer.java    <- Tier 5: Precision soil scanner leaf class
+│           │   ├── RentableAsset.java              <- Tier 2: State context, base rates, duration, cloneable
+│           │   ├── CategorizedRentalAsset.java     <- Tier 3: Category classification, protection tier
+│           │   ├── EventAndCreatorAsset.java       <- Tier 4: Wattage/battery, indoor/outdoor rating
+│           │   ├── UtilityAndMobilityAsset.java    <- Tier 4: Power/engine spec, safety cert, ground bay flag
+│           │   ├── CameraAndOpticsGear.java        <- Tier 5: 4K/8K cameras, high-res sensor rates (CAMERAS)
+│           │   ├── EventAudioAndLighting.java      <- Tier 5: Club audio dB, wireless mics (AUDIO_LIGHTING)
+│           │   ├── PowerToolEquipment.java         <- Tier 5: Cordless impact drills & bits (POWER_TOOLS)
+│           │   └── EventAndMobilityVehicle.java    <- Tier 5: Campus cars & electric mobility (MOBILITY_VEHICLES)
 │           │
 │           ├── state/                              <- [Assignment 2] 4-Stage GoF State Pattern
 │           │   ├── LeaseState.java                 <- Interface defining transition contracts
@@ -291,7 +291,44 @@ The web frontend (`frontend/index.html`, `frontend/css/styles.css`, `frontend/js
 
 ---
 
-## 7. Approval Gate
+## 7. Approval & Implementation History
+- **Initial Proposal**: Accepted October 25, 2026.
+- **Milestone 1**: 42 Unit Tests covering Core OOT Subsystems.
+- **Milestone 2**: 76 Tests covering Security, Payment Gateway Sandbox & 20 Policies.
+- **Milestone 3**: 91 Tests covering Notification persistence & IT Rules 2021 SLA.
+- **Milestone 4 (Final)**: 105 Tests covering Multi-Day Escrow Math Invariant (F-01), Strict Admin RBAC (F-02, F-03), and Atomic Staging (F-07).
 
-> [!IMPORTANT]
-> This Implementation Plan is finalized and submitted for user review. Once approved (or upon receiving "Proceed"), execution of Phase 3 will begin sequentially starting with directory tree creation and seed flat files.
+---
+
+## 8. Prioritized Post-Handover Engineering Roadmap
+
+The remaining work across future pilot and production deployment phases is categorized by priority:
+
+### P0 — Critical Blockers & Correctness Risks (STATUS: 0 REMAINING — 100% RESOLVED)
+- [x] **F-01: Multi-Day Escrow Math Invariant**: Resolved. `rentalDays` stored, serialized, and charged upon return approval. Verified by TEST 15.
+- [x] **F-02: Admin Endpoint RBAC Enforcement**: Resolved. Strict check `caller == null || !isUserAdmin(caller)` enforced. Verified live.
+- [x] **F-03: Locker Solenoid Hardware Override Authorization**: Resolved. Enforced admin check on `/api/admin/device/state`.
+- [x] **F-05: Smart Locker Matrix Collision Prevention**: Resolved. Bay occupancy validated prior to onboarding or cloning.
+- [x] **F-07: Atomic Persistence File Staging**: Resolved. Implemented `.tmp` staging and `Files.move(ATOMIC_MOVE)`.
+
+### P1 — Required for Reliable Evaluation & Viva Defense
+- [x] **Automated Test Suite Execution**: 105 / 105 tests passing cleanly across 15 test suites.
+- [x] **Clean Zero-Warning JDK Compilation**: All 50 backend Java source files compile cleanly with standard `javac`.
+- [x] **Standalone Desktop GUI Backup**: `SwingLockerConsole` operational for offline visual demonstration.
+- [x] **Team Handover Documentation**: `TEAM_HANDOVER.md` authored with exact commands, personas, and architectural walkthrough.
+
+### P2 — Important Pilot Improvements
+- [ ] **Server-Side Payment-to-Reservation Atomic Saga**:
+  - *Context*: Currently the frontend calls `/api/payments/verify` and then calls `/api/assets/reserve`.
+  - *Goal*: Auto-execute `executeReservation()` within payment verification handler on the server.
+  - *Suggested Ownership*: Backend Engineer (Faaris / Ketan).
+- [ ] **24-Hour Quarantine Auto-Approval Timer**:
+  - *Context*: If a host fails to review returned gear within 24 hours, automatically release deposit to renter.
+  - *Goal*: Background daemon in `MainServer` checking quarantine timestamps.
+  - *Suggested Ownership*: Core Engine (Faaris).
+
+### P3 — Optional Commercial Enhancements
+- [ ] **Physical IoT Hardware Interfacing**: Connect ESP32 / Raspberry Pi relay boards via MQTT client to control physical 12V lock solenoids.
+- [ ] **Live Banking Gateway Integration**: Swap `SandboxPaymentAdapter` with live Razorpay / Cashfree production API credentials.
+- [ ] **Android / iOS Hybrid App**: Package `frontend/` directory into a mobile APK using Capacitor.
+

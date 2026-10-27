@@ -24,7 +24,12 @@ import rentsphere.policy.*;
 import rentsphere.support.*;
 
 import java.io.File;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
+import rentsphere.api.MainServer;
 
 /**
  * RentSphere Automated Verification Test Suite.
@@ -74,6 +79,7 @@ public class RentSphereVerificationTest {
         testSupportTicketLifecycle();
         testNotificationServiceAndPersistence();
         testSecurityRemediationAndMultiDayEscrow();
+        testEndpointAuthorizationAndImpersonationGuards();
 
         System.out.println("\n=================================================================");
         System.out.printf("  VERIFICATION SUMMARY: %d / %d TESTS PASSED (100%% SUCCESS)%n", testsPassed, testsTotal);
@@ -343,7 +349,11 @@ public class RentSphereVerificationTest {
         assertTrue(PasswordHasher.verifyPassword(password, salt, hash), "PBKDF2 constant-time verification successfully validated correct password");
         assertTrue(!PasswordHasher.verifyPassword("WrongPassword", salt, hash), "PBKDF2 rejected invalid password attempt");
 
-        AuthService authService = new AuthService("data");
+        File testAuthDir = new File("data/test_auth");
+        testAuthDir.mkdirs();
+        File testAuthFile = new File(testAuthDir, "users_auth.txt");
+        if (testAuthFile.exists()) testAuthFile.delete();
+        AuthService authService = new AuthService(testAuthDir.getPath());
         String testEmail = "test_pilot_" + System.currentTimeMillis() + "@unigoa.ac.in";
         UserAccount newUser = authService.registerUser(testEmail, "CampusStudent#2026", "Ananya Naik", "RENTER", "+91 98221 11223");
         assertTrue(newUser != null && "RENTER".equals(newUser.getRole()), "User registration generated valid RENTER account entity");
@@ -370,7 +380,11 @@ public class RentSphereVerificationTest {
     private static void testPaymentGatewaySandbox() {
         System.out.println("\n--- [TEST 9] Indian Payment Gateway Sandbox (₹ INR) & HMAC ---");
 
-        SandboxPaymentAdapter gateway = new SandboxPaymentAdapter("data");
+        File testPayDir = new File("data/test_payments");
+        testPayDir.mkdirs();
+        File testPayFile = new File(testPayDir, "payments_ledger.txt");
+        if (testPayFile.exists()) testPayFile.delete();
+        SandboxPaymentAdapter gateway = new SandboxPaymentAdapter(testPayDir.getPath());
         PaymentOrder order = gateway.createOrder("BKG-9901", "AST-101", "renter_deepak", "host_faaris", 1500.0, 5000.0);
 
         assertTrue(order != null && order.getOrderId().startsWith("order_inr_"), "Gateway generated valid Indian payment order (₹ INR)");
@@ -448,7 +462,11 @@ public class RentSphereVerificationTest {
         assertTrue(reserveBlocked, "New reservation strictly blocked while asset is frozen in DISPUTED state");
 
         // File dispute record
-        DisputeService disputeService = new DisputeService("data");
+        File testDispDir = new File("data/test_disputes");
+        testDispDir.mkdirs();
+        File testDispFile = new File(testDispDir, "disputes_ledger.txt");
+        if (testDispFile.exists()) testDispFile.delete();
+        DisputeService disputeService = new DisputeService(testDispDir.getPath());
         DisputeRecord dispute = disputeService.fileDispute(asset.getId(), "renter_deepak", "host_faaris", 4000.0, 800.0,
                 "Lens cap had pre-existing dust; optics glass completely pristine", "Return photo timestamp 16:30 shows zero scratches");
         assertTrue(dispute != null && "OPEN".equals(dispute.getStatus()), "Dispute record created with held collateral frozen");
@@ -469,7 +487,11 @@ public class RentSphereVerificationTest {
     private static void testPolicyServiceAndConsentTracking() {
         System.out.println("\n--- [TEST 12] 20 Indian Legal Policies & Versioned Consent ---");
 
-        PolicyService policyService = new PolicyService("data");
+        File testPolicyDir = new File("data/test_policies");
+        testPolicyDir.mkdirs();
+        File testPolicyFile = new File(testPolicyDir, "policy_acceptance.txt");
+        if (testPolicyFile.exists()) testPolicyFile.delete();
+        PolicyService policyService = new PolicyService(testPolicyDir.getPath());
         List<PolicyService.PolicyDocument> policies = policyService.getAllPolicies();
         assertTrue(policies.size() == 20, "PolicyService manages exactly 20 distinct Indian regulatory policy documents");
 
@@ -493,7 +515,11 @@ public class RentSphereVerificationTest {
     private static void testSupportTicketLifecycle() {
         System.out.println("\n--- [TEST 13] Support Ticket Lifecycle & IT Rules 2021 SLA ---");
 
-        SupportService support = new SupportService("data");
+        File testSuppDir = new File("data/test_support");
+        testSuppDir.mkdirs();
+        File testSuppFile = new File(testSuppDir, "support_tickets.txt");
+        if (testSuppFile.exists()) testSuppFile.delete();
+        SupportService support = new SupportService(testSuppDir.getPath());
 
         // 1. Create a ticket and verify it gets a non-null ticketId
         String testUserId = "renter_test_support_audit";
@@ -637,6 +663,117 @@ public class RentSphereVerificationTest {
         atomicEngine.loadAssets(reloadedRepo);
         RentableAsset loadedGear = reloadedRepo.findById(gear.getId()).orElse(null);
         assertTrue(loadedGear != null && loadedGear.getRentalDays() == 5, "Multi-day rental duration (5 days) accurately restored from flat-file persistence (F-01/F-07)");
+    }
+
+    // ========================================================================
+    // TEST 16: ENDPOINT AUTHORIZATION & IMPERSONATION GUARDS (OWASP A01)
+    // ========================================================================
+    private static void testEndpointAuthorizationAndImpersonationGuards() {
+        System.out.println("\n--- [TEST 16] Endpoint Authorization & Impersonation Guards (OWASP A01) ---");
+
+        int testPort = 8089;
+        MainServer server = new MainServer(testPort, "data", "frontend");
+        try {
+            server.start();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to launch MainServer on test port " + testPort, e);
+        }
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            String baseUrl = "http://localhost:" + testPort;
+
+            // 1. Unauthenticated inspection approval must be rejected with 401 Unauthorized
+            HttpRequest unauthApprove = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/inspect-approve"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-108\",\"hostId\":\"host_ketan\"}"))
+                    .build();
+            HttpResponse<String> res1 = client.send(unauthApprove, HttpResponse.BodyHandlers.ofString());
+            assertTrue(res1.statusCode() == 401, "Unauthenticated inspection approval strictly rejected with HTTP 401 Unauthorized");
+
+            // 2. Unauthenticated deposit slashing must be rejected with 401 Unauthorized
+            HttpRequest unauthSlash = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/inspect-slash"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-108\",\"hostId\":\"host_ketan\",\"damagePercentage\":\"20.0\"}"))
+                    .build();
+            HttpResponse<String> res2 = client.send(unauthSlash, HttpResponse.BodyHandlers.ofString());
+            assertTrue(res2.statusCode() == 401, "Unauthenticated deposit slashing strictly rejected with HTTP 401 Unauthorized");
+
+            // 3. Authenticate non-owner/non-admin user (renter_deepak) to test horizontal privilege escalation
+            HttpRequest loginDeepak = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"deepak@rentsphere.in\",\"password\":\"RentSphere@2026\"}"))
+                    .build();
+            HttpResponse<String> loginRes = client.send(loginDeepak, HttpResponse.BodyHandlers.ofString());
+            String tokenDeepak = extractTokenFromJson(loginRes.body());
+            assertTrue(tokenDeepak != null && !tokenDeepak.isBlank(), "Obtained valid session token for renter_deepak");
+
+            // Unauthorized inspection: renter_deepak attempting to approve asset AST-108 (owned by host_ketan)
+            HttpRequest unauthorizedApprove = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/inspect-approve"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + tokenDeepak)
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-108\",\"hostId\":\"host_ketan\"}"))
+                    .build();
+            HttpResponse<String> res3 = client.send(unauthorizedApprove, HttpResponse.BodyHandlers.ofString());
+            assertTrue(res3.statusCode() == 403, "Non-owner/non-admin blocked from approving inspection (HTTP 403 Forbidden)");
+
+            // 4. Unauthenticated reservation must be rejected with 401 Unauthorized
+            HttpRequest unauthReserve = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/reserve"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-101\",\"renterId\":\"renter_deepak\",\"rentalDays\":1}"))
+                    .build();
+            HttpResponse<String> res4 = client.send(unauthReserve, HttpResponse.BodyHandlers.ofString());
+            assertTrue(res4.statusCode() == 401, "Unauthenticated asset reservation strictly rejected with HTTP 401 Unauthorized");
+
+            // 5. Impersonated reservation: authenticated renter_deepak attempting to book as renter_nikhil
+            HttpRequest impersonatedReserve = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/reserve"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + tokenDeepak)
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-101\",\"renterId\":\"renter_nikhil\",\"rentalDays\":1}"))
+                    .build();
+            HttpResponse<String> res5 = client.send(impersonatedReserve, HttpResponse.BodyHandlers.ofString());
+            assertTrue(res5.statusCode() == 403, "Impersonated reservation (booking on behalf of another user) blocked (HTTP 403 Forbidden)");
+
+            // 6. Unauthenticated pickup must be rejected with 401 Unauthorized
+            HttpRequest unauthPickup = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/pickup"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-104\",\"otpPin\":\"000000\"}"))
+                    .build();
+            HttpResponse<String> res6 = client.send(unauthPickup, HttpResponse.BodyHandlers.ofString());
+            assertTrue(res6.statusCode() == 401, "Unauthenticated equipment pickup strictly rejected with HTTP 401 Unauthorized");
+
+            // 7. Unauthorized pickup: renter_deepak attempting to pick up AST-104 (reserved by renter_nikhil)
+            HttpRequest unauthorizedPickup = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/pickup"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + tokenDeepak)
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-104\",\"otpPin\":\"000000\"}"))
+                    .build();
+            HttpResponse<String> res7 = client.send(unauthorizedPickup, HttpResponse.BodyHandlers.ofString());
+            assertTrue(res7.statusCode() == 403, "Unauthorized equipment pickup (picking up another user's reservation) blocked (HTTP 403 Forbidden)");
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error executing endpoint authorization security tests", e);
+        } finally {
+            server.stop();
+        }
+    }
+
+    private static String extractTokenFromJson(String json) {
+        if (json == null) return null;
+        int idx = json.indexOf("\"token\":\"");
+        if (idx == -1) return null;
+        int start = idx + 9;
+        int end = json.indexOf("\"", start);
+        if (end == -1) return null;
+        return json.substring(start, end);
     }
 }
 

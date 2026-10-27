@@ -12,7 +12,7 @@
 
 RentSphere has completed a comprehensive threat-oriented application security audit and remediation cycle. This review evaluates the peer-to-peer equipment rental marketplace and smart pickup locker engine against the **OWASP Top 10 (2021)**, the **OWASP API Security Top 10**, and relevant **Common Weakness Enumerations (CWE)**.
 
-All identified critical and high-severity vulnerabilities—notably **CWE-200 (OTP Credential Leakage)**, **CWE-307 (Improper Restriction of Excessive Authentication Attempts)**, and **CWE-256 (Plaintext Password Storage)**—have been remediated and verified through 76 automated tests and interactive browser sessions.
+All identified critical and high-severity vulnerabilities—notably **CWE-200 (OTP Credential Leakage)**, **CWE-307 (Improper Restriction of Excessive Authentication Attempts)**, and **CWE-256 (Plaintext Password Storage)**—have been remediated and verified through 105 automated tests across 15 test suites and interactive browser sessions.
 
 ---
 

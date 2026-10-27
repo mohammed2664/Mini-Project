@@ -277,6 +277,12 @@ public class MainServer {
             return;
         }
 
+        UserAccount caller = resolveUser(exchange);
+        if (caller == null) {
+            sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Authentication required to reserve assets.\"}");
+            return;
+        }
+
         Map<String, String> body = parseJsonBody(exchange);
         String assetId = body.get("assetId");
         String renterId = body.get("renterId");
@@ -286,10 +292,12 @@ public class MainServer {
             sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Rental duration must be between 1 and 90 days.\"}");
             return;
         }
-        if (renterId == null || renterId.isBlank()) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Renter ID is required.\"}");
+
+        if (renterId != null && !renterId.isBlank() && !renterId.equalsIgnoreCase(caller.getUserId()) && !isUserAdmin(caller)) {
+            sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Cannot reserve assets on behalf of another user.\"}");
             return;
         }
+        String effectiveRenterId = (isUserAdmin(caller) && renterId != null && !renterId.isBlank()) ? renterId : caller.getUserId();
 
         Optional<RentableAsset> optAsset = assetRepo.findById(assetId);
         if (optAsset.isEmpty()) {
@@ -298,25 +306,25 @@ public class MainServer {
         }
 
         RentableAsset asset = optAsset.get();
-        EscrowAccount renter = escrowVault.getAccount(renterId);
+        EscrowAccount renter = escrowVault.getAccount(effectiveRenterId);
         double balance = (renter != null) ? renter.getWalletBalance() : 0.0;
         boolean kyc = (renter != null) && renter.isKycVerified();
 
         // Check if renter accepted essential policies
-        if (!policyService.hasAcceptedAllEssential(renterId)) {
+        if (!policyService.hasAcceptedAllEssential(effectiveRenterId)) {
             // Auto-grant essential policies in demo mode if not explicitly accepted
-            policyService.recordAcceptance(renterId, List.of("tos", "privacy", "rental_agreement", "cancellation", "deposit_payment"));
+            policyService.recordAcceptance(effectiveRenterId, List.of("tos", "privacy", "rental_agreement", "cancellation", "deposit_payment"));
         }
 
         // EXECUTE 4-GATE FAIL-FAST PIPELINE
         PipelineContext ctx = new PipelineContext(
-                asset, renterId, "RESERVE", balance, kyc, asset.getLockerCoordinate(), days, 0.0
+                asset, effectiveRenterId, "RESERVE", balance, kyc, asset.getLockerCoordinate(), days, 0.0
         );
 
         GateResult verdict = pipeline.verify(ctx);
         if (!verdict.isPassed()) {
             persistenceEngine.appendWal(assetId, "RESERVE_BLOCKED", asset.getCurrentState().getStateName(),
-                    asset.getCurrentState().getStateName(), renterId, 
+                    asset.getCurrentState().getStateName(), effectiveRenterId, 
                     "Blocked at Gate " + verdict.getGateIndex() + " (" + verdict.getGateName() + "): " + verdict.getDiagnostic());
 
             String err = String.format("{\"success\":false,\"gateIndex\":%d,\"gateName\":\"%s\",\"message\":\"%s\"}",
@@ -328,14 +336,14 @@ public class MainServer {
         double tariff = asset.calculateDailyRentalTariff(days);
         double collateral = asset.calculateRequiredCollateral();
 
-        boolean locked = escrowVault.lockEscrow(renterId, asset.getOwnerId(), assetId, tariff, collateral);
+        boolean locked = escrowVault.lockEscrow(effectiveRenterId, asset.getOwnerId(), assetId, tariff, collateral);
         if (!locked) {
             sendJsonResponse(exchange, 500, "{\"error\":\"Escrow lock failed unexpectedly.\"}");
             return;
         }
 
         String prevState = asset.getCurrentState().getStateName();
-        asset.getCurrentState().reserve(asset, renterId);
+        asset.getCurrentState().reserve(asset, effectiveRenterId);
         asset.setRentalDays(days);
 
         LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
@@ -345,19 +353,19 @@ public class MainServer {
             otp = comp.generateNewOtp();
         }
 
-        asset.addServiceLog("Reserved for " + days + " days by " + renterId + " (Escrow: ₹" + (tariff + collateral) + ")");
+        asset.addServiceLog("Reserved for " + days + " days by " + effectiveRenterId + " (Escrow: ₹" + (tariff + collateral) + ")");
 
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.saveEscrow(escrowVault);
-        persistenceEngine.appendWal(assetId, "RESERVE", prevState, asset.getCurrentState().getStateName(), renterId,
+        persistenceEngine.appendWal(assetId, "RESERVE", prevState, asset.getCurrentState().getStateName(), effectiveRenterId,
                 String.format("Escrow locked ₹%.2f. OTP generated for bay %s", (tariff + collateral), asset.getLockerCoordinate()));
 
-        notificationService.pushNotification(renterId, "Booking Confirmed",
+        notificationService.pushNotification(effectiveRenterId, "Booking Confirmed",
                 "Your reservation for " + asset.getTitle() + " is ready. Pickup OTP sent to your secure dashboard.", "SUCCESS");
 
         notificationService.pushNotification(asset.getOwnerId(), "Equipment Booked",
-                "Your asset " + asset.getTitle() + " has been booked by " + renterId + " for " + days + " day(s).", "INFO");
+                "Your asset " + asset.getTitle() + " has been booked by " + effectiveRenterId + " for " + days + " day(s).", "INFO");
 
         String res = String.format(Locale.US,
                 "{\"success\":true,\"state\":\"%s\",\"assetId\":\"%s\",\"otpPin\":\"%s\",\"lockerBay\":\"%s\"," +
@@ -374,6 +382,12 @@ public class MainServer {
             return;
         }
 
+        UserAccount caller = resolveUser(exchange);
+        if (caller == null) {
+            sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Authentication required to pick up assets.\"}");
+            return;
+        }
+
         Map<String, String> body = parseJsonBody(exchange);
         String assetId = body.get("assetId");
         String otp = body.get("otpPin");
@@ -387,6 +401,11 @@ public class MainServer {
         RentableAsset asset = optAsset.get();
         if (!asset.getCurrentState().canPickup()) {
             sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Asset is not in a reserved pickup state.\"}");
+            return;
+        }
+
+        if (!isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getRenterId())) {
+            sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the reserving renter or administrator can pick up this asset.\"}");
             return;
         }
 
@@ -484,6 +503,12 @@ public class MainServer {
             return;
         }
 
+        UserAccount caller = resolveUser(exchange);
+        if (caller == null) {
+            sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Authentication required to inspect assets.\"}");
+            return;
+        }
+
         Map<String, String> body = parseJsonBody(exchange);
         String assetId = body.get("assetId");
         String hostId = body.get("hostId");
@@ -495,8 +520,7 @@ public class MainServer {
         }
 
         RentableAsset asset = optAsset.get();
-        UserAccount caller = resolveUser(exchange);
-        if (caller != null && !isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getOwnerId())) {
+        if (!isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getOwnerId())) {
             sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the asset owner or administrator can inspect this asset.\"}");
             return;
         }
@@ -522,12 +546,13 @@ public class MainServer {
             comp.setStatus("ONLINE_READY");
         }
 
-        asset.addServiceLog("Clean Inspection Approved by " + hostId + ". 100% deposit refunded. Restored to AVAILABLE.");
+        String actingHostId = (hostId != null && !hostId.isBlank() && isUserAdmin(caller)) ? hostId : caller.getUserId();
+        asset.addServiceLog("Clean Inspection Approved by " + actingHostId + ". 100% deposit refunded. Restored to AVAILABLE.");
 
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.saveEscrow(escrowVault);
-        persistenceEngine.appendWal(assetId, "INSPECT_APPROVE", prevState, asset.getCurrentState().getStateName(), hostId,
+        persistenceEngine.appendWal(assetId, "INSPECT_APPROVE", prevState, asset.getCurrentState().getStateName(), actingHostId,
                 String.format("Clean return approved. Slashed ₹0. Refunded ₹%.2f deposit to %s. Paid ₹%.2f to host (%d days).",
                         collateral, renterId, tariff, rentalDays));
 
@@ -547,6 +572,12 @@ public class MainServer {
             return;
         }
 
+        UserAccount caller = resolveUser(exchange);
+        if (caller == null) {
+            sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Authentication required to inspect assets.\"}");
+            return;
+        }
+
         Map<String, String> body = parseJsonBody(exchange);
         String assetId = body.get("assetId");
         String hostId = body.get("hostId");
@@ -560,8 +591,7 @@ public class MainServer {
         }
 
         RentableAsset asset = optAsset.get();
-        UserAccount caller = resolveUser(exchange);
-        if (caller != null && !isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getOwnerId())) {
+        if (!isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getOwnerId())) {
             sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the asset owner or administrator can inspect this asset.\"}");
             return;
         }
@@ -589,12 +619,13 @@ public class MainServer {
         }
 
         double netRefund = Math.max(0.0, collateral - slashingPenalty);
+        String actingHostId = (hostId != null && !hostId.isBlank() && isUserAdmin(caller)) ? hostId : caller.getUserId();
         asset.addServiceLog(String.format(Locale.US, "Damage Slashed: %.1f%% penalty (₹%.2f) deducted from deposit. Restored to AVAILABLE.", damagePct, slashingPenalty));
 
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.saveEscrow(escrowVault);
-        persistenceEngine.appendWal(assetId, "INSPECT_SLASH", prevState, asset.getCurrentState().getStateName(), hostId,
+        persistenceEngine.appendWal(assetId, "INSPECT_SLASH", prevState, asset.getCurrentState().getStateName(), actingHostId,
                 String.format(Locale.US, "Damage flagged (%.1f%%). Slashed ₹%.2f to host. Refunded ₹%.2f net deposit to %s.",
                         damagePct, slashingPenalty, netRefund, renterId));
 

@@ -8,7 +8,7 @@ const API_BASE = '/api';
 
 // Application State Store
 const state = {
-    activeUser: 'renter_deepak',
+    activeUser: null,
     activeCategory: 'ALL',
     users: [],
     assets: [],
@@ -53,15 +53,68 @@ document.addEventListener('DOMContentLoaded', async () => {
     initNotifications();
     initAuthModals();
     initPolicies();
+    initJourneyTimeline();
     initEventListeners();
 
-    // Auto-login default persona so session cookie and token match active user
-    await executeLogin(state.activeUser, 'RentSphere@2026');
+    // Check and restore existing server session using /api/auth/me
+    await restoreSession();
     await fetchAllData();
 
     // Auto-refresh data every 8 seconds to reflect background flat-file state
     setInterval(refreshBackgroundData, 8000);
 });
+
+async function restoreSession() {
+    try {
+        const res = await fetch(`${API_BASE}/auth/me`);
+        if (!res.ok) {
+            state.activeUser = null;
+            return;
+        }
+        const data = await res.json();
+        if (data && data.authenticated && data.user) {
+            state.activeUser = data.user.userId;
+            const select = document.getElementById('activeUserSelect');
+            if (select) {
+                let opt = Array.from(select.options).find(o => o.value === data.user.userId);
+                if (!opt) {
+                    opt = new Option(data.user.fullName + ` (${data.user.role})`, data.user.userId);
+                    select.add(opt);
+                }
+                select.value = data.user.userId;
+            }
+        } else {
+            state.activeUser = null;
+        }
+    } catch (e) {
+        console.warn('Session restoration failed:', e);
+        state.activeUser = null;
+    }
+}
+
+async function executeLogout() {
+    try {
+        await fetch(`${API_BASE}/auth/logout`, {
+            method: 'POST'
+        });
+    } catch (e) {
+        console.warn('Logout request failed:', e);
+    }
+    state.activeUser = null;
+    state.authToken = null;
+    const select = document.getElementById('activeUserSelect');
+    if (select) {
+        let guestOpt = Array.from(select.options).find(o => o.value === '');
+        if (!guestOpt) {
+            guestOpt = new Option('-- Guest (Not Signed In) --', '');
+            select.add(guestOpt, 0);
+        }
+        select.value = '';
+    }
+    updateUserUI();
+    showToast('🚪 Signed out successfully. You are now in Guest mode.', 'info');
+    await fetchAllData();
+}
 
 function initNavigation() {
     const navPills = document.querySelectorAll('.nav-pill');
@@ -105,7 +158,12 @@ function initUserSelector() {
     const select = document.getElementById('activeUserSelect');
     if (!select) return;
     select.addEventListener('change', async (e) => {
-        state.activeUser = e.target.value;
+        const val = e.target.value;
+        if (!val) {
+            await executeLogout();
+            return;
+        }
+        state.activeUser = val;
         await executeLogin(state.activeUser, 'RentSphere@2026');
         updateUserUI();
         fetchNotifications();
@@ -135,6 +193,7 @@ function initEventListeners() {
     });
     document.getElementById('heroBecomeHostBtn')?.addEventListener('click', () => openModal('onboardModal'));
     document.getElementById('openAuthModalBtn')?.addEventListener('click', () => openModal('authModal'));
+    document.getElementById('signOutBtn')?.addEventListener('click', executeLogout);
     document.getElementById('openSupportTicketBtn')?.addEventListener('click', () => openModal('supportModal'));
 
     // Footer Policy Link Triggers
@@ -161,6 +220,7 @@ function initEventListeners() {
     });
     document.getElementById('pickupFromLockerBtn')?.addEventListener('click', pickupSelectedBayGear);
     document.getElementById('returnToQuarantineBtn')?.addEventListener('click', returnSelectedBayGear);
+    document.getElementById('inspectorApplyStateBtn')?.addEventListener('click', applyInspectorDeviceState);
 
     // Admin & Support Buttons
     document.getElementById('refreshUsersBtn')?.addEventListener('click', fetchAdminUsers);
@@ -245,6 +305,7 @@ async function fetchAssets(silent = false) {
         renderCatalog();
         populateHostDropdowns();
         renderQuarantineDeck();
+        renderRenterActiveBookings();
     } catch (e) {
         console.error('Assets fetch error:', e);
     }
@@ -257,6 +318,7 @@ async function fetchLockers(silent = false) {
         state.lockers = await res.json();
         renderLockerGrid();
         updateInspectorDetails();
+        renderRenterActiveBookings();
     } catch (e) {
         console.error('Lockers fetch error:', e);
     }
@@ -277,19 +339,318 @@ async function fetchWal(silent = false) {
 // USER UI & IDENTITY MANAGEMENT
 // ============================================================================
 function updateUserUI() {
-    const user = state.users.find(u => u.userId === state.activeUser);
-    if (!user) return;
-
-    document.getElementById('headerWalletBalance').textContent = Number(user.walletBalance).toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+    const signOutBtn = document.getElementById('signOutBtn');
     const badge = document.getElementById('userRoleBadge');
-    badge.textContent = user.role;
-    badge.className = 'role-tag role-' + user.role.toLowerCase();
-
+    const walletSpan = document.getElementById('headerWalletBalance');
     const authBtn = document.getElementById('authButtonLabel');
-    if (authBtn) authBtn.textContent = user.userName.split(' ')[0] + ' (' + user.role + ')';
+    const navHostTab = document.getElementById('navHostTab');
+    const navAdminTab = document.getElementById('navAdminTab');
+    const listEquipBtn = document.getElementById('openListEquipmentBtn');
+
+    if (!state.activeUser) {
+        if (badge) {
+            badge.textContent = 'GUEST';
+            badge.className = 'role-tag';
+        }
+        if (walletSpan) walletSpan.textContent = '0.00';
+        if (authBtn) authBtn.textContent = 'Sign In / Register';
+        if (signOutBtn) signOutBtn.style.display = 'none';
+        if (navHostTab) navHostTab.style.display = 'none';
+        if (navAdminTab) navAdminTab.style.display = 'none';
+        if (listEquipBtn) listEquipBtn.style.display = 'none';
+        renderRenterActiveBookings();
+        return;
+    }
+
+    const user = state.users.find(u => u.userId === state.activeUser);
+    const role = user ? user.role : 'RENTER';
+    const userName = user ? user.userName : state.activeUser;
+    const balance = user ? Number(user.walletBalance) : 0;
+
+    if (walletSpan) {
+        walletSpan.textContent = balance.toLocaleString('en-IN', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    if (badge) {
+        badge.textContent = role;
+        badge.className = 'role-tag role-' + role.toLowerCase();
+    }
+    if (authBtn) {
+        authBtn.textContent = userName.split(' ')[0] + ' (' + role + ')';
+    }
+    if (signOutBtn) {
+        signOutBtn.style.display = 'inline-flex';
+    }
+
+    // Role-based navigation and action visibility (Requirement 2)
+    const isAdminUser = role === 'ADMIN' || role === 'INSPECTOR' || (user && user.userId === 'inspector_almeida');
+    if (isAdminUser) {
+        if (navHostTab) navHostTab.style.display = 'inline-flex';
+        if (navAdminTab) navAdminTab.style.display = 'inline-flex';
+        if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
+    } else if (role === 'HOST') {
+        if (navHostTab) navHostTab.style.display = 'inline-flex';
+        if (navAdminTab) navAdminTab.style.display = 'none';
+        if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
+    } else { // RENTER
+        if (navHostTab) navHostTab.style.display = 'none';
+        if (navAdminTab) navAdminTab.style.display = 'none';
+        if (listEquipBtn) listEquipBtn.style.display = 'none';
+    }
+
+    // Redirect to marketplace if currently viewing a role-restricted tab
+    const activeNav = document.querySelector('.nav-pill.active');
+    if (activeNav) {
+        const currentView = activeNav.getAttribute('data-view');
+        if ((currentView === 'hostView' && role === 'RENTER') || 
+            (currentView === 'adminSupportView' && !isAdminUser)) {
+            const marketplaceTab = document.querySelector('.nav-pill[data-view="marketplaceView"]');
+            if (marketplaceTab) marketplaceTab.click();
+        }
+    }
+
+    renderRenterActiveBookings();
+    updateInspectorDetails();
+}
+
+function initJourneyTimeline() {
+    const steps = [
+        { id: 'journeyStep1', view: 'marketplaceView', scrollId: 'assetsGrid' },
+        { id: 'journeyStep2', view: 'marketplaceView', scrollId: 'assetsGrid' },
+        { id: 'journeyStep3', view: 'hubView', scrollId: null },
+        { id: 'journeyStep4', view: 'marketplaceView', scrollId: 'renterActiveBookingsContainer' },
+        { id: 'journeyStep5', view: 'escrowView', scrollId: null }
+    ];
+
+    steps.forEach(({ id, view, scrollId }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('click', () => {
+            const targetNav = document.querySelector(`.nav-pill[data-view="${view}"]`);
+            if (targetNav) targetNav.click();
+            if (scrollId) {
+                setTimeout(() => {
+                    document.getElementById(scrollId)?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+            }
+        });
+    });
+}
+
+function updateJourneyTimeline() {
+    const subnav = document.getElementById('renterJourneySubnav');
+    if (!subnav) return;
+
+    const myRentals = state.activeUser 
+        ? state.assets.filter(a => a.renterId === state.activeUser && (a.state === 'RESERVED_ESCROW' || a.state === 'ACTIVE_LEASE' || a.state === 'INSPECTION_QUARANTINE'))
+        : [];
+
+    const reserved = myRentals.find(a => a.state === 'RESERVED_ESCROW');
+    const activeLease = myRentals.find(a => a.state === 'ACTIVE_LEASE');
+    const quarantine = myRentals.find(a => a.state === 'INSPECTION_QUARANTINE');
+
+    // Reset steps
+    for (let i = 1; i <= 5; i++) {
+        const step = document.getElementById(`journeyStep${i}`);
+        const circle = document.getElementById(`circleStep${i}`);
+        const line = document.getElementById(`lineStep${i}`);
+        if (step) {
+            step.className = 'journey-step';
+        }
+        if (circle) {
+            circle.textContent = i;
+        }
+        if (line) {
+            line.className = 'step-line';
+        }
+    }
+
+    if (quarantine) {
+        // Stage 5 active
+        for (let i = 1; i <= 4; i++) {
+            document.getElementById(`journeyStep${i}`)?.classList.add('completed');
+            const c = document.getElementById(`circleStep${i}`);
+            if (c) c.textContent = '✓';
+            document.getElementById(`lineStep${i}`)?.classList.add('completed');
+        }
+        document.getElementById('journeyStep5')?.classList.add('active');
+        const desc = document.getElementById('descStep5');
+        if (desc) desc.textContent = `${quarantine.title.split(' ')[0]} in Quarantine`;
+    } else if (activeLease) {
+        // Stage 4 active
+        for (let i = 1; i <= 3; i++) {
+            document.getElementById(`journeyStep${i}`)?.classList.add('completed');
+            const c = document.getElementById(`circleStep${i}`);
+            if (c) c.textContent = '✓';
+            document.getElementById(`lineStep${i}`)?.classList.add('completed');
+        }
+        document.getElementById('journeyStep4')?.classList.add('active');
+        const desc = document.getElementById('descStep4');
+        if (desc) desc.textContent = `${activeLease.title.split(' ')[0]} (Bay ${activeLease.lockerCoordinate})`;
+    } else if (reserved) {
+        // Stage 3 active
+        for (let i = 1; i <= 2; i++) {
+            document.getElementById(`journeyStep${i}`)?.classList.add('completed');
+            const c = document.getElementById(`circleStep${i}`);
+            if (c) c.textContent = '✓';
+            document.getElementById(`lineStep${i}`)?.classList.add('completed');
+        }
+        document.getElementById('journeyStep3')?.classList.add('active');
+        const desc = document.getElementById('descStep3');
+        if (desc) desc.textContent = `Bay ${reserved.lockerCoordinate} • PIN Ready`;
+    } else {
+        // Stage 1 active (Browse)
+        document.getElementById('journeyStep1')?.classList.add('active');
+    }
+}
+
+function renderRenterActiveBookings() {
+    updateJourneyTimeline();
+
+    const container = document.getElementById('renterActiveBookingsContainer');
+    if (!container) return;
+
+    if (!state.activeUser) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    const myRentals = state.assets.filter(a => a.renterId === state.activeUser && (a.state === 'RESERVED_ESCROW' || a.state === 'ACTIVE_LEASE'));
+    if (myRentals.length === 0) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="tactile-quick-dock">
+            <div class="dock-header">
+                <h3 class="dock-title">
+                    <span>⚡</span> Active Rental Quick-Dock (${myRentals.length})
+                </h3>
+                <span class="dock-stage-badge">
+                    ${myRentals.some(a => a.state === 'RESERVED_ESCROW') ? 'Stage 3 of 5: Smart Locker Pickup' : 'Stage 4 of 5: Active Lease in Field'}
+                </span>
+            </div>
+            <div class="dock-grid">
+                ${myRentals.map(a => {
+                    const isReserved = a.state === 'RESERVED_ESCROW';
+                    const comp = state.lockers.find(c => c.bayId === a.lockerCoordinate);
+                    const hasOtp = comp && comp.otpPin && comp.otpPin.length === 6;
+                    const formattedOtp = hasOtp ? comp.otpPin.split('').join(' ') : '• • • • • •';
+
+                    return `
+                        <div class="dock-card">
+                            <div>
+                                <div class="dock-card-top">
+                                    <span class="cat-pill-badge" style="font-size:10px;">${getCategoryDisplayName(a.leafClass)}</span>
+                                    <span class="state-pill ${isReserved ? 'state-reserved' : 'state-active'}">
+                                        ${isReserved ? '🔒 RESERVED (Escrow Locked)' : '🚀 ACTIVE LEASE (In Use)'}
+                                    </span>
+                                </div>
+                                <h4 style="font-family:var(--font-heading); font-size:15px; font-weight:700; margin:0 0 6px 0; color:var(--slate-900);">
+                                    ${escapeHtml(a.title)}
+                                </h4>
+                                <div style="font-size:12px; color:var(--slate-600); margin-bottom:8px;">
+                                    Smart Hub Bay: <strong style="color:var(--brand-teal);">${a.lockerCoordinate}</strong> • Host: <strong>${escapeHtml(a.ownerId)}</strong>
+                                </div>
+                                <div class="dock-meter-row">
+                                    <span>Duration: <strong>${a.rentalDays || 1} day(s)</strong> (Tariff: ${formatInr(a.calculatedTariff * (a.rentalDays || 1))})</span>
+                                    <span>Escrow Deposit: <strong>${formatInr(a.requiredCollateral)}</strong></span>
+                                </div>
+                            </div>
+
+                            <div>
+                                ${isReserved ? `
+                                    <div class="dock-pin-vault">
+                                        <div class="dock-pin-header">
+                                            <span>One-Time Locker Access PIN</span>
+                                            <span class="hardware-paired-badge">● Hardware Paired</span>
+                                        </div>
+                                        <div class="dock-pin-val">${escapeHtml(formattedOtp)}</div>
+                                        <div style="font-size:10px; color:rgba(255,255,255,0.7); text-align:center;">
+                                            Protected by 3-attempt brute-force lockout (CWE-307)
+                                        </div>
+                                    </div>
+                                    <button class="btn-primary direct-pickup-btn" data-id="${a.id}" data-bay="${a.lockerCoordinate}" data-otp="${hasOtp ? escapeHtml(comp.otpPin) : ''}" style="width:100%; justify-content:center; padding:10px 14px; font-weight:700;">
+                                        <span>🔓</span> 1-Click Remote Unlock Bay ${a.lockerCoordinate}
+                                    </button>
+                                ` : `
+                                    <div style="background:var(--emerald-light); border:1px solid rgba(16,185,129,0.3); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:10px; font-size:11px; color:var(--emerald-dark); font-weight:600; display:flex; align-items:center; gap:6px;">
+                                        <span>✓</span> Equipment active in field. Deposit guaranteed in Smart Escrow.
+                                    </div>
+                                    <button class="btn-danger direct-return-btn" data-id="${a.id}" data-bay="${a.lockerCoordinate}" style="width:100%; justify-content:center; padding:10px 14px; font-weight:700;">
+                                        <span>📦</span> Return to Bay ${a.lockerCoordinate} (Enter Quarantine)
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+    `;
+
+    // Wire handlers for direct pickup
+    container.querySelectorAll('.direct-pickup-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const assetId = btn.getAttribute('data-id');
+            const bayId = btn.getAttribute('data-bay');
+            const prefilledOtp = btn.getAttribute('data-otp');
+            let otp = prefilledOtp;
+            if (!otp) {
+                otp = prompt(`Enter 6-Digit Pickup OTP for Bay ${bayId}:`);
+            }
+            if (!otp || !otp.trim()) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/assets/pickup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assetId, otpPin: otp.trim() })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('🔓 ' + data.message, 'success');
+                    await fetchAllData();
+                } else {
+                    showToast('❌ ' + (data.message || data.error), 'error');
+                }
+            } catch (e) {
+                showToast('Pickup failed: ' + e.message, 'error');
+            }
+        });
+    });
+
+    // Wire handlers for direct return
+    container.querySelectorAll('.direct-return-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const assetId = btn.getAttribute('data-id');
+            const bayId = btn.getAttribute('data-bay');
+            if (!confirm(`Return equipment to Hub Bay ${bayId}? It will strictly enter Mandatory Quarantine for host condition inspection.`)) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/assets/return`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ assetId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('📦 ' + data.message, 'success');
+                    await fetchAllData();
+                } else {
+                    showToast('❌ ' + (data.message || data.error), 'error');
+                }
+            } catch (e) {
+                showToast('Return failed: ' + e.message, 'error');
+            }
+        });
+    });
 }
 
 function getActiveUserName() {
@@ -357,44 +718,108 @@ function renderAssetCard(a) {
     const stateBadgeClass = getStateBadgeClass(a.state);
     const categoryName = getCategoryDisplayName(a.leafClass);
 
-    let specificPills = '';
-    if (a.indoorOutdoorRating) specificPills += `<span class="spec-pill">${escapeHtml(a.indoorOutdoorRating)}</span>`;
-    if (a.powerOrEngineSpec) specificPills += `<span class="spec-pill">${escapeHtml(a.powerOrEngineSpec)}</span>`;
-    if (a.wattageOrBatterySpec) specificPills += `<span class="spec-pill">${escapeHtml(a.wattageOrBatterySpec)}</span>`;
-    if (a.safetyCertification) specificPills += `<span class="spec-pill is-safety">✓ ${escapeHtml(a.safetyCertification)}</span>`;
+    // Visual Banner Theme by Category
+    let bannerCatClass = 'cat-cameras';
+    let bannerIcon = '📷';
+    if (a.leafClass === 'EventAudioAndLighting') {
+        bannerCatClass = 'cat-audio';
+        bannerIcon = '🔊';
+    } else if (a.leafClass === 'PowerToolEquipment') {
+        bannerCatClass = 'cat-tools';
+        bannerIcon = '🛠️';
+    } else if (a.leafClass === 'EventAndMobilityVehicle') {
+        bannerCatClass = 'cat-vehicles';
+        bannerIcon = '🚗';
+    }
+
+    // Host identity & verified KYC status strictly from real backend data (state.users)
+    const owner = state.users.find(u => u.userId === a.ownerId);
+    const hostDisplayName = owner ? owner.userName : a.ownerId;
+    const isVerifiedHost = Boolean(owner && owner.isKycVerified);
+
+    // Real specification tags strictly from backend domain fields
+    let specPills = [];
+    if (a.indoorOutdoorRating) specPills.push(`<span class="spec-pill">${escapeHtml(a.indoorOutdoorRating)}</span>`);
+    if (a.wattageOrBatterySpec) specPills.push(`<span class="spec-pill">${escapeHtml(a.wattageOrBatterySpec)}</span>`);
+    if (a.powerOrEngineSpec) specPills.push(`<span class="spec-pill">${escapeHtml(a.powerOrEngineSpec)}</span>`);
+    if (a.safetyCertification) specPills.push(`<span class="spec-pill is-safety"><span aria-hidden="true">✓</span> ${escapeHtml(a.safetyCertification)}</span>`);
+    if (a.protectionTier) specPills.push(`<span class="spec-pill">${escapeHtml(a.protectionTier)}</span>`);
+    if (a.requiresGroundBay) specPills.push(`<span class="spec-pill" style="border-color:var(--warm-amber); color:var(--warm-amber-dark); font-weight:700;">Ground Slot (Row H)</span>`);
+    if (a.accessoryKitCount && a.accessoryKitCount > 0) specPills.push(`<span class="spec-pill">${a.accessoryKitCount} Kit Items</span>`);
+
+    const hasLockerCoordinate = Boolean(a.lockerCoordinate && a.lockerCoordinate.trim());
 
     return `
-        <div class="asset-card">
-            <div class="asset-card-top">
-                <span class="cat-pill-badge">${categoryName}</span>
-                <span class="state-pill ${stateBadgeClass}">${formatStateName(a.state)}</span>
+        <article class="asset-card" aria-labelledby="asset-title-${escapeHtml(a.id)}">
+            <div class="asset-banner ${bannerCatClass}" role="img" aria-label="${escapeHtml(a.title)} category visual">
+                <div class="asset-banner-icon" aria-hidden="true">${bannerIcon}</div>
+                ${hasLockerCoordinate ? `
+                    <div class="asset-bay-badge" title="Physical Storage Location in 8x8 Smart Hub: Bay ${escapeHtml(a.lockerCoordinate)}" aria-label="Smart Locker Bay ${escapeHtml(a.lockerCoordinate)}">
+                        <span aria-hidden="true">📍</span> Hub Bay ${escapeHtml(a.lockerCoordinate)}
+                    </div>
+                ` : ''}
+                <span class="asset-state-tag ${stateBadgeClass}" aria-label="Availability Status: ${formatStateName(a.state)}">
+                    ${formatStateName(a.state)}
+                </span>
             </div>
 
-            <h3 class="asset-title">${escapeHtml(a.title)}</h3>
-            <div class="asset-meta-row">
-                <span>📍 Bay: <strong>${a.lockerCoordinate}</strong></span>
-                <span>Host: <strong>${escapeHtml(a.ownerId)}</strong></span>
-            </div>
+            <div class="asset-card-content">
+                <div>
+                    <div class="asset-host-row">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span class="asset-id-chip" title="Asset Reference ID">${escapeHtml(a.id)}</span>
+                            <span class="cat-pill-badge" style="font-size:10px;">${categoryName}</span>
+                        </div>
+                        ${owner ? (isVerifiedHost ? `
+                            <span class="verified-host-tag" title="Identity & Bank Solvency Verified via 4-Gate Pipeline">
+                                <span aria-hidden="true">✓</span> Verified Host: ${escapeHtml(hostDisplayName)}
+                            </span>
+                        ` : `
+                            <span class="unverified-host-tag" title="KYC Verification Pending">
+                                <span aria-hidden="true">⏳</span> Host: ${escapeHtml(hostDisplayName)}
+                            </span>
+                        `) : (a.ownerId ? `
+                            <span class="unverified-host-tag">
+                                Host: ${escapeHtml(a.ownerId)}
+                            </span>
+                        ` : '')}
+                    </div>
 
-            <div class="specs-pills-row">
-                ${specificPills}
-            </div>
+                    <h3 class="asset-title" id="asset-title-${escapeHtml(a.id)}" style="margin-top:10px;">
+                        ${escapeHtml(a.title)}
+                    </h3>
 
-            <div class="price-container">
-                <div class="price-block">
-                    <span class="price-label">Daily Rental Rate</span>
-                    <span class="price-val">${formatInr(a.calculatedTariff)}</span>
+                    ${specPills.length > 0 ? `
+                        <div class="asset-specs-row" style="margin-top:8px;">
+                            ${specPills.join('')}
+                        </div>
+                    ` : ''}
                 </div>
-                <div class="price-block">
-                    <span class="price-label">Refundable Deposit</span>
-                    <span class="price-val">${formatInr(a.requiredCollateral)}</span>
+
+                <div class="asset-pricing-bar">
+                    <div>
+                        <div class="tariff-display" aria-label="Daily Rental Fee: ${formatInr(a.calculatedTariff)} per day">
+                            ${formatInr(a.calculatedTariff)} <span class="tariff-unit">/day</span>
+                        </div>
+                        <div class="deposit-display" title="Held safely in EscrowVault until clean host inspection" aria-label="Refundable Escrow Deposit: ${formatInr(a.requiredCollateral)}">
+                            <span aria-hidden="true">🛡️</span> + ${formatInr(a.requiredCollateral)} Refundable Escrow
+                        </div>
+                    </div>
+
+                    <div>
+                        ${isAvail ? `
+                            <button class="btn-primary reserve-card-btn" data-id="${a.id}" aria-label="Quick Reserve ${escapeHtml(a.title)} for ${formatInr(a.calculatedTariff)} per day" style="padding:9px 18px; border-radius:var(--radius-pill); font-size:12px; font-weight:700;">
+                                <span aria-hidden="true">⚡</span> Quick Reserve
+                            </button>
+                        ` : `
+                            <button class="btn-secondary" disabled aria-disabled="true" aria-label="${escapeHtml(a.title)} is currently ${formatStateName(a.state)}" style="padding:9px 18px; border-radius:var(--radius-pill); font-size:12px; font-weight:600; cursor:not-allowed;">
+                                <span aria-hidden="true">🔒</span> ${formatStateName(a.state)}
+                            </button>
+                        `}
+                    </div>
                 </div>
             </div>
-
-            <button class="btn-primary reserve-card-btn" data-id="${a.id}" ${isAvail ? '' : 'disabled'} style="width:100%; justify-content:center; margin-top:14px;">
-                <span>${isAvail ? '🛒 Rent & Lock Escrow' : '🔒 Currently Unavailable'}</span>
-            </button>
-        </div>
+        </article>
     `;
 }
 
@@ -425,81 +850,340 @@ function getCategoryDisplayName(leafClass) {
 }
 
 // ============================================================================
-// TAB 2: 8x8 SMART HUB & PARKING MATRIX
+// TAB 2: 8x8 SMART HUB & PARKING MATRIX (WARM HORIZON / STITCH VARIANT 2)
 // ============================================================================
+function getLockerCellDetails(c) {
+    const isGround = c.bayId.startsWith('H') || c.row === 7 || c.sizeTier === 'XL_GROUND_SLOT';
+    const asset = state.assets.find(a => (c.currentAssetId && a.id === c.currentAssetId) || a.lockerCoordinate === c.bayId);
+    
+    let stateClass = 'bay-available';
+    let statusText = isGround ? 'BAY READY' : 'READY';
+    let statusIcon = isGround ? '🚗' : '📦';
+
+    if (asset && asset.state === 'DISPUTED') {
+        stateClass = 'bay-disputed';
+        statusText = 'DISPUTE';
+        statusIcon = '⚖️';
+    } else if (c.status === 'QUARANTINE_LOCKED' || (asset && asset.state === 'INSPECTION_QUARANTINE')) {
+        stateClass = 'bay-quarantine';
+        statusText = 'HOLD';
+        statusIcon = '⚠️';
+    } else if (c.status === 'DISPATCHED_ACTIVE' || (asset && asset.state === 'ACTIVE_LEASE')) {
+        stateClass = 'bay-active';
+        statusText = 'ACTIVE';
+        statusIcon = '🚀';
+    } else if (c.status === 'RESERVED_LOCKED' || (asset && asset.state === 'RESERVED_ESCROW')) {
+        stateClass = 'bay-reserved';
+        statusText = 'RESERVED';
+        statusIcon = '🔒';
+    }
+
+    let tierShort = 'S';
+    if (isGround) tierShort = 'XL';
+    else if (c.sizeTier === 'LARGE') tierShort = 'L';
+    else if (c.sizeTier === 'MEDIUM') tierShort = 'M';
+
+    return {
+        isGround,
+        asset,
+        stateClass,
+        statusText,
+        statusIcon,
+        tierShort
+    };
+}
+
 function renderLockerGrid() {
     const container = document.getElementById('grid8x8Container');
     if (!container) return;
 
-    if (state.lockers.length === 0) {
-        container.innerHTML = '<div style="padding:20px;">Loading 64 Hub Compartments...</div>';
+    if (!state.lockers || state.lockers.length === 0) {
+        container.innerHTML = '<div style="padding:24px; text-align:center; color:var(--slate-500); grid-column:1/-1;">Loading 64 Hub Compartments...</div>';
         return;
     }
 
-    container.innerHTML = state.lockers.map(c => {
-        const isGround = c.row === 8;
-        const isSelected = c.bayId === state.selectedBayId;
-        const cellClass = getLockerCellClass(c.status, isGround);
+    if (!state.selectedBayId && state.lockers.length > 0) {
+        state.selectedBayId = state.lockers[0].bayId;
+    }
 
-        return `
-            <div class="bay-cell ${cellClass} ${isSelected ? 'selected' : ''}" data-bay="${c.bayId}">
-                <span class="bay-id">${c.bayId}</span>
-                <span class="bay-state-text">${formatLockerStatus(c.status)}</span>
-                ${isGround ? '<span style="font-size:8px; font-weight:800; color:var(--purple);">GROUND SLOT</span>' : ''}
+    let html = '';
+    state.lockers.forEach((c, index) => {
+        // Visually separate Row H (Ground Vehicle & Heavy Cargo bays index 56-63)
+        if (index === 56 || (c.bayId === 'H1' && !html.includes('ground-row-divider'))) {
+            html += `<div class="ground-row-divider" role="separator" aria-label="Ground Vehicle & Heavy Cargo Bays">
+                <span>🚗</span> ROW H: GROUND VEHICLE &amp; HEAVY CARGO BAYS (H1–H8) • DIRECT DRIVE-IN ACCESS
+            </div>`;
+        }
+
+        const details = getLockerCellDetails(c);
+        const isSelected = c.bayId === state.selectedBayId;
+        const groundClass = details.isGround ? 'is-ground-slot' : '';
+        const selectedClass = isSelected ? 'selected' : '';
+        const sensorMini = (c.weightKg && c.weightKg > 0) 
+            ? `${c.weightKg.toFixed(1)}kg` 
+            : (c.tempC ? `${c.tempC.toFixed(0)}°C` : '');
+        const assetLabel = details.asset ? ` • Asset: ${details.asset.title}` : '';
+
+        html += `
+            <div class="bay-cell ${details.stateClass} ${groundClass} ${selectedClass}"
+                 data-bay="${escapeHtml(c.bayId)}"
+                 data-row="${c.row}"
+                 data-col="${c.col}"
+                 tabindex="0"
+                 role="button"
+                 aria-label="Bay ${c.bayId}, Tier ${details.tierShort}, Status: ${details.statusText}${assetLabel}"
+                 aria-current="${isSelected ? 'true' : 'false'}">
+                <div class="bay-top-row">
+                    <span class="bay-id">${escapeHtml(c.bayId)}</span>
+                    <span class="bay-tier-tag">${details.tierShort}</span>
+                </div>
+                <div class="bay-center-icon">${details.statusIcon}</div>
+                <div class="bay-bottom-row">
+                    <span class="bay-state-text">${details.statusText}</span>
+                    <span class="bay-sensor-mini">${sensorMini}</span>
+                </div>
             </div>
         `;
-    }).join('');
+    });
+
+    container.innerHTML = html;
 
     container.querySelectorAll('.bay-cell').forEach(cell => {
+        const bayId = cell.getAttribute('data-bay');
+        const row = parseInt(cell.getAttribute('data-row'), 10);
+        const col = parseInt(cell.getAttribute('data-col'), 10);
+
         cell.addEventListener('click', () => {
-            state.selectedBayId = cell.getAttribute('data-bay');
-            renderLockerGrid();
-            updateInspectorDetails();
+            selectBay(bayId);
+        });
+
+        cell.addEventListener('keydown', (e) => {
+            handleBayKeydown(e, bayId, row, col);
         });
     });
 }
 
-function getLockerCellClass(status, isGround) {
-    if (isGround) return 'cell-ground';
-    if (status === 'ONLINE_READY' || status === 'AVAILABLE') return 'cell-ready';
-    if (status === 'RESERVED_LOCKED') return 'cell-reserved';
-    if (status === 'DISPATCHED_ACTIVE') return 'cell-active';
-    if (status === 'QUARANTINE_LOCKED') return 'cell-quarantine';
-    return 'cell-ready';
+function handleBayKeydown(e, bayId, row, col) {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        selectBay(bayId);
+        return;
+    }
+
+    let targetRow = row;
+    let targetCol = col;
+
+    if (e.key === 'ArrowUp') {
+        targetRow = row - 1;
+    } else if (e.key === 'ArrowDown') {
+        targetRow = row + 1;
+    } else if (e.key === 'ArrowLeft') {
+        targetCol = col - 1;
+    } else if (e.key === 'ArrowRight') {
+        targetCol = col + 1;
+    } else {
+        return;
+    }
+
+    if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8) {
+        e.preventDefault();
+        const targetCell = document.querySelector(`.bay-cell[data-row="${targetRow}"][data-col="${targetCol}"]`);
+        if (targetCell) {
+            targetCell.focus();
+            const targetBay = targetCell.getAttribute('data-bay');
+            if (targetBay) selectBay(targetBay);
+        }
+    }
 }
 
-function formatLockerStatus(st) {
-    if (st === 'ONLINE_READY' || st === 'AVAILABLE') return 'READY';
-    if (st === 'RESERVED_LOCKED') return 'LOCKED';
-    if (st === 'DISPATCHED_ACTIVE') return 'VACATED';
-    if (st === 'QUARANTINE_LOCKED') return 'HOLD';
-    return st;
+function selectBay(bayId) {
+    if (!bayId) return;
+    state.selectedBayId = bayId;
+
+    const container = document.getElementById('grid8x8Container');
+    if (container) {
+        container.querySelectorAll('.bay-cell').forEach(cell => {
+            const isSel = cell.getAttribute('data-bay') === bayId;
+            cell.classList.toggle('selected', isSel);
+            cell.setAttribute('aria-current', isSel ? 'true' : 'false');
+        });
+    }
+
+    updateInspectorDetails();
 }
 
 function updateInspectorDetails() {
-    const comp = state.lockers.find(c => c.bayId === state.selectedBayId);
+    const comp = state.lockers.find(c => c.bayId === state.selectedBayId) || state.lockers[0];
     if (!comp) return;
 
-    document.getElementById('inspectorBayId').textContent = 'Bay ' + comp.bayId;
+    // Header & Bay ID
+    const bayIdEl = document.getElementById('inspectorBayId');
+    if (bayIdEl) bayIdEl.textContent = 'Bay ' + comp.bayId;
+
+    // Size Tier Badge
     const tierBadge = document.getElementById('inspectorSizeTier');
-    tierBadge.textContent = comp.sizeTier.replace('_', ' ');
-
-    document.getElementById('telTemp').textContent = comp.tempC.toFixed(1);
-    document.getElementById('telHum').textContent = comp.humidityPct.toFixed(1);
-    document.getElementById('telWeight').textContent = comp.weightKg.toFixed(1);
-
-    const asset = state.assets.find(a => a.id === comp.currentAssetId || a.lockerCoordinate === comp.bayId);
-    if (asset) {
-        document.getElementById('inspectorAssetTitle').textContent = asset.title;
-        document.getElementById('inspectorAssetId').textContent = asset.id + ' • ' + formatStateName(asset.state);
-    } else {
-        document.getElementById('inspectorAssetTitle').textContent = 'Empty / Available Slot';
-        document.getElementById('inspectorAssetId').textContent = 'Ready for assignment';
+    const isGround = comp.bayId.startsWith('H') || comp.row === 7 || comp.sizeTier === 'XL_GROUND_SLOT';
+    if (tierBadge) {
+        if (isGround) {
+            tierBadge.textContent = 'GROUND VEHICLE SLOT (ROW H) • XL DRIVE-IN';
+            tierBadge.className = 'tier-badge tier-mobility';
+        } else if (comp.sizeTier === 'LARGE') {
+            tierBadge.textContent = 'LARGE LOCKER (ROWS F–G) • 80L';
+            tierBadge.className = 'tier-badge tier-lighting';
+        } else if (comp.sizeTier === 'MEDIUM') {
+            tierBadge.textContent = 'MEDIUM LOCKER (ROWS D–E) • 40L';
+            tierBadge.className = 'tier-badge tier-tools';
+        } else {
+            tierBadge.textContent = 'SMALL LOCKER (ROWS A–C) • 20L';
+            tierBadge.className = 'tier-badge tier-cameras';
+        }
     }
 
-    // OTP Pin display: masked if empty (OWASP CWE-200 defense)
+    // Status Pill on top of inspector
+    const stateTag = document.getElementById('inspectorDeviceStateTag');
+    const asset = state.assets.find(a => (comp.currentAssetId && a.id === comp.currentAssetId) || a.lockerCoordinate === comp.bayId);
+    if (stateTag) {
+        if (asset && asset.state === 'DISPUTED') {
+            stateTag.className = 'state-pill state-disputed';
+            stateTag.textContent = 'IN_DISPUTE';
+        } else if (comp.status === 'QUARANTINE_LOCKED' || (asset && asset.state === 'INSPECTION_QUARANTINE')) {
+            stateTag.className = 'state-pill state-quarantine';
+            stateTag.textContent = 'QUARANTINE_LOCKED';
+        } else if (comp.status === 'DISPATCHED_ACTIVE' || (asset && asset.state === 'ACTIVE_LEASE')) {
+            stateTag.className = 'state-pill state-active';
+            stateTag.textContent = 'DISPATCHED_ACTIVE';
+        } else if (comp.status === 'RESERVED_LOCKED' || (asset && asset.state === 'RESERVED_ESCROW')) {
+            stateTag.className = 'state-pill state-reserved';
+            stateTag.textContent = 'RESERVED_LOCKED';
+        } else {
+            stateTag.className = 'state-pill state-available';
+            stateTag.textContent = comp.status || 'ONLINE_READY';
+        }
+    }
+
+    // Telemetry dials (Simulated virtual sensors)
+    const telTemp = document.getElementById('telTemp');
+    const telHum = document.getElementById('telHum');
+    const telWeight = document.getElementById('telWeight');
+    if (telTemp) telTemp.textContent = comp.tempC != null ? comp.tempC.toFixed(1) : '--';
+    if (telHum) telHum.textContent = comp.humidityPct != null ? comp.humidityPct.toFixed(1) : '--';
+    if (telWeight) telWeight.textContent = comp.weightKg != null ? comp.weightKg.toFixed(1) : '--';
+
+    // Assigned Equipment
+    const assetTitleEl = document.getElementById('inspectorAssetTitle');
+    const assetIdEl = document.getElementById('inspectorAssetId');
+    const assetOwnerEl = document.getElementById('inspectorAssetOwner');
+
+    if (asset) {
+        if (assetTitleEl) assetTitleEl.textContent = asset.title;
+        if (assetIdEl) assetIdEl.textContent = `${asset.id} • ${asset.leafClass || ''} • ${formatStateName(asset.state)}`;
+        if (assetOwnerEl) assetOwnerEl.textContent = `Host: ${asset.ownerId || 'Unknown'}`;
+    } else {
+        if (assetTitleEl) assetTitleEl.textContent = 'Empty / Available Slot';
+        if (assetIdEl) assetIdEl.textContent = 'Ready for assignment';
+        if (assetOwnerEl) assetOwnerEl.textContent = 'No owner assigned';
+    }
+
+    // OTP Pin Display (OWASP CWE-200 defense)
+    const activeUserObj = state.users.find(u => u.userId === state.activeUser);
+    const role = activeUserObj ? activeUserObj.role : 'RENTER';
+    const isAdmin = role === 'ADMIN' || role === 'INSPECTOR' || (activeUserObj && activeUserObj.userId === 'inspector_almeida');
+    const isRenterOfThisAsset = asset && asset.renterId === state.activeUser;
+
     const otpVal = document.getElementById('inspectorOtp');
-    otpVal.textContent = comp.otpPin && comp.otpPin.length === 6 ? comp.otpPin : '••••••';
+    const otpTitle = document.getElementById('inspectorOtpTitle');
+    const otpNotice = document.getElementById('inspectorOtpNotice');
+    if (otpVal) {
+        if ((isAdmin || isRenterOfThisAsset) && comp.otpPin && comp.otpPin.length === 6) {
+            otpVal.textContent = comp.otpPin;
+            if (otpTitle) otpTitle.textContent = '6-Digit Pickup OTP Passcode';
+            if (otpNotice) otpNotice.textContent = isRenterOfThisAsset ? 'Your authorized pickup PIN' : 'Admin diagnostic vault access';
+        } else {
+            otpVal.textContent = '••••••';
+            if (otpTitle) otpTitle.textContent = '6-Digit Pickup OTP Passcode';
+            if (otpNotice) otpNotice.textContent = 'Masked for security (CWE-200). Authorized renters see PIN in Active Rentals.';
+        }
+    }
+
+    // Lockout alert
+    const lockoutAlert = document.getElementById('inspectorLockoutAlert');
+    if (lockoutAlert) {
+        lockoutAlert.style.display = (comp.lockedOut || comp.failedAttempts >= 3) ? 'block' : 'none';
+    }
+
+    // Admin Diagnostic Deck vs Locked Notice
+    const adminDeck = document.getElementById('inspectorAdminDeck');
+    const adminLocked = document.getElementById('inspectorAdminLocked');
+    const adminTargetBay = document.getElementById('adminTargetBayLabel');
+
+    if (isAdmin) {
+        if (adminDeck) adminDeck.style.display = 'block';
+        if (adminLocked) adminLocked.style.display = 'none';
+        if (adminTargetBay) adminTargetBay.textContent = 'Bay ' + comp.bayId;
+    } else {
+        if (adminDeck) adminDeck.style.display = 'none';
+        if (adminLocked) adminLocked.style.display = 'block';
+    }
+}
+
+async function applyInspectorDeviceState() {
+    const user = state.users.find(u => u.userId === state.activeUser);
+    const isAdmin = user && (user.role === 'ADMIN' || user.role === 'INSPECTOR' || user.userId === 'inspector_almeida');
+    if (!isAdmin) {
+        showToast('Unauthorized: Administrator role required for hardware diagnostics.', 'error');
+        return;
+    }
+
+    const bayId = state.selectedBayId || 'A2';
+    const stateStr = document.getElementById('inspectorDeviceStateSelect')?.value || 'ONLINE_READY';
+    const fb = document.getElementById('adminDiagFeedback');
+
+    const confirmed = confirm(
+        `[SIMULATION WARNING]\n\nYou are about to send a simulated solenoid override for Bay ${bayId} to: "${stateStr}".\n\n` +
+        `Note: This is a software simulation running against the virtual locker matrix. No physical hardware is connected.\n\n` +
+        `Proceed with simulation command?`
+    );
+    if (!confirmed) return;
+
+    try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) {
+            headers['Authorization'] = `Bearer ${state.authToken}`;
+        }
+        const res = await fetch(`${API_BASE}/admin/device/state`, {
+            method: 'POST',
+            headers,
+            credentials: 'same-origin',
+            body: JSON.stringify({ bayId, state: stateStr })
+        });
+        const data = await res.json();
+        if (fb) {
+            fb.style.display = 'block';
+            if (data.success) {
+                fb.style.background = 'var(--emerald-light)';
+                fb.style.color = 'var(--forest-green)';
+                fb.style.border = '1px solid rgba(16,185,129,0.3)';
+                fb.textContent = `Server (HTTP ${res.status}): Bay ${bayId} solenoid state -> ${stateStr} (Simulated)`;
+                showToast(`Simulated Bay ${bayId} state updated to ${stateStr}`, 'success');
+            } else {
+                fb.style.background = 'var(--crimson-light)';
+                fb.style.color = 'var(--crimson)';
+                fb.style.border = '1px solid rgba(239,68,68,0.3)';
+                fb.textContent = `Server (HTTP ${res.status}): ${data.error || data.message || 'Override failed'}`;
+                showToast('Hardware override rejected: ' + (data.error || data.message), 'error');
+            }
+        }
+        await fetchLockers();
+    } catch (e) {
+        if (fb) {
+            fb.style.display = 'block';
+            fb.style.background = 'var(--crimson-light)';
+            fb.style.color = 'var(--crimson)';
+            fb.style.border = '1px solid rgba(239,68,68,0.3)';
+            fb.textContent = 'Hardware simulation network error: ' + e.message;
+        }
+        showToast('Device simulation error: ' + e.message, 'error');
+    }
 }
 
 // Pickup & Return Handlers
@@ -580,13 +1264,20 @@ function renderQuarantineDeck() {
 
     container.innerHTML = quarantined.map(a => {
         const isDisputed = a.state === 'DISPUTED';
+        const user = state.users.find(u => u.userId === state.activeUser);
+        const role = user ? user.role : 'RENTER';
+        const isAssetOwner = a.ownerId === state.activeUser;
+        const isAdmin = role === 'ADMIN' || role === 'INSPECTOR' || (user && user.userId === 'inspector_almeida');
+        const isRenter = a.renterId === state.activeUser;
+        const canHostInspect = isAssetOwner || isAdmin;
+
         return `
             <div class="quarantine-card ${isDisputed ? 'disputed-card' : ''}">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div>
                         <span class="cat-pill-badge">${getCategoryDisplayName(a.leafClass)}</span>
                         <h4 style="font-family:var(--font-heading); font-size:16px; font-weight:800; margin-top:6px;">${escapeHtml(a.title)}</h4>
-                        <div style="font-size:12px; color:var(--slate-500);">Bay: <strong>${a.lockerCoordinate}</strong> • Renter: <strong>${escapeHtml(a.renterId)}</strong></div>
+                        <div style="font-size:12px; color:var(--slate-500);">Bay: <strong>${a.lockerCoordinate}</strong> • Renter: <strong>${escapeHtml(a.renterId)}</strong> • Host: <strong>${escapeHtml(a.ownerId)}</strong></div>
                     </div>
                     <span class="state-pill ${isDisputed ? 'state-disputed' : 'state-quarantine'}">
                         ${isDisputed ? '⚖️ IN DISPUTE' : '⚠️ MANDATORY QUARANTINE'}
@@ -606,17 +1297,32 @@ function renderQuarantineDeck() {
                 </div>
 
                 ${!isDisputed ? `
-                    <div style="display:flex; flex-direction:column; gap:10px;">
-                        <button class="btn-primary approve-inspection-btn" data-id="${a.id}" style="justify-content:center;">
-                            <span>✅</span> Approve Clean Return (100% Deposit Refund)
-                        </button>
-                        <button class="btn-danger slash-inspection-btn" data-id="${a.id}" style="justify-content:center;">
-                            <span>⚠️</span> Flag 20% Damage Penalty
-                        </button>
-                        <button class="btn-secondary contest-dispute-btn" data-id="${a.id}" data-collateral="${a.requiredCollateral}" data-title="${escapeHtml(a.title)}" style="justify-content:center; font-size:12px;">
-                            <span>⚖️</span> Contest Claim / File Formal Dispute
-                        </button>
-                    </div>
+                    ${canHostInspect ? `
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <button class="btn-primary approve-inspection-btn" data-id="${a.id}" style="justify-content:center;">
+                                <span>✅</span> Approve Clean Return (100% Deposit Refund)
+                            </button>
+                            <button class="btn-danger slash-inspection-btn" data-id="${a.id}" style="justify-content:center;">
+                                <span>⚠️</span> Flag 20% Damage Penalty
+                            </button>
+                            <div style="font-size:11px; color:var(--slate-500); text-align:center;">
+                                Host Inspection Authority: Verify physical condition before releasing escrow.
+                            </div>
+                        </div>
+                    ` : isRenter ? `
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <button class="btn-secondary contest-dispute-btn" data-id="${a.id}" data-collateral="${a.requiredCollateral}" data-title="${escapeHtml(a.title)}" style="justify-content:center; font-size:12px;">
+                                <span>⚖️</span> Contest Claim / File Formal Dispute
+                            </button>
+                            <div style="font-size:11px; color:var(--slate-500); text-align:center;">
+                                Waiting for Host (${escapeHtml(a.ownerId)}) inspection. Click above to freeze deposit if disputed.
+                            </div>
+                        </div>
+                    ` : `
+                        <div style="font-size:12px; color:var(--slate-500); text-align:center; padding:10px; background:#FFFFFF; border-radius:var(--radius-sm); border:1px dashed var(--slate-200);">
+                            🔒 Inspection reserved for Asset Owner (<strong>${escapeHtml(a.ownerId)}</strong>) or Hub Administrator.
+                        </div>
+                    `}
                 ` : `
                     <div style="font-size:12px; font-weight:700; color:var(--purple); text-align:center; padding:8px; background:var(--purple-light); border-radius:var(--radius-sm);">
                         ⚖️ Formal Dispute Record Active (Review in Admin Hub)
@@ -1051,9 +1757,14 @@ async function applySimulatedDeviceState() {
     const stateStr = document.getElementById('simDeviceStateSelect')?.value || 'ONLINE_READY';
 
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) {
+            headers['Authorization'] = `Bearer ${state.authToken}`;
+        }
         const res = await fetch(`${API_BASE}/admin/device/state`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ bayId, state: stateStr })
         });
         const data = await res.json();
@@ -1337,6 +2048,12 @@ async function executeLogin(emailOrUser, password) {
 // RESERVATION & PAYMENT SANDBOX (₹ INR)
 // ============================================================================
 function openReserveModal(assetId) {
+    if (!state.activeUser) {
+        openModal('authModal');
+        showToast('Please sign in or select a demo persona to rent equipment.', 'warning');
+        return;
+    }
+
     const asset = state.assets.find(a => a.id === assetId);
     if (!asset) return;
 

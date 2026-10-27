@@ -13,7 +13,7 @@
 
 | Metric | Target | Actual Result | Status |
 | :--- | :--- | :--- | :--- |
-| **Total Automated Unit & Integration Tests** | >= 70 | **105 Tests across 15 Suites** | **PASS (100%)** |
+| **Total Automated Unit & Integration Tests** | >= 70 | **113 Tests across 16 Suites** | **PASS (100%)** |
 | **Failed / Flaky Tests** | 0 | **0** | **PASS** |
 | **External Dependencies Required** | 0 | **0 (Pure Java SE built-ins)** | **PASS** |
 | **Compilation Status** | Clean (Exit 0) | **Clean (Exit 0, 0 warnings)** | **PASS** |
@@ -35,11 +35,11 @@ javac -encoding UTF-8 -d bin '@sources.txt'
 ```powershell
 java -cp bin tests.RentSphereVerificationTest
 ```
-*Output: Exit code 0. All 105 tests passed across 15 suites.*
+*Output: Exit code 0. All 113 tests passed across 16 suites.*
 
 ---
 
-## 3. Detailed Automated Test Breakdown (105 Passing Tests)
+## 3. Detailed Automated Test Breakdown (113 Passing Tests)
 
 ### Test Suite 1: 5-Tier Inheritance Hierarchy & Polymorphic Rates (8 Tests)
 - `[PASS]` CameraAndOpticsGear 4K video tariff calculation (Expected ₹2760.00, Got ₹2760.0)
@@ -175,6 +175,16 @@ java -cp bin tests.RentSphereVerificationTest
 - `[PASS]` Assets ledger successfully written via atomic staging (F-07)
 - `[PASS]` Temporary staging file cleanly renamed via atomic move without stale locks (F-07)
 - `[PASS]` Multi-day rental duration (5 days) accurately restored from flat-file persistence (F-01/F-07)
+
+### Test Suite 16: Endpoint Authorization & Impersonation Guards (OWASP A01) (8 Tests)
+- `[PASS]` Unauthenticated inspection approval strictly rejected with HTTP 401 Unauthorized
+- `[PASS]` Unauthenticated deposit slashing strictly rejected with HTTP 401 Unauthorized
+- `[PASS]` Obtained valid session token for renter_deepak
+- `[PASS]` Non-owner/non-admin blocked from approving inspection (HTTP 403 Forbidden)
+- `[PASS]` Unauthenticated asset reservation strictly rejected with HTTP 401 Unauthorized
+- `[PASS]` Impersonated reservation (booking on behalf of another user) blocked (HTTP 403 Forbidden)
+- `[PASS]` Unauthenticated equipment pickup strictly rejected with HTTP 401 Unauthorized
+- `[PASS]` Unauthorized equipment pickup (picking up another user's reservation) blocked (HTTP 403 Forbidden)
 
 ---
 

@@ -3,7 +3,7 @@
 [![Java Version](https://img.shields.io/badge/Java-SE%2017%2B%20%2F%2025-0D9488.svg)](https://openjdk.org/)
 [![Architecture](https://img.shields.io/badge/Architecture-Zero--Database%20Pure%20OOP-0A5C4D.svg)](#zero-database-flat-file-persistence-engine)
 [![Currency](https://img.shields.io/badge/Currency-Indian%20Rupees%20(%E2%82%B9%20INR)-F59E0B.svg)](#realistic-catalog-in-indian-rupees--inr)
-[![Test Suite](https://img.shields.io/badge/Verification%20Tests-105%20%2F%20105%20PASSED-10B981.svg)](#running-automated-verification-tests)
+[![Test Suite](https://img.shields.io/badge/Verification%20Tests-113%20%2F%20113%20PASSED-10B981.svg)](#running-automated-verification-tests)
 [![Security Status](https://img.shields.io/badge/Security-OWASP%20Hardened%20%7C%20Zero%20OTP%20Leakage-10B981.svg)](#security-audit--threat-remediation)
 [![Legal Compliance](https://img.shields.io/badge/Compliance-DPDP%20Act%202023%20%7C%20IT%20Rules%202021-3B82F6.svg)](#legal-policies--statutory-grievance-redressal)
 [![Design System](https://img.shields.io/badge/Theme-Warm%20Horizon%20Marketplace-0D9488.svg)](#5-cohesive-product-views)
@@ -130,14 +130,14 @@ Get-ChildItem -Path "backend/src", "tests" -Filter "*.java" -Recurse | ForEach-O
 javac -d bin -sourcepath "backend/src;tests" @sources.txt
 ```
 
-### Step 2: Run Automated Verification Test Suite (91 Tests across 14 Suites)
+### Step 2: Run Automated Verification Test Suite (113 Tests across 16 Suites)
 ```powershell
 java -cp bin tests.RentSphereVerificationTest
 ```
 *Expected Output:*
 ```
 =================================================================
-  VERIFICATION SUMMARY: 105 / 105 TESTS PASSED (100% SUCCESS)
+  VERIFICATION SUMMARY: 113 / 113 TESTS PASSED (100% SUCCESS)
 =================================================================
 ```
 
@@ -149,22 +149,26 @@ Open your browser and navigate to: **`http://localhost:8080/`**
 
 ### Step 4: Pre-Seeded Community Personas
 All seeded accounts share the default password: **`RentSphere@2026`**
-- **Admin & Grievance Officer:** `almeida@unigoa.ac.in` (User ID: `inspector_almeida`)
+- **Admin & Grievance Officer:** `admin@rentsphere.in` (User ID: `inspector_almeida`)
 - **Equipment Hosts:** `faaris@rentsphere.in` (`host_faaris`), `ketan@rentsphere.in` (`host_ketan`)
-- **Community Renters:** `deepak@unigoa.ac.in` (`renter_deepak`), `nikhil@rentsphere.in` (`renter_nikhil`), `priya@rentsphere.in` (`renter_priya`)
+- **Community Renters:** `deepak@rentsphere.in` (`renter_deepak`), `nikhil@rentsphere.in` (`renter_nikhil`), `priya@rentsphere.in` (`renter_priya`)
 
 ---
 
 ## 8. Complete Project Documentation Index
 
-- [GAP_ANALYSIS.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/GAP_ANALYSIS.md) — Evidence-based codebase audit, gap analysis, and 91-test validation.
-- [PROJECT_AUDIT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/PROJECT_AUDIT.md) — Architectural assessment, initial state, and risk classification.
-- [IMPLEMENTATION_REPORT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/IMPLEMENTATION_REPORT.md) — Detailed changelog of all implemented features.
-- [TEST_REPORT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/TEST_REPORT.md) — Test commands, automated test results, and browser verification artifacts.
-- [SECURITY_REVIEW.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/SECURITY_REVIEW.md) — Threat modeling, OWASP remediation, and residual risk analysis.
+- [TEAM_HANDOVER.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/TEAM_HANDOVER.md) — **Master Handover & Quick-Start Guide** for teammates, examiners, and next-day operations.
+- [PROJECT_ARCHITECTURE.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/PROJECT_ARCHITECTURE.md) — Comprehensive architecture specification, UML diagrams, package map, and API reference.
+- [IMPLEMENTATION_STATUS.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/IMPLEMENTATION_STATUS.md) — Evidence-based feature matrix, verified business invariants, and gap audit.
+- [DECISION_LOG.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/DECISION_LOG.md) — Architectural Decision Records (ADRs) covering pure Java, zero-DB, and security choices.
+- [IDEAS_BACKLOG.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/IDEAS_BACKLOG.md) — Master ideas register tracking accepted, deferred, proposed, and rejected concepts.
+- [TEST_REPORT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/TEST_REPORT.md) — 113-test automated verification suite, execution commands, and browser screenshots.
+- [SECURITY_REVIEW.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/SECURITY_REVIEW.md) — Threat modeling, OWASP remediation (CWE-200, 307, 256, 285), and residual risk analysis.
+- [GAP_ANALYSIS.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/GAP_ANALYSIS.md) — Evidence-based codebase audit, gap analysis, and 113-test validation.
 - [POLICY_REVIEW_CHECKLIST.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/POLICY_REVIEW_CHECKLIST.md) — 20 Indian legal policies, compliance matrix, and counsel sign-off checklist.
 - [DEPLOYMENT.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/DEPLOYMENT.md) — Operations, recovery, reverse proxy setup, and disaster recovery procedures.
-- [DEVELOPMENT_LOG.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/DEVELOPMENT_LOG.md) — Complete iterative development history and viva-voce notes.
+- [DEVELOPMENT_LOG.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/DEVELOPMENT_LOG.md) — Complete iterative development history, engineering ledger, and viva-voce notes.
+- [docs/UML_DIAGRAMS.md](file:///c:/Users/user/OneDrive/Desktop/MCA/OOT-MINIPROJECT/docs/UML_DIAGRAMS.md) — Formal Mermaid.js UML architecture diagrams (Use Case, 5-Tier Class, Statechart, Pipeline Sequence, Activity).
 
 ---
 
