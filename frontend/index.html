@@ -306,7 +306,7 @@
                             <span class="matrix-col-header">Col 7</span>
                             <span class="matrix-col-header">Col 8</span>
                         </div>
-                        <div class="grid-8x8" id="grid8x8Container" role="grid" aria-label="8 by 8 Smart Locker Grid with 64 physical compartments">
+                        <div class="grid-8x8" id="grid8x8Container" role="grid" aria-label="8 by 8 Smart Locker Grid with software-simulated 64-bay locker matrix">
                             <!-- 64 Bay Cells Rendered Dynamically by app.js -->
                         </div>
                     </div>
@@ -792,20 +792,88 @@
              TAB 5: ADMIN, GRIEVANCE & SUPPORT HUB (IT RULES 2021)
              ================================================================== -->
         <section id="adminSupportView" class="view-section">
-            <div class="section-title-bar">
-                <div>
-                    <h2 class="section-title"><span>⚖️</span> Administrator Arbitration & Grievance Redressal</h2>
-                    <p style="font-size:12px; color:var(--slate-500); margin-top:2px;">
-                        Fulfilling Rule 3(2) of the Information Technology (Intermediary Guidelines) Rules, 2021 and Goa University community pilot standards.
+            <!-- Non-Admin Permission Denied Banner -->
+            <div id="adminPermBanner" class="admin-perm-banner" style="display:none;">
+                <div class="admin-perm-content">
+                    <div class="admin-perm-icon">🛡️</div>
+                    <div>
+                        <h3 class="admin-perm-title">Administrator & Inspector Access Required</h3>
+                        <p class="admin-perm-text" id="adminPermMessage">
+                            You are currently signed in as a Renter or Host. Access to user account moderation, damage dispute arbitration, statutory grievance redressal, and Smart Hub locker diagnostics is restricted to administrators and inspection officers.
+                        </p>
+                    </div>
+                </div>
+                <div class="admin-perm-actions">
+                    <button class="btn-primary" id="adminPermSwitchBtn">
+                        <span>🔐</span> Sign In as Administrator
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Overview Header -->
+            <div class="admin-overview-header" id="adminOverviewHeader">
+                <div class="admin-header-info">
+                    <div class="admin-persona-pill">
+                        <span class="admin-dot"></span>
+                        <span id="adminPersonaLabel">Persona: Administrator / Lead Inspector</span>
+                        <span class="admin-node-tag">📍 Goa Univ Central Hub Node</span>
+                    </div>
+                    <h2 class="admin-header-title">System Operations & Arbitration Center</h2>
+                    <p class="admin-header-desc">
+                        Authoritative administrative overview, legal dispute arbitration, implemented prototype grievance redressal workflow (Rule 3(2) IT Rules 2021 model), and Smart Hub hardware diagnostics.
                     </p>
                 </div>
-                <button class="btn-primary" id="openSupportTicketBtn">
-                    <span>🎫</span> Submit New Grievance / Ticket
-                </button>
+                <div class="admin-header-actions">
+                    <button class="btn-secondary" id="adminRefreshAllBtn">
+                        <span>🔄</span> Refresh All Admin Systems
+                    </button>
+                    <button class="btn-primary" id="openSupportTicketBtn">
+                        <span>🎫</span> Submit New Grievance / Ticket
+                    </button>
+                </div>
+            </div>
+
+            <!-- Admin Real-Time KPI Cards Bar -->
+            <div class="admin-kpi-grid" id="adminKpiGrid">
+                <div class="admin-kpi-card">
+                    <div class="admin-kpi-top">
+                        <span class="admin-kpi-icon teal">👥</span>
+                        <span class="admin-kpi-label">Registered Accounts</span>
+                    </div>
+                    <div class="admin-kpi-val" id="adminKpiTotalUsers">0</div>
+                    <div class="admin-kpi-sub" id="adminKpiUsersSub">0 Active • 0 Suspended</div>
+                </div>
+
+                <div class="admin-kpi-card">
+                    <div class="admin-kpi-top">
+                        <span class="admin-kpi-icon crimson">⚖️</span>
+                        <span class="admin-kpi-label">Active Damage Disputes</span>
+                    </div>
+                    <div class="admin-kpi-val" id="adminKpiActiveDisputes">0</div>
+                    <div class="admin-kpi-sub" id="adminKpiDisputesSub">₹0.00 Held Collateral</div>
+                </div>
+
+                <div class="admin-kpi-card">
+                    <div class="admin-kpi-top">
+                        <span class="admin-kpi-icon amber">🎫</span>
+                        <span class="admin-kpi-label">Open Grievance Tickets</span>
+                    </div>
+                    <div class="admin-kpi-val" id="adminKpiOpenTickets">0</div>
+                    <div class="admin-kpi-sub" id="adminKpiTicketsSub">24h Acknowledgment & 15d Target</div>
+                </div>
+
+                <div class="admin-kpi-card">
+                    <div class="admin-kpi-top">
+                        <span class="admin-kpi-icon emerald">🗄️</span>
+                        <span class="admin-kpi-label">Hub Matrix Status</span>
+                    </div>
+                    <div class="admin-kpi-val" id="adminKpiHubHealth">64/64</div>
+                    <div class="admin-kpi-sub" id="adminKpiHubSub">0 Occupied • 0 Quarantine</div>
+                </div>
             </div>
 
             <!-- 2-Column Deck: Dispute Arbitration & Support Tickets -->
-            <div class="admin-support-grid">
+            <div class="admin-support-grid" id="adminDecksGrid1">
                 
                 <!-- Deck 1: Active Damage Disputes Queue -->
                 <div class="admin-card">
@@ -824,11 +892,11 @@
                 <!-- Deck 2: Customer Grievance & Support Tickets -->
                 <div class="admin-card">
                     <div class="admin-card-header">
-                        <h3><span>🎫</span> Grievance Redressal Tickets (IT Rules 2021)</h3>
+                        <h3><span>🎫</span> Grievance Redressal Tickets (Rule 3(2) Prototype)</h3>
                         <span class="count-badge" id="ticketCountBadge">0 Open</span>
                     </div>
                     <p style="font-size:12px; color:var(--slate-500); margin-bottom:12px;">
-                        Designated Grievance Officer: Prof. Support / Compliance Lead (Goa University Campus). Acknowledged within 24h.
+                        Prototype Grievance Redressal: Demonstrating 24h complaint acknowledgment and 15-day resolution target under Rule 3(2) IT Rules 2021 guidelines (academic prototype demonstration, not statutory certification).
                     </p>
                     <div class="ticket-list" id="ticketListContainer">
                         <div class="empty-state-box">No unresolved support tickets.</div>
@@ -837,7 +905,7 @@
             </div>
 
             <!-- Subdeck: User Accounts & Hub Hardware Simulation -->
-            <div class="admin-support-grid" style="margin-top:24px;">
+            <div class="admin-support-grid" id="adminDecksGrid2" style="margin-top:24px;">
                 
                 <!-- Deck 3: Registered User Accounts & RBAC Status -->
                 <div class="admin-card">
@@ -871,7 +939,7 @@
                         <span class="sim-badge">TEST HARNESS</span>
                     </div>
                     <p style="font-size:12px; color:var(--slate-500); margin-bottom:12px;">
-                        Simulate solenoid lock states, door jams, and maintenance modes across the 64 physical bays.
+                        Simulate solenoid lock states, door jams, and maintenance modes across the software-simulated 64-bay locker matrix.
                     </p>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <div class="form-group">
@@ -889,6 +957,23 @@
                             </select>
                         </div>
                     </div>
+
+                    <!-- Live Hardware Solenoid & Telemetry Preview Box -->
+                    <div class="sim-telemetry-box" id="simBayTelemetryBox" style="margin-top:12px; padding:10px 14px; background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-md); font-size:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <strong>Selected Bay: <span id="simBayCurrentId">A2</span></strong>
+                            <span class="state-pill state-available" id="simBayCurrentStatus">ONLINE_READY</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; font-size:11px; color:var(--slate-600);">
+                            <div>Temp: <strong id="simBayTemp">24.0°C</strong></div>
+                            <div>Humidity: <strong id="simBayHum">48.0%</strong></div>
+                            <div>Weight: <strong id="simBayWeight">0.0 kg</strong></div>
+                        </div>
+                        <div style="font-size:11px; color:var(--slate-500); margin-top:4px;">
+                            Occupied: <strong id="simBayOccupied">No</strong> | Asset: <span id="simBayAssetId">None</span>
+                        </div>
+                    </div>
+
                     <button class="btn-secondary" id="applyDeviceStateBtn" style="width:100%; justify-content:center; margin-top:12px;">
                         <span>⚙️</span> Apply Device State to Hub Bay
                     </button>
@@ -1098,7 +1183,7 @@
             </div>
             <div class="modal-body">
                 <p style="font-size:11px; color:var(--slate-500); margin-bottom:12px;">
-                    Statutory Grievance Redressal under Rule 3(2) of IT Rules, 2021. Acknowledgment generated within 24 hours.
+                    Prototype Grievance Redressal modeled after Rule 3(2) of IT Rules, 2021 (24-hour acknowledgment requirement, 15-day resolution target). Academic prototype demonstration; does not constitute legal certification.
                 </p>
 
                 <div class="form-group">
@@ -1140,7 +1225,7 @@
                 <div class="auth-tabs" style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--slate-200); padding-bottom:8px;">
                     <button class="cat-pill active" id="tabAuthLogin">Sign In</button>
                     <button class="cat-pill" id="tabAuthRegister">Register New User</button>
-                    <button class="cat-pill" id="tabAuthQuick">Quick Demo Switch</button>
+                    <button class="cat-pill" id="tabAuthQuick">Demo Switcher (Viva Defense Only)</button>
                 </div>
 
                 <!-- Sign In Form -->
@@ -1193,16 +1278,15 @@
 
                 <!-- Quick Switch Persona -->
                 <div id="authQuickForm" style="display:none;">
-                    <p style="font-size:12px; color:var(--slate-500); margin-bottom:10px;">
-                        Click any seeded persona to instantly authenticate with PBKDF2 verification:
-                    </p>
+                    <div style="background:var(--warm-amber-light); border:1px solid var(--warm-amber); color:var(--warm-amber-dark); padding:8px 10px; border-radius:6px; font-size:11px; margin-bottom:12px;">
+                        <strong>Academic Demo Isolation:</strong> 1-Click quick switch is restricted to unprivileged Renter and Host personas for lab viva evaluations. Privileged Administrator accounts are strictly isolated and require standard credential authentication.
+                    </div>
                     <div class="quick-personas-grid">
                         <button class="btn-secondary quick-persona-btn" data-user="renter_deepak">👤 Deepak Dev (Renter)</button>
                         <button class="btn-secondary quick-persona-btn" data-user="renter_nikhil">👤 Nikhil Bhaiju (Renter)</button>
                         <button class="btn-secondary quick-persona-btn" data-user="renter_priya">👤 Priya Sharma (Renter)</button>
                         <button class="btn-secondary quick-persona-btn" data-user="host_faaris">⚡ Faaris Khan (Host)</button>
                         <button class="btn-secondary quick-persona-btn" data-user="host_ketan">⚡ Ketan Naik (Host)</button>
-                        <button class="btn-secondary quick-persona-btn" data-user="inspector_almeida">⚖️ Prof. Almeida (Admin)</button>
                     </div>
                 </div>
             </div>
@@ -1317,6 +1401,6 @@
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="js/app.js?v=phase5_final"></script>
+    <script src="js/app.js?v=checkpoint7_1"></script>
 </body>
 </html>

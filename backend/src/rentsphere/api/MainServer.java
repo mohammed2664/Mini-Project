@@ -215,11 +215,18 @@ public class MainServer {
         if (token == null || token.isBlank()) return null;
         UserSession session = authService.validateSession(token);
         if (session == null) return null;
-        return authService.getUserById(session.getUserId());
+        UserAccount user = authService.getUserById(session.getUserId());
+        if (user == null) return null;
+        if ("SUSPENDED".equalsIgnoreCase(user.getAccountStatus())) {
+            return null; // Suspended user sessions cannot be used for authenticated operations
+        }
+        return user;
     }
 
     private boolean isUserAdmin(UserAccount user) {
-        return user != null && "ADMIN".equalsIgnoreCase(user.getRole());
+        return user != null
+                && !"SUSPENDED".equalsIgnoreCase(user.getAccountStatus())
+                && ("ADMIN".equalsIgnoreCase(user.getRole()) || "INSPECTOR".equalsIgnoreCase(user.getRole()));
     }
 
     // ========================================================================
@@ -539,56 +546,63 @@ public class MainServer {
         String assetId = body.get("assetId");
         String hostId = body.get("hostId");
 
-        Optional<RentableAsset> optAsset = assetRepo.findById(assetId);
-        if (optAsset.isEmpty()) {
-            sendJsonResponse(exchange, 404, "{\"error\":\"Asset not found\"}");
-            return;
+        synchronized (this) {
+            Optional<RentableAsset> optAsset = assetRepo.findById(assetId);
+            if (optAsset.isEmpty()) {
+                sendJsonResponse(exchange, 404, "{\"error\":\"Asset not found\"}");
+                return;
+            }
+
+            RentableAsset asset = optAsset.get();
+            if (!isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getOwnerId())) {
+                sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the asset owner or administrator can inspect this asset.\"}");
+                return;
+            }
+
+            if (!"INSPECTION_QUARANTINE".equalsIgnoreCase(asset.getCurrentState().getStateName())) {
+                sendJsonResponse(exchange, 409, "{\"error\":\"Conflict: Asset " + assetId + " is in state " + asset.getCurrentState().getStateName() + ", not INSPECTION_QUARANTINE. Settlement already completed or invalid.\"}");
+                return;
+            }
+
+            String renterId = asset.getRenterId();
+            int rentalDays = asset.getRentalDays();
+            double tariff = asset.calculateDailyRentalTariff(rentalDays);
+            double collateral = asset.calculateRequiredCollateral();
+
+            String prevState = asset.getCurrentState().getStateName();
+            try {
+                asset.getCurrentState().approveInspection(asset);
+            } catch (IllegalStateException e) {
+                sendJsonResponse(exchange, 409, "{\"error\":\"Conflict: " + escapeJson(e.getMessage()) + "\"}");
+                return;
+            }
+
+            asset.setRentalDays(1);
+            escrowVault.releasePayoutClean(renterId, asset.getOwnerId(), assetId, tariff, collateral);
+
+            LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
+            if (comp != null) {
+                comp.setStatus("ONLINE_READY");
+            }
+
+            String actingHostId = (hostId != null && !hostId.isBlank() && isUserAdmin(caller)) ? hostId : caller.getUserId();
+            asset.addServiceLog("Clean Inspection Approved by " + actingHostId + ". 100% deposit refunded. Restored to AVAILABLE.");
+
+            persistenceEngine.saveAssets(assetRepo);
+            persistenceEngine.saveLockers(lockerGrid);
+            persistenceEngine.saveEscrow(escrowVault);
+            persistenceEngine.appendWal(assetId, "INSPECT_APPROVE", prevState, asset.getCurrentState().getStateName(), actingHostId,
+                    String.format("Clean return approved. Slashed ₹0. Refunded ₹%.2f deposit to %s. Paid ₹%.2f to host (%d days).",
+                            collateral, renterId, tariff, rentalDays));
+
+            notificationService.pushNotification(renterId, "Deposit Refunded",
+                    "Clean inspection approved for " + asset.getTitle() + ". Full security deposit (₹" + collateral + ") refunded.", "SUCCESS");
+
+            String res = String.format(Locale.US,
+                    "{\"success\":true,\"state\":\"%s\",\"message\":\"Clean Return Approved! Full deposit (₹%.2f) refunded to renter. ₹%.2f rental fee transferred to host.\"}",
+                    asset.getCurrentState().getStateName(), collateral, tariff);
+            sendJsonResponse(exchange, 200, res);
         }
-
-        RentableAsset asset = optAsset.get();
-        if (!isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getOwnerId())) {
-            sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the asset owner or administrator can inspect this asset.\"}");
-            return;
-        }
-
-        String renterId = asset.getRenterId();
-        int rentalDays = asset.getRentalDays();
-        double tariff = asset.calculateDailyRentalTariff(rentalDays);
-        double collateral = asset.calculateRequiredCollateral();
-
-        String prevState = asset.getCurrentState().getStateName();
-        try {
-            asset.getCurrentState().approveInspection(asset);
-        } catch (IllegalStateException e) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"" + escapeJson(e.getMessage()) + "\"}");
-            return;
-        }
-
-        asset.setRentalDays(1);
-        escrowVault.releasePayoutClean(renterId, asset.getOwnerId(), assetId, tariff, collateral);
-
-        LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
-        if (comp != null) {
-            comp.setStatus("ONLINE_READY");
-        }
-
-        String actingHostId = (hostId != null && !hostId.isBlank() && isUserAdmin(caller)) ? hostId : caller.getUserId();
-        asset.addServiceLog("Clean Inspection Approved by " + actingHostId + ". 100% deposit refunded. Restored to AVAILABLE.");
-
-        persistenceEngine.saveAssets(assetRepo);
-        persistenceEngine.saveLockers(lockerGrid);
-        persistenceEngine.saveEscrow(escrowVault);
-        persistenceEngine.appendWal(assetId, "INSPECT_APPROVE", prevState, asset.getCurrentState().getStateName(), actingHostId,
-                String.format("Clean return approved. Slashed ₹0. Refunded ₹%.2f deposit to %s. Paid ₹%.2f to host (%d days).",
-                        collateral, renterId, tariff, rentalDays));
-
-        notificationService.pushNotification(renterId, "Deposit Refunded",
-                "Clean inspection approved for " + asset.getTitle() + ". Full security deposit (₹" + collateral + ") refunded.", "SUCCESS");
-
-        String res = String.format(Locale.US,
-                "{\"success\":true,\"state\":\"%s\",\"message\":\"Clean Return Approved! Full deposit (₹%.2f) refunded to renter. ₹%.2f rental fee transferred to host.\"}",
-                asset.getCurrentState().getStateName(), collateral, tariff);
-        sendJsonResponse(exchange, 200, res);
     }
 
     private void handleInspectSlash(HttpExchange exchange) throws IOException {
@@ -610,60 +624,67 @@ public class MainServer {
         double damagePct = parseDouble(body.get("damagePercentage"), 20.0);
         damagePct = Math.max(0.0, Math.min(100.0, damagePct));
 
-        Optional<RentableAsset> optAsset = assetRepo.findById(assetId);
-        if (optAsset.isEmpty()) {
-            sendJsonResponse(exchange, 404, "{\"error\":\"Asset not found\"}");
-            return;
+        synchronized (this) {
+            Optional<RentableAsset> optAsset = assetRepo.findById(assetId);
+            if (optAsset.isEmpty()) {
+                sendJsonResponse(exchange, 404, "{\"error\":\"Asset not found\"}");
+                return;
+            }
+
+            RentableAsset asset = optAsset.get();
+            if (!isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getOwnerId())) {
+                sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the asset owner or administrator can inspect this asset.\"}");
+                return;
+            }
+
+            if (!"INSPECTION_QUARANTINE".equalsIgnoreCase(asset.getCurrentState().getStateName())) {
+                sendJsonResponse(exchange, 409, "{\"error\":\"Conflict: Asset " + assetId + " is in state " + asset.getCurrentState().getStateName() + ", not INSPECTION_QUARANTINE. Settlement already completed or invalid.\"}");
+                return;
+            }
+
+            String renterId = asset.getRenterId();
+            int rentalDays = asset.getRentalDays();
+            double tariff = asset.calculateDailyRentalTariff(rentalDays);
+            double collateral = asset.calculateRequiredCollateral();
+            double slashingPenalty = asset.calculateDamageSlashingPenalty(damagePct);
+
+            String prevState = asset.getCurrentState().getStateName();
+            try {
+                asset.getCurrentState().slashCollateral(asset, slashingPenalty);
+            } catch (IllegalStateException e) {
+                sendJsonResponse(exchange, 409, "{\"error\":\"Conflict: " + escapeJson(e.getMessage()) + "\"}");
+                return;
+            }
+
+            asset.setRentalDays(1);
+            escrowVault.slashCollateral(renterId, asset.getOwnerId(), assetId, tariff, collateral, slashingPenalty);
+
+            LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
+            if (comp != null) {
+                comp.setStatus("ONLINE_READY");
+            }
+
+            double netRefund = Math.max(0.0, collateral - slashingPenalty);
+            String actingHostId = (hostId != null && !hostId.isBlank() && isUserAdmin(caller)) ? hostId : caller.getUserId();
+            asset.addServiceLog(String.format(Locale.US, "Damage Slashed: %.1f%% penalty (₹%.2f) deducted from deposit. Restored to AVAILABLE.", damagePct, slashingPenalty));
+
+            persistenceEngine.saveAssets(assetRepo);
+            persistenceEngine.saveLockers(lockerGrid);
+            persistenceEngine.saveEscrow(escrowVault);
+            persistenceEngine.appendWal(assetId, "INSPECT_SLASH", prevState, asset.getCurrentState().getStateName(), actingHostId,
+                    String.format(Locale.US, "Damage flagged (%.1f%%). Slashed ₹%.2f to host. Refunded ₹%.2f net deposit to %s.",
+                            damagePct, slashingPenalty, netRefund, renterId));
+
+            notificationService.pushNotification(renterId, "Damage Deduction Flagged",
+                    String.format(Locale.US, "Host flagged %.1f%% damage for %s. ₹%.2f deducted from deposit. You may file a dispute if contested.",
+                            damagePct, asset.getTitle(), slashingPenalty), "WARNING");
+
+            String res = String.format(Locale.US,
+                    "{\"success\":true,\"state\":\"%s\",\"slashedPenalty\":%.2f,\"refundedCollateral\":%.2f," +
+                    "\"message\":\"Damage Slashing Executed: ₹%.2f deducted from deposit for repairs. ₹%.2f net refund returned to renter.\"}",
+                    asset.getCurrentState().getStateName(), slashingPenalty, netRefund, slashingPenalty, netRefund);
+            sendJsonResponse(exchange, 200, res);
         }
-
-        RentableAsset asset = optAsset.get();
-        if (!isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getOwnerId())) {
-            sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the asset owner or administrator can inspect this asset.\"}");
-            return;
-        }
-
-        String renterId = asset.getRenterId();
-        int rentalDays = asset.getRentalDays();
-        double tariff = asset.calculateDailyRentalTariff(rentalDays);
-        double collateral = asset.calculateRequiredCollateral();
-        double slashingPenalty = asset.calculateDamageSlashingPenalty(damagePct);
-
-        String prevState = asset.getCurrentState().getStateName();
-        try {
-            asset.getCurrentState().slashCollateral(asset, slashingPenalty);
-        } catch (IllegalStateException e) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"" + escapeJson(e.getMessage()) + "\"}");
-            return;
-        }
-
-        asset.setRentalDays(1);
-        escrowVault.slashCollateral(renterId, asset.getOwnerId(), assetId, tariff, collateral, slashingPenalty);
-
-        LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
-        if (comp != null) {
-            comp.setStatus("ONLINE_READY");
-        }
-
-        double netRefund = Math.max(0.0, collateral - slashingPenalty);
-        String actingHostId = (hostId != null && !hostId.isBlank() && isUserAdmin(caller)) ? hostId : caller.getUserId();
-        asset.addServiceLog(String.format(Locale.US, "Damage Slashed: %.1f%% penalty (₹%.2f) deducted from deposit. Restored to AVAILABLE.", damagePct, slashingPenalty));
-
-        persistenceEngine.saveAssets(assetRepo);
-        persistenceEngine.saveLockers(lockerGrid);
-        persistenceEngine.saveEscrow(escrowVault);
-        persistenceEngine.appendWal(assetId, "INSPECT_SLASH", prevState, asset.getCurrentState().getStateName(), actingHostId,
-                String.format(Locale.US, "Damage flagged (%.1f%%). Slashed ₹%.2f to host. Refunded ₹%.2f net deposit to %s.",
-                        damagePct, slashingPenalty, netRefund, renterId));
-
-        notificationService.pushNotification(renterId, "Damage Deduction Flagged",
-                String.format(Locale.US, "Host flagged %.1f%% damage for %s. ₹%.2f deducted from deposit. You may file a dispute if contested.",
-                        damagePct, asset.getTitle(), slashingPenalty), "WARNING");
-
-        String res = String.format(Locale.US,
-                "{\"success\":true,\"state\":\"%s\",\"slashedPenalty\":%.2f,\"refundedCollateral\":%.2f," +
-                "\"message\":\"Damage Slashing Executed: ₹%.2f deducted from deposit for repairs. ₹%.2f net refund returned to renter.\"}",
-                asset.getCurrentState().getStateName(), slashingPenalty, netRefund, slashingPenalty, netRefund);
-        sendJsonResponse(exchange, 200, res);
     }
 
     private void handleOnboard(HttpExchange exchange) throws IOException {
@@ -969,6 +990,9 @@ public class MainServer {
 
         Map<String, String> b = parseJsonBody(exchange);
         String email = b.get("email");
+        if (email == null || email.isBlank()) {
+            email = b.get("userId");
+        }
         String password = b.get("password");
 
         try {
@@ -1189,66 +1213,83 @@ public class MainServer {
     }
 
     private void handleDisputeResolve(HttpExchange exchange) throws IOException {
-        if (handleCorsPreflight(exchange)) return;
-        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
-            sendResponse(exchange, 405, "{\"error\":\"Method Not Allowed\"}");
-            return;
-        }
-
-        UserAccount admin = resolveUser(exchange);
-        if (admin == null || !isUserAdmin(admin)) {
-            sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Admin session required for dispute arbitration.\"}");
-            return;
-        }
-
-        Map<String, String> b = parseJsonBody(exchange);
-        String disputeId = b.get("disputeId");
-        String decision = b.getOrDefault("decision", "RESOLVED_REFUND"); // "RESOLVED_REFUND" or "RESOLVED_SLASH"
-        String notes = b.getOrDefault("adminNotes", "Arbitrated after review of photo evidence.");
-
-        DisputeRecord dispute = disputeService.getDispute(disputeId);
-        if (dispute == null) {
-            sendJsonResponse(exchange, 404, "{\"error\":\"Dispute not found\"}");
-            return;
-        }
-
-        disputeService.resolveDispute(disputeId, admin != null ? admin.getUserId() : "admin_lead", decision, notes);
-
-        Optional<RentableAsset> optAsset = assetRepo.findById(dispute.getAssetId());
-        if (optAsset.isPresent()) {
-            RentableAsset asset = optAsset.get();
-            String prevState = asset.getCurrentState().getStateName();
-            int rentalDays = asset.getRentalDays();
-            double tariff = asset.calculateDailyRentalTariff(rentalDays);
-
-            if ("RESOLVED_REFUND".equalsIgnoreCase(decision)) {
-                // Rule in favor of renter: Full refund of held deposit
-                asset.getCurrentState().approveInspection(asset);
-                escrowVault.releasePayoutClean(dispute.getRenterId(), dispute.getOwnerId(), asset.getId(),
-                        tariff, dispute.getHeldDeposit());
-                asset.addServiceLog("Dispute resolved in favor of renter. 100% deposit refunded. Restored to AVAILABLE.");
-            } else {
-                // Rule in favor of host: Slash claimed deduction
-                asset.getCurrentState().slashCollateral(asset, dispute.getClaimedDeduction());
-                escrowVault.slashCollateral(dispute.getRenterId(), dispute.getOwnerId(), asset.getId(),
-                        tariff, dispute.getHeldDeposit(), dispute.getClaimedDeduction());
-                asset.addServiceLog("Dispute resolved in favor of host. ₹" + dispute.getClaimedDeduction() + " deducted from deposit.");
+        try {
+            if (handleCorsPreflight(exchange)) return;
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                sendResponse(exchange, 405, "{\"error\":\"Method Not Allowed\"}");
+                return;
             }
-            asset.setRentalDays(1);
 
-            persistenceEngine.saveAssets(assetRepo);
-            persistenceEngine.saveEscrow(escrowVault);
-            persistenceEngine.appendWal(asset.getId(), "DISPUTE_RESOLVED", prevState, asset.getCurrentState().getStateName(),
-                    admin != null ? admin.getUserId() : "admin",
-                    "Dispute " + disputeId + " settled: " + decision + ". " + notes);
+            UserAccount admin = resolveUser(exchange);
+            if (admin == null) {
+                sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Valid session required for dispute arbitration.\"}");
+                return;
+            }
+            if (!isUserAdmin(admin)) {
+                sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Platform administrator or inspector privilege required.\"}");
+                return;
+            }
 
-            notificationService.pushNotification(dispute.getRenterId(), "Dispute Arbitrated",
-                    "RentSphere arbitration concluded for " + asset.getTitle() + ": " + decision + ".", "INFO");
-            notificationService.pushNotification(dispute.getOwnerId(), "Dispute Arbitrated",
-                    "Arbitration finalized for " + asset.getTitle() + ": " + decision + ".", "INFO");
+            Map<String, String> b = parseJsonBody(exchange);
+            String disputeId = b.get("disputeId");
+            String decision = b.getOrDefault("decision", "RESOLVED_REFUND"); // "RESOLVED_REFUND" or "RESOLVED_SLASH"
+            String notes = b.getOrDefault("adminNotes", "Arbitrated after review of photo evidence.");
+
+            synchronized (this) {
+                DisputeRecord dispute = disputeService.getDispute(disputeId);
+                if (dispute == null) {
+                    sendJsonResponse(exchange, 404, "{\"error\":\"Dispute not found\"}");
+                    return;
+                }
+
+                if (dispute.getStatus() != null && dispute.getStatus().startsWith("RESOLVED")) {
+                    sendJsonResponse(exchange, 409, "{\"error\":\"Conflict: Dispute " + disputeId + " is already resolved (" + dispute.getStatus() + "). Duplicate arbitration rejected.\"}");
+                    return;
+                }
+
+                disputeService.resolveDispute(disputeId, admin.getUserId(), decision, notes);
+
+                Optional<RentableAsset> optAsset = assetRepo.findById(dispute.getAssetId());
+                if (optAsset.isPresent()) {
+                    RentableAsset asset = optAsset.get();
+                    String prevState = asset.getCurrentState().getStateName();
+                    int rentalDays = asset.getRentalDays();
+                    double tariff = asset.calculateDailyRentalTariff(rentalDays);
+
+                    if ("RESOLVED_REFUND".equalsIgnoreCase(decision)) {
+                        // Rule in favor of renter: Full refund of held deposit
+                        asset.getCurrentState().approveInspection(asset);
+                        escrowVault.releasePayoutClean(dispute.getRenterId(), dispute.getOwnerId(), asset.getId(),
+                                tariff, dispute.getHeldDeposit());
+                        asset.addServiceLog("Dispute resolved in favor of renter. 100% deposit refunded. Restored to AVAILABLE.");
+                    } else {
+                        // Rule in favor of host: Slash claimed deduction
+                        asset.getCurrentState().slashCollateral(asset, dispute.getClaimedDeduction());
+                        escrowVault.slashCollateral(dispute.getRenterId(), dispute.getOwnerId(), asset.getId(),
+                                tariff, dispute.getHeldDeposit(), dispute.getClaimedDeduction());
+                        asset.addServiceLog("Dispute resolved in favor of host. ₹" + dispute.getClaimedDeduction() + " deducted from deposit.");
+                    }
+                    asset.setRentalDays(1);
+
+                    persistenceEngine.saveAssets(assetRepo);
+                    persistenceEngine.saveEscrow(escrowVault);
+                    persistenceEngine.appendWal(asset.getId(), "DISPUTE_RESOLVED", prevState, asset.getCurrentState().getStateName(),
+                            admin.getUserId(),
+                            "Dispute " + disputeId + " settled: " + decision + ". " + notes);
+
+                    notificationService.pushNotification(dispute.getRenterId(), "Dispute Arbitrated",
+                            "RentSphere arbitration concluded for " + asset.getTitle() + ": " + decision + ".", "INFO");
+                    notificationService.pushNotification(dispute.getOwnerId(), "Dispute Arbitrated",
+                            "Arbitration finalized for " + asset.getTitle() + ": " + decision + ".", "INFO");
+                }
+
+                sendJsonResponse(exchange, 200, "{\"success\":true,\"disputeId\":\"" + disputeId + "\",\"decision\":\"" + decision + "\",\"message\":\"Dispute arbitrated and settled.\"}");
+            }
+        } catch (Throwable t) {
+            System.err.println("[ERROR] handleDisputeResolve error: " + t.getMessage());
+            t.printStackTrace();
+            sendJsonResponse(exchange, 500, "{\"error\":\"" + escapeJson(t.getMessage()) + "\"}");
         }
-
-        sendJsonResponse(exchange, 200, "{\"success\":true,\"disputeId\":\"" + disputeId + "\",\"decision\":\"" + decision + "\",\"message\":\"Dispute arbitrated and settled.\"}");
     }
 
     // ========================================================================
@@ -1308,7 +1349,11 @@ public class MainServer {
         }
 
         UserAccount admin = resolveUser(exchange);
-        if (admin == null || !isUserAdmin(admin)) {
+        if (admin == null) {
+            sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Valid administrator session required.\"}");
+            return;
+        }
+        if (!isUserAdmin(admin)) {
             sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Admin access required.\"}");
             return;
         }
@@ -1317,11 +1362,23 @@ public class MainServer {
         String ticketId = b.get("ticketId");
         String resolution = b.getOrDefault("resolution", "Resolved by Goa University Hub Support.");
 
-        boolean ok = supportService.resolveTicket(ticketId, admin.getUserId(), resolution);
-        if (ok) {
-            sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Ticket updated successfully.\"}");
-        } else {
-            sendJsonResponse(exchange, 404, "{\"error\":\"Ticket not found\"}");
+        synchronized (this) {
+            SupportService.SupportTicket ticket = supportService.getTicket(ticketId);
+            if (ticket == null) {
+                sendJsonResponse(exchange, 404, "{\"error\":\"Ticket not found\"}");
+                return;
+            }
+            if ("RESOLVED".equalsIgnoreCase(ticket.status)) {
+                sendJsonResponse(exchange, 409, "{\"error\":\"Conflict: Ticket " + ticketId + " is already resolved. Duplicate resolution rejected.\"}");
+                return;
+            }
+
+            boolean ok = supportService.resolveTicket(ticketId, admin.getUserId(), resolution);
+            if (ok) {
+                sendJsonResponse(exchange, 200, "{\"success\":true,\"message\":\"Ticket updated successfully.\"}");
+            } else {
+                sendJsonResponse(exchange, 404, "{\"error\":\"Ticket not found\"}");
+            }
         }
     }
 
@@ -1419,7 +1476,11 @@ public class MainServer {
         }
 
         UserAccount caller = resolveUser(exchange);
-        if (caller == null || !isUserAdmin(caller)) {
+        if (caller == null) {
+            sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Valid administrator session required.\"}");
+            return;
+        }
+        if (!isUserAdmin(caller)) {
             sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Admin access required.\"}");
             return;
         }
@@ -1447,7 +1508,11 @@ public class MainServer {
         }
 
         UserAccount caller = resolveUser(exchange);
-        if (caller == null || !isUserAdmin(caller)) {
+        if (caller == null) {
+            sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Valid administrator session required.\"}");
+            return;
+        }
+        if (!isUserAdmin(caller)) {
             sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Admin access required.\"}");
             return;
         }
@@ -1455,6 +1520,11 @@ public class MainServer {
         Map<String, String> b = parseJsonBody(exchange);
         String userId = b.get("userId");
         String status = b.getOrDefault("status", "ACTIVE"); // "ACTIVE" or "SUSPENDED"
+
+        if (caller.getUserId().equalsIgnoreCase(userId) && "SUSPENDED".equalsIgnoreCase(status)) {
+            sendJsonResponse(exchange, 400, "{\"error\":\"Self-lockout prevented: Administrator cannot suspend their own active account.\"}");
+            return;
+        }
 
         boolean ok = authService.setAccountStatus(userId, status);
         if (ok) {
@@ -1472,7 +1542,11 @@ public class MainServer {
         }
 
         UserAccount caller = resolveUser(exchange);
-        if (caller == null || !isUserAdmin(caller)) {
+        if (caller == null) {
+            sendJsonResponse(exchange, 401, "{\"error\":\"Unauthorized: Valid administrator session required.\"}");
+            return;
+        }
+        if (!isUserAdmin(caller)) {
             sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Admin access required to control hardware locker state.\"}");
             return;
         }

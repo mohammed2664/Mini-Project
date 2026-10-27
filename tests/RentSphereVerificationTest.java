@@ -24,11 +24,14 @@ import rentsphere.policy.*;
 import rentsphere.support.*;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.*;
 import java.util.List;
+import java.util.concurrent.*;
 import rentsphere.api.MainServer;
 
 /**
@@ -80,6 +83,7 @@ public class RentSphereVerificationTest {
         testNotificationServiceAndPersistence();
         testSecurityRemediationAndMultiDayEscrow();
         testEndpointAuthorizationAndImpersonationGuards();
+        testAdminSecuritySettlementConcurrencyAndGrievanceSla();
 
         System.out.println("\n=================================================================");
         System.out.printf("  VERIFICATION SUMMARY: %d / %d TESTS PASSED (100%% SUCCESS)%n", testsPassed, testsTotal);
@@ -775,5 +779,470 @@ public class RentSphereVerificationTest {
         if (end == -1) return null;
         return json.substring(start, end);
     }
-}
+    private static HttpResponse<String>[] sendSimultaneousRequests(HttpRequest req1, HttpRequest req2) throws Exception {
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            HttpClient client1 = HttpClient.newHttpClient();
+            HttpClient client2 = HttpClient.newHttpClient();
 
+            Future<HttpResponse<String>> f1 = pool.submit(() -> {
+                barrier.await();
+                return client1.send(req1, HttpResponse.BodyHandlers.ofString());
+            });
+
+            Future<HttpResponse<String>> f2 = pool.submit(() -> {
+                barrier.await();
+                return client2.send(req2, HttpResponse.BodyHandlers.ofString());
+            });
+
+            HttpResponse<String> r1 = f1.get(10, TimeUnit.SECONDS);
+            HttpResponse<String> r2 = f2.get(10, TimeUnit.SECONDS);
+            @SuppressWarnings("unchecked")
+            HttpResponse<String>[] results = new HttpResponse[]{r1, r2};
+            return results;
+        } finally {
+            pool.shutdown();
+        }
+    }
+
+    private static class EscrowSnapshot {
+        final double wallet;
+        final double locked;
+        final double earned;
+
+        EscrowSnapshot(double wallet, double locked, double earned) {
+            this.wallet = wallet;
+            this.locked = locked;
+            this.earned = earned;
+        }
+    }
+
+    private static EscrowSnapshot getEscrowSnapshot(Path escrowFile, String userId) throws IOException {
+        List<String> lines = Files.readAllLines(escrowFile);
+        for (String line : lines) {
+            String[] parts = line.split("\\|");
+            if (parts.length >= 6 && parts[0].equalsIgnoreCase(userId)) {
+                double wallet = Double.parseDouble(parts[3]);
+                double locked = Double.parseDouble(parts[4]);
+                double earned = Double.parseDouble(parts[5]);
+                return new EscrowSnapshot(wallet, locked, earned);
+            }
+        }
+        throw new IllegalArgumentException("User " + userId + " not found in " + escrowFile);
+    }
+
+    // ========================================================================
+    // TEST 17: CHECKPOINT 7.1 ADMIN SECURITY, SETTLEMENT CONCURRENCY & GRIEVANCE SLA AUDIT
+    // ========================================================================
+    private static void testAdminSecuritySettlementConcurrencyAndGrievanceSla() {
+        System.out.println("\n--- [TEST 17] Admin Security, Settlement Concurrency & Grievance SLA Audit ---");
+
+        Path testDataDir = Paths.get("data/test_audit_71");
+        Path assetsFile = testDataDir.resolve("assets_ledger.txt");
+        Path disputesFile = testDataDir.resolve("disputes_ledger.txt");
+        Path ticketsFile = testDataDir.resolve("support_tickets.txt");
+        try {
+            // 1. Setup strictly isolated test directory with seed data
+            if (Files.exists(testDataDir)) {
+                try (var stream = Files.walk(testDataDir)) {
+                    stream.sorted(java.util.Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+                }
+            }
+            Files.createDirectories(testDataDir);
+
+            // Copy seed files into testDataDir for isolated manipulation
+            Path sourceDir = Paths.get("data");
+            String[] seedFiles = {"users.txt", "assets_ledger.txt", "escrow_vault.txt", "locker_grid_8x8.txt", "disputes_ledger.txt", "support_tickets.txt", "audit_wal.txt", "policies.txt"};
+            for (String f : seedFiles) {
+                Path src = sourceDir.resolve(f);
+                if (Files.exists(src)) {
+                    Files.copy(src, testDataDir.resolve(f), StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+
+            // Seed dedicated test records in testDataDir for concurrent execution
+            String assetDispute = "AST-CONCUR-D|Concurrent Dispute Asset|CAMERAS|CameraAndOpticsGear|host_ketan|renter_priya|DISPUTED|550.00|2000.00|C1|sensorMp=24.2;is4k=true;mount=Standard Mount;protection=Creator Comprehensive;kitCount=3;days=1|Commissioning Log\n";
+            String assetApprove = "AST-CONCUR-APP|Concurrent Clean Return Asset|POWER_TOOLS|PowerToolEquipment|host_ketan|renter_priya|INSPECTION_QUARANTINE|500.00|1500.00|C2|power=600W Motor;safety=ISI Certified;cordless=false;bits=10;days=1|Commissioning Log\n";
+            String assetSlash = "AST-CONCUR-SLASH|Concurrent Slashed Asset|POWER_TOOLS|PowerToolEquipment|host_ketan|renter_deepak|INSPECTION_QUARANTINE|400.00|1000.00|C4|power=600W Motor;safety=ISI Certified;cordless=false;bits=10;days=1|Commissioning Log\n";
+            Files.writeString(assetsFile, assetDispute + assetApprove + assetSlash, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+
+            // Seed a dedicated open dispute in testDataDir for dispute resolution concurrency
+            String testDisputeLine = "DSP-CONCUR-DISP|AST-CONCUR-D|renter_priya|host_ketan|2000.00|500.00|Contested damage|Evidence clear|OPEN||1792931000000|0\n";
+            Files.writeString(disputesFile, testDisputeLine, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+
+            // Seed a dedicated open ticket in testDataDir for ticket resolution duplicate check
+            String testTicketLine = "TCK-CONCUR-REP|renter_deepak|BOOKING|Simultaneous Ticket Resolution|Testing concurrency|OPEN||1792931000000|0\n";
+            Files.writeString(ticketsFile, testTicketLine, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to prepare isolated test environment in data/test_audit_71", e);
+        }
+
+        int testPort = 8090;
+        MainServer server = new MainServer(testPort, "data/test_audit_71", "frontend");
+        try {
+            server.start();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to launch MainServer on test port " + testPort, e);
+        }
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            String baseUrl = "http://localhost:" + testPort;
+
+            // -------------------------------------------------------------
+            // PART 1: ADMIN PRIVILEGE ESCALATION & SERVER-SIDE RBAC AUDIT
+            // -------------------------------------------------------------
+
+            // 1.1 Unauthenticated request to /api/admin/users -> 401 Unauthorized
+            HttpRequest unauthAdmin = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/admin/users"))
+                    .GET()
+                    .build();
+            HttpResponse<String> r1 = client.send(unauthAdmin, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r1.statusCode() == 401, "Unauthenticated GET /api/admin/users strictly rejected with HTTP 401 Unauthorized");
+
+            // 1.2 Unauthenticated request to /api/admin/device/state -> 401 Unauthorized
+            HttpRequest unauthDev = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/admin/device/state"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"bayId\":\"A2\",\"state\":\"ONLINE_READY\"}"))
+                    .build();
+            HttpResponse<String> r2 = client.send(unauthDev, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r2.statusCode() == 401, "Unauthenticated POST /api/admin/device/state strictly rejected with HTTP 401 Unauthorized");
+
+            // 1.3 Unauthenticated request to /api/disputes/resolve -> 401 Unauthorized
+            HttpRequest unauthDisp = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/disputes/resolve"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"disputeId\":\"DSP-TEST-CONCUR\",\"decision\":\"RESOLVED_REFUND\"}"))
+                    .build();
+            HttpResponse<String> r3 = client.send(unauthDisp, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r3.statusCode() == 401, "Unauthenticated POST /api/disputes/resolve strictly rejected with HTTP 401 Unauthorized");
+
+            // 1.4 Unauthenticated request to /api/support/reply -> 401 Unauthorized
+            HttpRequest unauthSupp = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/support/reply"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"ticketId\":\"TCK-TEST-SLA\",\"resolution\":\"Test resolution\"}"))
+                    .build();
+            HttpResponse<String> r4 = client.send(unauthSupp, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r4.statusCode() == 401, "Unauthenticated POST /api/support/reply strictly rejected with HTTP 401 Unauthorized");
+
+            // 1.5 Authenticate renter (deepak@rentsphere.in)
+            HttpRequest loginRenter = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"deepak@rentsphere.in\",\"password\":\"RentSphere@2026\"}"))
+                    .build();
+            HttpResponse<String> resRenter = client.send(loginRenter, HttpResponse.BodyHandlers.ofString());
+            String tokenRenter = extractTokenFromJson(resRenter.body());
+            assertTrue(tokenRenter != null && !tokenRenter.isBlank(), "Renter successfully logged in with valid session token");
+
+            // 1.6 Renter calling /api/admin/users -> 403 Forbidden
+            HttpRequest renterAdmin = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/admin/users"))
+                    .header("Authorization", "Bearer " + tokenRenter)
+                    .GET()
+                    .build();
+            HttpResponse<String> r5 = client.send(renterAdmin, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r5.statusCode() == 403, "Authenticated renter calling GET /api/admin/users strictly blocked with HTTP 403 Forbidden");
+
+            // 1.7 Renter calling /api/admin/device/state -> 403 Forbidden
+            HttpRequest renterDev = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/admin/device/state"))
+                    .header("Authorization", "Bearer " + tokenRenter)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"bayId\":\"A2\",\"state\":\"ONLINE_READY\"}"))
+                    .build();
+            HttpResponse<String> r6 = client.send(renterDev, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r6.statusCode() == 403, "Authenticated renter calling POST /api/admin/device/state strictly blocked with HTTP 403 Forbidden");
+
+            // 1.8 Renter calling /api/disputes/resolve -> 403 Forbidden
+            HttpRequest renterDisp = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/disputes/resolve"))
+                    .header("Authorization", "Bearer " + tokenRenter)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"disputeId\":\"DSP-TEST-CONCUR\",\"decision\":\"RESOLVED_REFUND\"}"))
+                    .build();
+            HttpResponse<String> r7 = client.send(renterDisp, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r7.statusCode() == 403, "Authenticated renter calling POST /api/disputes/resolve strictly blocked with HTTP 403 Forbidden");
+
+            // 1.9 Authenticate administrator (inspector_almeida)
+            HttpRequest loginAdmin = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"userId\":\"inspector_almeida\",\"password\":\"RentSphere@2026\"}"))
+                    .build();
+            HttpResponse<String> resAdmin = client.send(loginAdmin, HttpResponse.BodyHandlers.ofString());
+            String tokenAdmin = extractTokenFromJson(resAdmin.body());
+            assertTrue(tokenAdmin != null && !tokenAdmin.isBlank(), "Administrator (Prof. Almeida) successfully authenticated with valid token");
+
+            // 1.10 Admin calling /api/admin/users -> 200 OK
+            HttpRequest adminUsers = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/admin/users"))
+                    .header("Authorization", "Bearer " + tokenAdmin)
+                    .GET()
+                    .build();
+            HttpResponse<String> r8 = client.send(adminUsers, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r8.statusCode() == 200, "Authenticated administrator successfully accesses GET /api/admin/users (HTTP 200 OK)");
+
+            // -------------------------------------------------------------
+            // PART 2: SUSPENDED SESSIONS & SELF-SUSPENSION DEFENSE
+            // -------------------------------------------------------------
+
+            // 2.1 Self-suspension guard: Admin attempting to suspend their own account -> 400 Bad Request
+            HttpRequest selfSuspend = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/admin/users/status"))
+                    .header("Authorization", "Bearer " + tokenAdmin)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"userId\":\"inspector_almeida\",\"status\":\"SUSPENDED\"}"))
+                    .build();
+            HttpResponse<String> r9 = client.send(selfSuspend, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r9.statusCode() == 400 && r9.body().contains("Self-lockout prevented"),
+                    "Self-suspension strictly prevented: Admin cannot suspend their own active account (HTTP 400 Bad Request)");
+
+            // 2.2 Suspend renter account (renter_deepak)
+            HttpRequest suspendDeepak = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/admin/users/status"))
+                    .header("Authorization", "Bearer " + tokenAdmin)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"userId\":\"renter_deepak\",\"status\":\"SUSPENDED\"}"))
+                    .build();
+            HttpResponse<String> r10 = client.send(suspendDeepak, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r10.statusCode() == 200 && r10.body().contains("SUSPENDED"),
+                    "Administrator successfully suspended user account renter_deepak (HTTP 200 OK)");
+
+            // 2.3 Suspended renter session token is immediately rejected on authenticated endpoints -> 401 Unauthorized
+            HttpRequest suspendedReq = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/reserve"))
+                    .header("Authorization", "Bearer " + tokenRenter)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-101\",\"rentalDays\":1}"))
+                    .build();
+            HttpResponse<String> r11 = client.send(suspendedReq, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r11.statusCode() == 401,
+                    "Suspended user's existing session token strictly rejected on authenticated endpoint (HTTP 401 Unauthorized)");
+
+            // 2.4 Suspended user cannot log in
+            HttpRequest loginSuspended = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"deepak@rentsphere.in\",\"password\":\"RentSphere@2026\"}"))
+                    .build();
+            HttpResponse<String> r12 = client.send(loginSuspended, HttpResponse.BodyHandlers.ofString());
+            assertTrue(r12.statusCode() == 403 && r12.body().contains("suspended"),
+                    "Login attempt by suspended user account strictly rejected (HTTP 403 Forbidden)");
+
+            // Reactivate renter_deepak for subsequent tests
+            HttpRequest reactivateDeepak = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/admin/users/status"))
+                    .header("Authorization", "Bearer " + tokenAdmin)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"userId\":\"renter_deepak\",\"status\":\"ACTIVE\"}"))
+                    .build();
+            client.send(reactivateDeepak, HttpResponse.BodyHandlers.ofString());
+
+            // -------------------------------------------------------------
+            // PART 3: TRUE CONCURRENT DISPUTE ARBITRATION (SIMULTANEOUS OVERLAPPING REQUESTS)
+            // -------------------------------------------------------------
+            Path escrowFile = testDataDir.resolve("escrow_vault.txt");
+            Path walFile = testDataDir.resolve("audit_wal.txt");
+
+            EscrowSnapshot priyaBeforeDisp = getEscrowSnapshot(escrowFile, "renter_priya");
+            EscrowSnapshot ketanBeforeDisp = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            HttpRequest concurDisp1 = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/disputes/resolve"))
+                    .header("Authorization", "Bearer " + tokenAdmin)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"disputeId\":\"DSP-CONCUR-DISP\",\"decision\":\"RESOLVED_REFUND\",\"adminNotes\":\"Concurrent ruling Worker 1\"}"))
+                    .build();
+
+            HttpRequest concurDisp2 = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/disputes/resolve"))
+                    .header("Authorization", "Bearer " + tokenAdmin)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"disputeId\":\"DSP-CONCUR-DISP\",\"decision\":\"RESOLVED_REFUND\",\"adminNotes\":\"Concurrent ruling Worker 2\"}"))
+                    .build();
+
+            HttpResponse<String>[] dispResponses = sendSimultaneousRequests(concurDisp1, concurDisp2);
+            int disp200 = (dispResponses[0].statusCode() == 200 ? 1 : 0) + (dispResponses[1].statusCode() == 200 ? 1 : 0);
+            int disp409 = (dispResponses[0].statusCode() == 409 ? 1 : 0) + (dispResponses[1].statusCode() == 409 ? 1 : 0);
+
+            assertTrue(disp200 == 1 && disp409 == 1, "Simultaneous dispute resolution: Exactly one HTTP 200 and one HTTP 409 Conflict observed");
+
+            // Verify authoritative dispute status & asset state
+            List<String> dispLines = Files.readAllLines(disputesFile);
+            boolean dispResolved = dispLines.stream().anyMatch(l -> l.startsWith("DSP-CONCUR-DISP|") && l.contains("|RESOLVED_REFUND|"));
+            assertTrue(dispResolved, "Dispute DSP-CONCUR-DISP authoritative status is RESOLVED_REFUND");
+
+            List<String> assetLines = Files.readAllLines(assetsFile);
+            boolean assetDAvailable = assetLines.stream().anyMatch(l -> l.startsWith("AST-CONCUR-D|") && l.contains("|AVAILABLE|"));
+            assertTrue(assetDAvailable, "Asset AST-CONCUR-D authoritatively restored to AVAILABLE after dispute resolution");
+
+            // Invariants: Renter Priya refunded heldDeposit (2000.00) exactly once, debited locked (2550.00) exactly once
+            EscrowSnapshot priyaAfterDisp = getEscrowSnapshot(escrowFile, "renter_priya");
+            EscrowSnapshot ketanAfterDisp = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            assertTrue(Math.abs((priyaAfterDisp.wallet - priyaBeforeDisp.wallet) - 2000.00) < 0.01,
+                    "Dispute concurrency: Renter collateral refunded exactly once (+₹2000.00, observed: ₹" + (priyaAfterDisp.wallet - priyaBeforeDisp.wallet) + ")");
+            assertTrue(Math.abs((priyaBeforeDisp.locked - priyaAfterDisp.locked) - 2632.50) < 0.01,
+                    "Dispute concurrency: Renter locked escrow debited exactly once (-₹2632.50, observed: ₹" + (priyaBeforeDisp.locked - priyaAfterDisp.locked) + ")");
+            assertTrue(priyaAfterDisp.locked >= 0.0, "Dispute concurrency: Renter locked escrow non-negative (observed: ₹" + priyaAfterDisp.locked + ")");
+            assertTrue(Math.abs((ketanAfterDisp.wallet - ketanBeforeDisp.wallet) - 632.50) < 0.01,
+                    "Dispute concurrency: Host tariff credited exactly once (+₹632.50, observed: ₹" + (ketanAfterDisp.wallet - ketanBeforeDisp.wallet) + ")");
+
+            long walCountDisp = Files.readAllLines(walFile).stream().filter(l -> l.contains("DSP-CONCUR-DISP")).count();
+            assertTrue(walCountDisp == 1, "Dispute concurrency: Exactly 1 immutable audit entry recorded in WAL for DSP-CONCUR-DISP");
+
+            // -------------------------------------------------------------
+            // PART 4: TRUE CONCURRENT CLEAN INSPECTION APPROVAL
+            // -------------------------------------------------------------
+            // Authenticate host_ketan (owner of AST-CONCUR-APP and AST-CONCUR-SLASH)
+            HttpRequest loginKetan = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/auth/login"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"email\":\"ketan@rentsphere.in\",\"password\":\"RentSphere@2026\"}"))
+                    .build();
+            HttpResponse<String> resKetan = client.send(loginKetan, HttpResponse.BodyHandlers.ofString());
+            String tokenKetan = extractTokenFromJson(resKetan.body());
+
+            EscrowSnapshot priyaBeforeApp = getEscrowSnapshot(escrowFile, "renter_priya");
+            EscrowSnapshot ketanBeforeApp = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            HttpRequest concurApp1 = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/inspect-approve"))
+                    .header("Authorization", "Bearer " + tokenKetan)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-CONCUR-APP\",\"hostId\":\"host_ketan\"}"))
+                    .build();
+
+            HttpRequest concurApp2 = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/inspect-approve"))
+                    .header("Authorization", "Bearer " + tokenKetan)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-CONCUR-APP\",\"hostId\":\"host_ketan\"}"))
+                    .build();
+
+            HttpResponse<String>[] appResponses = sendSimultaneousRequests(concurApp1, concurApp2);
+            int app200 = (appResponses[0].statusCode() == 200 ? 1 : 0) + (appResponses[1].statusCode() == 200 ? 1 : 0);
+            int app409 = (appResponses[0].statusCode() == 409 ? 1 : 0) + (appResponses[1].statusCode() == 409 ? 1 : 0);
+
+            assertTrue(app200 == 1 && app409 == 1, "Simultaneous clean inspection approval: Exactly one HTTP 200 and one HTTP 409 Conflict observed");
+
+            assetLines = Files.readAllLines(assetsFile);
+            boolean assetAppAvailable = assetLines.stream().anyMatch(l -> l.startsWith("AST-CONCUR-APP|") && l.contains("|AVAILABLE|"));
+            assertTrue(assetAppAvailable, "Asset AST-CONCUR-APP authoritatively transitioned to AVAILABLE after clean inspection");
+
+            EscrowSnapshot priyaAfterApp = getEscrowSnapshot(escrowFile, "renter_priya");
+            EscrowSnapshot ketanAfterApp = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            assertTrue(Math.abs((priyaAfterApp.wallet - priyaBeforeApp.wallet) - 1500.00) < 0.01,
+                    "Clean inspection concurrency: Full deposit refunded exactly once (+₹1500.00, observed: ₹" + (priyaAfterApp.wallet - priyaBeforeApp.wallet) + ")");
+            assertTrue(Math.abs((priyaBeforeApp.locked - priyaAfterApp.locked) - 2000.00) < 0.01,
+                    "Clean inspection concurrency: Locked escrow debited exactly once (-₹2000.00, observed: ₹" + (priyaBeforeApp.locked - priyaAfterApp.locked) + ")");
+            assertTrue(priyaAfterApp.locked >= 0.0, "Clean inspection concurrency: Locked escrow non-negative (observed: ₹" + priyaAfterApp.locked + ")");
+            assertTrue(Math.abs((ketanAfterApp.wallet - ketanBeforeApp.wallet) - 500.00) < 0.01,
+                    "Clean inspection concurrency: Host tariff credited exactly once (+₹500.00, observed: ₹" + (ketanAfterApp.wallet - ketanBeforeApp.wallet) + ")");
+
+            long walCountApp = Files.readAllLines(walFile).stream().filter(l -> l.contains("AST-CONCUR-APP") && l.contains("INSPECT_APPROVE")).count();
+            assertTrue(walCountApp == 1, "Clean inspection concurrency: Exactly 1 immutable audit entry recorded in WAL for AST-CONCUR-APP");
+
+            // -------------------------------------------------------------
+            // PART 5: TRUE CONCURRENT DAMAGE SLASHING
+            // -------------------------------------------------------------
+            EscrowSnapshot deepakBeforeSlash = getEscrowSnapshot(escrowFile, "renter_deepak");
+            EscrowSnapshot ketanBeforeSlash = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            HttpRequest concurSlash1 = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/inspect-slash"))
+                    .header("Authorization", "Bearer " + tokenKetan)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-CONCUR-SLASH\",\"hostId\":\"host_ketan\",\"damagePercentage\":\"20.0\"}"))
+                    .build();
+
+            HttpRequest concurSlash2 = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/assets/inspect-slash"))
+                    .header("Authorization", "Bearer " + tokenKetan)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"assetId\":\"AST-CONCUR-SLASH\",\"hostId\":\"host_ketan\",\"damagePercentage\":\"20.0\"}"))
+                    .build();
+
+            HttpResponse<String>[] slashResponses = sendSimultaneousRequests(concurSlash1, concurSlash2);
+            int slash200 = (slashResponses[0].statusCode() == 200 ? 1 : 0) + (slashResponses[1].statusCode() == 200 ? 1 : 0);
+            int slash409 = (slashResponses[0].statusCode() == 409 ? 1 : 0) + (slashResponses[1].statusCode() == 409 ? 1 : 0);
+
+            assertTrue(slash200 == 1 && slash409 == 1, "Simultaneous damage slashing: Exactly one HTTP 200 and one HTTP 409 Conflict observed");
+
+            assetLines = Files.readAllLines(assetsFile);
+            boolean assetSlashAvailable = assetLines.stream().anyMatch(l -> l.startsWith("AST-CONCUR-SLASH|") && l.contains("|AVAILABLE|"));
+            assertTrue(assetSlashAvailable, "Asset AST-CONCUR-SLASH authoritatively transitioned to AVAILABLE after damage slashing");
+
+            EscrowSnapshot deepakAfterSlash = getEscrowSnapshot(escrowFile, "renter_deepak");
+            EscrowSnapshot ketanAfterSlash = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            assertTrue(Math.abs((deepakAfterSlash.wallet - deepakBeforeSlash.wallet) - 800.00) < 0.01,
+                    "Damage slashing concurrency: Net deposit refunded exactly once (+₹800.00, observed: ₹" + (deepakAfterSlash.wallet - deepakBeforeSlash.wallet) + ")");
+            assertTrue(Math.abs((deepakBeforeSlash.locked - deepakAfterSlash.locked) - 1400.00) < 0.01,
+                    "Damage slashing concurrency: Locked escrow debited exactly once (-₹1400.00, observed: ₹" + (deepakBeforeSlash.locked - deepakAfterSlash.locked) + ")");
+            assertTrue(deepakAfterSlash.locked >= 0.0, "Damage slashing concurrency: Locked escrow non-negative (observed: ₹" + deepakAfterSlash.locked + ")");
+            assertTrue(Math.abs((ketanAfterSlash.wallet - ketanBeforeSlash.wallet) - 600.00) < 0.01,
+                    "Damage slashing concurrency: Host payout (tariff + penalty) credited exactly once (+₹600.00, observed: ₹" + (ketanAfterSlash.wallet - ketanBeforeSlash.wallet) + ")");
+
+            long walCountSlash = Files.readAllLines(walFile).stream().filter(l -> l.contains("AST-CONCUR-SLASH") && l.contains("INSPECT_SLASH")).count();
+            assertTrue(walCountSlash == 1, "Damage slashing concurrency: Exactly 1 immutable audit entry recorded in WAL for AST-CONCUR-SLASH");
+
+            // -------------------------------------------------------------
+            // PART 6: TRUE CONCURRENT GRIEVANCE TICKET RESOLUTION
+            // -------------------------------------------------------------
+            HttpRequest concurTicket1 = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/support/reply"))
+                    .header("Authorization", "Bearer " + tokenAdmin)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"ticketId\":\"TCK-CONCUR-REP\",\"resolution\":\"Simultaneous resolution Worker Alpha\"}"))
+                    .build();
+
+            HttpRequest concurTicket2 = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/support/reply"))
+                    .header("Authorization", "Bearer " + tokenAdmin)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"ticketId\":\"TCK-CONCUR-REP\",\"resolution\":\"Simultaneous resolution Worker Beta\"}"))
+                    .build();
+
+            HttpResponse<String>[] ticketResponses = sendSimultaneousRequests(concurTicket1, concurTicket2);
+            int ticket200 = (ticketResponses[0].statusCode() == 200 ? 1 : 0) + (ticketResponses[1].statusCode() == 200 ? 1 : 0);
+            int ticket409 = (ticketResponses[0].statusCode() == 409 ? 1 : 0) + (ticketResponses[1].statusCode() == 409 ? 1 : 0);
+
+            assertTrue(ticket200 == 1 && ticket409 == 1, "Simultaneous grievance ticket resolution: Exactly one HTTP 200 and one HTTP 409 Conflict observed");
+
+            List<String> ticketLines = Files.readAllLines(ticketsFile);
+            boolean ticketResolved = ticketLines.stream().anyMatch(l -> l.startsWith("TCK-CONCUR-REP|") && l.contains("|RESOLVED|"));
+            assertTrue(ticketResolved, "Ticket TCK-CONCUR-REP authoritatively transitioned to RESOLVED status");
+
+            long ticketCount = ticketLines.stream().filter(l -> l.startsWith("TCK-CONCUR-REP|")).count();
+            assertTrue(ticketCount == 1, "Ticket persistence integrity: Exactly 1 authoritative ticket record preserved (no duplicate records)");
+
+            // -------------------------------------------------------------
+            // PART 7: OVERALL AUDIT WAL INTEGRITY
+            // -------------------------------------------------------------
+            assertTrue(Files.exists(walFile), "Audit WAL file exists in isolated test environment");
+            List<String> allWalLines = Files.readAllLines(walFile);
+            assertTrue(allWalLines.size() >= 3, "Audit WAL contains all authoritative transactions without truncation");
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error executing Checkpoint 7.1 security & concurrency tests", e);
+        } finally {
+            server.stop();
+            // Cleanup isolated test directory
+            try {
+                if (Files.exists(testDataDir)) {
+                    try (var stream = Files.walk(testDataDir)) {
+                        stream.sorted(java.util.Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+}

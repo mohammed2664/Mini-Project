@@ -2943,4 +2943,245 @@ body {
     }
 }
 
+/* ==========================================================================
+   PHASE 6: ADMIN, DISPUTES, SUPPORT & SYSTEM DIAGNOSTICS STYLES
+   ========================================================================== */
+
+/* Admin Permission Banner */
+.admin-perm-banner {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(245, 158, 11, 0.05) 100%);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.06);
+}
+
+.admin-perm-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.admin-perm-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.admin-perm-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--crimson-dark, #991b1b);
+    margin: 0 0 4px 0;
+}
+
+.admin-perm-text {
+    font-size: 13px;
+    color: var(--slate-700);
+    margin: 0;
+    max-width: 680px;
+    line-height: 1.5;
+}
+
+.admin-perm-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* Admin Overview Header */
+.admin-overview-header {
+    background: #FFFFFF;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-xl, 16px);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.admin-header-info {
+    flex: 1;
+}
+
+.admin-persona-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(14, 165, 233, 0.1);
+    color: var(--brand-teal-dark, #0369a1);
+    border: 1px solid rgba(14, 165, 233, 0.25);
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.admin-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--brand-teal, #0284c7);
+    display: inline-block;
+}
+
+.admin-node-tag {
+    color: var(--slate-500);
+    font-weight: 500;
+}
+
+.admin-header-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--slate-900);
+    margin: 0 0 4px 0;
+}
+
+.admin-header-desc {
+    font-size: 13px;
+    color: var(--slate-600);
+    margin: 0;
+    max-width: 720px;
+    line-height: 1.5;
+}
+
+.admin-header-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+/* Admin Real-Time KPI Grid */
+.admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.admin-kpi-card {
+    background: #FFFFFF;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.admin-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.admin-kpi-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.admin-kpi-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+}
+
+.admin-kpi-icon.teal { background: rgba(14, 165, 233, 0.12); }
+.admin-kpi-icon.crimson { background: rgba(239, 68, 68, 0.12); }
+.admin-kpi-icon.amber { background: rgba(245, 158, 11, 0.12); }
+.admin-kpi-icon.emerald { background: rgba(16, 185, 129, 0.12); }
+
+.admin-kpi-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--slate-600);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.admin-kpi-val {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--slate-900);
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+
+.admin-kpi-sub {
+    font-size: 11px;
+    color: var(--slate-500);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Telemetry Box in Hardware Simulator */
+.sim-telemetry-box {
+    transition: background-color var(--transition-fast);
+}
+
+/* In-flight button pending state for admin buttons */
+.arbitrate-refund-btn.is-pending,
+.arbitrate-slash-btn.is-pending,
+.resolve-ticket-btn.is-pending,
+.toggle-status-btn.is-pending,
+#applyDeviceStateBtn.is-pending,
+#adminRefreshAllBtn.is-pending {
+    opacity: 0.65;
+    pointer-events: none;
+    cursor: wait !important;
+}
+
+/* Responsive Breakpoints for Admin View */
+@media (max-width: 1024px) {
+    .admin-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .admin-overview-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .admin-header-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 768px) {
+    .admin-support-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .admin-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+    .admin-perm-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .admin-perm-actions {
+        width: 100%;
+    }
+    .admin-perm-actions button {
+        flex: 1;
+    }
+}
+
 

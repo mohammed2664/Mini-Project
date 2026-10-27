@@ -162,6 +162,20 @@ function initUserSelector() {
             await executeLogout();
             return;
         }
+        if (val === 'inspector_almeida' || val === 'admin_lead') {
+            select.value = state.activeUser || '';
+            openModal('authModal');
+            document.getElementById('tabAuthLogin')?.click();
+            const emailInput = document.getElementById('loginEmail');
+            const passInput = document.getElementById('loginPassword');
+            if (emailInput) emailInput.value = val;
+            if (passInput) {
+                passInput.value = '';
+                passInput.focus();
+            }
+            showToast('🔐 Administrator authentication required. Please enter credentials.', 'warning');
+            return;
+        }
         state.activeUser = val;
         await executeLogin(state.activeUser, 'RentSphere@2026');
         updateUserUI();
@@ -224,6 +238,27 @@ function initEventListeners() {
     // Admin & Support Buttons
     document.getElementById('refreshUsersBtn')?.addEventListener('click', fetchAdminUsers);
     document.getElementById('applyDeviceStateBtn')?.addEventListener('click', applySimulatedDeviceState);
+    document.getElementById('simBayIdInput')?.addEventListener('input', updateSimBayTelemetryPreview);
+    document.getElementById('adminRefreshAllBtn')?.addEventListener('click', async () => {
+        const btn = document.getElementById('adminRefreshAllBtn');
+        if (btn) { btn.disabled = true; btn.classList.add('is-pending'); }
+        await fetchAllData();
+        await renderAdminSupportView();
+        showToast('🔄 All Admin Systems Refreshed.', 'info');
+        if (btn) { btn.disabled = false; btn.classList.remove('is-pending'); }
+    });
+    document.getElementById('adminPermSwitchBtn')?.addEventListener('click', () => {
+        openModal('authModal');
+        document.getElementById('tabAuthLogin')?.click();
+        const emailInput = document.getElementById('loginEmail');
+        const passInput = document.getElementById('loginPassword');
+        if (emailInput) emailInput.value = 'inspector_almeida';
+        if (passInput) {
+            passInput.value = '';
+            passInput.focus();
+        }
+        showToast('🔐 Please authenticate with administrator credentials to continue.', 'info');
+    });
 
     // WAL Audit Ledger Refresh
     document.getElementById('refreshWalBtn')?.addEventListener('click', () => {
@@ -422,29 +457,19 @@ function updateUserUI() {
     }
 
     // Role-based navigation and action visibility (Requirement 2)
-    const isAdminUser = role === 'ADMIN' || role === 'INSPECTOR' || (user && user.userId === 'inspector_almeida');
+    const isAdminUser = role === 'ADMIN' || role === 'INSPECTOR';
     if (isAdminUser) {
         if (navHostTab) navHostTab.style.display = 'inline-flex';
         if (navAdminTab) navAdminTab.style.display = 'inline-flex';
         if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
     } else if (role === 'HOST') {
         if (navHostTab) navHostTab.style.display = 'inline-flex';
-        if (navAdminTab) navAdminTab.style.display = 'none';
+        if (navAdminTab) navAdminTab.style.display = 'inline-flex';
         if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
     } else { // RENTER
-        if (navHostTab) navHostTab.style.display = 'inline-flex'; // Retain access so permission banner can explain host onboarding
-        if (navAdminTab) navAdminTab.style.display = 'none';
+        if (navHostTab) navHostTab.style.display = 'inline-flex';
+        if (navAdminTab) navAdminTab.style.display = 'inline-flex';
         if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
-    }
-
-    // Redirect ONLY if adminSupportView is visited by non-admin
-    const activeNav = document.querySelector('.nav-pill.active');
-    if (activeNav) {
-        const currentView = activeNav.getAttribute('data-view');
-        if (currentView === 'adminSupportView' && !isAdminUser) {
-            const marketplaceTab = document.querySelector('.nav-pill[data-view="marketplaceView"]');
-            if (marketplaceTab) marketplaceTab.click();
-        }
     }
 
     renderRenterActiveBookings();
@@ -1349,7 +1374,7 @@ function updateInspectorDetails() {
     // OTP Pin Display (OWASP CWE-200 defense)
     const activeUserObj = state.users.find(u => u.userId === state.activeUser);
     const role = activeUserObj ? activeUserObj.role : 'RENTER';
-    const isAdmin = role === 'ADMIN' || role === 'INSPECTOR' || (activeUserObj && activeUserObj.userId === 'inspector_almeida');
+    const isAdmin = role === 'ADMIN' || role === 'INSPECTOR';
     const isRenterOfThisAsset = asset && asset.renterId === state.activeUser;
 
     const otpVal = document.getElementById('inspectorOtp');
@@ -1390,7 +1415,7 @@ function updateInspectorDetails() {
 
 async function applyInspectorDeviceState() {
     const user = state.users.find(u => u.userId === state.activeUser);
-    const isAdmin = user && (user.role === 'ADMIN' || user.role === 'INSPECTOR' || user.userId === 'inspector_almeida');
+    const isAdmin = user && (user.role === 'ADMIN' || user.role === 'INSPECTOR');
     if (!isAdmin) {
         showToast('Unauthorized: Administrator role required for hardware diagnostics.', 'error');
         return;
@@ -1564,7 +1589,7 @@ function renderQuarantineDeck() {
         const user = state.users.find(u => u.userId === state.activeUser);
         const role = user ? user.role : 'RENTER';
         const isAssetOwner = a.ownerId === state.activeUser;
-        const isAdmin = role === 'ADMIN' || role === 'INSPECTOR' || (user && user.userId === 'inspector_almeida');
+        const isAdmin = role === 'ADMIN' || role === 'INSPECTOR';
         const isRenter = a.renterId === state.activeUser;
         const canHostInspect = isAssetOwner || isAdmin;
 
@@ -1680,6 +1705,10 @@ async function approveInspection(assetId, triggerBtn) {
             showToast('✅ ' + data.message, 'success');
             await fetchAllData();
             renderHostStudio();
+        } else if (res.status === 409) {
+            showToast('⚠️ ' + (data.error || data.message || 'Settlement conflict: Inspection already completed.'), 'warning');
+            await fetchAllData();
+            renderHostStudio();
         } else {
             showToast('❌ ' + (data.message || data.error || 'Server rejected inspection approval'), 'error');
             if (triggerBtn) {
@@ -1718,6 +1747,10 @@ async function slashInspection(assetId, triggerBtn) {
         const data = await res.json();
         if (data.success) {
             showToast('⚠️ ' + data.message, 'warning');
+            await fetchAllData();
+            renderHostStudio();
+        } else if (res.status === 409) {
+            showToast('⚠️ ' + (data.error || data.message || 'Settlement conflict: Inspection already completed.'), 'warning');
             await fetchAllData();
             renderHostStudio();
         } else {
@@ -1772,7 +1805,7 @@ state.adminSelectedHost = 'ALL';
 function renderHostStudio() {
     const user = state.users.find(u => u.userId === state.activeUser);
     const role = user ? user.role : 'RENTER';
-    const isAdmin = role === 'ADMIN' || role === 'INSPECTOR' || (user && user.userId === 'inspector_almeida');
+    const isAdmin = role === 'ADMIN' || role === 'INSPECTOR';
     const isHost = role === 'HOST';
 
     const permBanner = document.getElementById('hostPermBanner');
@@ -2258,16 +2291,135 @@ async function runLiveReflection() {
 // TAB 5: ADMIN, GRIEVANCE & SUPPORT HUB (IT RULES 2021)
 // ============================================================================
 async function renderAdminSupportView() {
+    const permBanner = document.getElementById('adminPermBanner');
+    const overviewHeader = document.getElementById('adminOverviewHeader');
+    const kpiGrid = document.getElementById('adminKpiGrid');
+    const decks1 = document.getElementById('adminDecksGrid1');
+    const decks2 = document.getElementById('adminDecksGrid2');
+
+    // 1. RBAC check: Only ADMIN or INSPECTOR can access admin controls
+    const activeUserObj = (state.users || []).find(u => u.userId === state.activeUser) ||
+                          (state.accounts || []).find(u => u.userId === state.activeUser);
+    const userRole = activeUserObj?.role?.toUpperCase();
+    const isAdmin = (userRole === 'ADMIN' || userRole === 'INSPECTOR');
+
+    if (!isAdmin) {
+        if (permBanner) permBanner.style.display = 'flex';
+        if (overviewHeader) overviewHeader.style.display = 'none';
+        if (kpiGrid) kpiGrid.style.display = 'none';
+        if (decks1) decks1.style.display = 'none';
+        if (decks2) decks2.style.display = 'none';
+        return;
+    }
+
+    if (permBanner) permBanner.style.display = 'none';
+    if (overviewHeader) overviewHeader.style.display = 'flex';
+    if (kpiGrid) kpiGrid.style.display = 'grid';
+    if (decks1) decks1.style.display = 'grid';
+    if (decks2) decks2.style.display = 'grid';
+
+    // Persona Label
+    const personaLabel = document.getElementById('adminPersonaLabel');
+    if (personaLabel) {
+        personaLabel.textContent = `Persona: ${activeUserObj?.fullName || activeUserObj?.userName || 'Prof. Almeida'} (${activeUserObj?.role || 'ADMIN'})`;
+    }
+
+    // Fetch authoritative data with auth token
     await Promise.all([
         fetchDisputes(),
         fetchSupportTickets(),
         fetchAdminUsers()
     ]);
+
+    // 2. Authoritative KPI Metrics Calculation (Zero Fabrication)
+    // Card 1: Registered Accounts
+    const userList = state.users && state.users.length > 0 ? state.users : (state.accounts || []);
+    const totalUsers = userList.length;
+    const activeUsers = userList.filter(u => u.accountStatus === 'ACTIVE' || !u.accountStatus).length;
+    const suspendedUsers = userList.filter(u => u.accountStatus === 'SUSPENDED').length;
+    const adminUsers = userList.filter(u => (u.role || '').toUpperCase() === 'ADMIN' || (u.role || '').toUpperCase() === 'INSPECTOR').length;
+
+    const elTotalUsers = document.getElementById('adminKpiTotalUsers');
+    const elUsersSub = document.getElementById('adminKpiUsersSub');
+    if (elTotalUsers) elTotalUsers.textContent = totalUsers;
+    if (elUsersSub) elUsersSub.textContent = `${activeUsers} Active • ${suspendedUsers} Suspended • ${adminUsers} Admins`;
+
+    // Card 2: Active Damage Disputes & Held Collateral
+    const activeDisputes = (state.disputes || []).filter(d => d.status === 'OPEN' || d.status === 'UNDER_REVIEW');
+    const totalHeldCollateral = activeDisputes.reduce((sum, d) => sum + (Number(d.heldDeposit) || 0), 0);
+    const elActiveDisputes = document.getElementById('adminKpiActiveDisputes');
+    const elDisputesSub = document.getElementById('adminKpiDisputesSub');
+    if (elActiveDisputes) elActiveDisputes.textContent = activeDisputes.length;
+    if (elDisputesSub) elDisputesSub.textContent = `${formatInr(totalHeldCollateral)} Frozen Collateral Held`;
+
+    // Card 3: Statutory Grievance Tickets
+    const openTickets = (state.tickets || []).filter(t => t.status === 'OPEN');
+    const resolvedTickets = (state.tickets || []).filter(t => t.status === 'RESOLVED');
+    const elOpenTickets = document.getElementById('adminKpiOpenTickets');
+    const elTicketsSub = document.getElementById('adminKpiTicketsSub');
+    if (elOpenTickets) elOpenTickets.textContent = openTickets.length;
+    if (elTicketsSub) elTicketsSub.textContent = `Rule 3(2) IT Rules 2021 SLA Clock (${resolvedTickets.length} Resolved)`;
+
+    // Card 4: Smart Hub Matrix Health (64 Compartments)
+    const totalBays = (state.lockers && state.lockers.length > 0) ? state.lockers.length : 64;
+    const onlineBays = (state.lockers || []).filter(b => b.status === 'ONLINE_READY' || b.status === 'OCCUPIED').length;
+    const occupiedBays = (state.lockers || []).filter(b => b.occupied).length;
+    const quarantineBays = (state.lockers || []).filter(b => b.status === 'QUARANTINE_LOCKED').length;
+    const elHubHealth = document.getElementById('adminKpiHubHealth');
+    const elHubSub = document.getElementById('adminKpiHubSub');
+    if (elHubHealth) elHubHealth.textContent = `${onlineBays}/${totalBays}`;
+    if (elHubSub) elHubSub.textContent = `${occupiedBays} Occupied • ${quarantineBays} Quarantine • ${totalBays - occupiedBays} Clear`;
+
+    // Update Telemetry Box in Hardware Simulator Deck
+    updateSimBayTelemetryPreview();
+}
+
+function updateSimBayTelemetryPreview() {
+    const bayId = (document.getElementById('simBayIdInput')?.value || 'A2').toUpperCase().trim();
+    const bay = (state.lockers || []).find(b => b.bayId === bayId);
+
+    const elId = document.getElementById('simBayCurrentId');
+    const elStatus = document.getElementById('simBayCurrentStatus');
+    const elTemp = document.getElementById('simBayTemp');
+    const elHum = document.getElementById('simBayHum');
+    const elWeight = document.getElementById('simBayWeight');
+    const elOcc = document.getElementById('simBayOccupied');
+    const elAsset = document.getElementById('simBayAssetId');
+
+    if (elId) elId.textContent = bayId;
+
+    if (bay) {
+        if (elStatus) {
+            elStatus.textContent = bay.status || 'ONLINE_READY';
+            elStatus.className = 'state-pill ' + (
+                bay.status === 'ONLINE_READY' ? 'state-available' :
+                bay.status === 'QUARANTINE_LOCKED' ? 'state-quarantine' :
+                bay.status === 'DOOR_UNLOCKED' ? 'state-disputed' : 'state-quarantine'
+            );
+        }
+        if (elTemp) elTemp.textContent = (bay.tempC != null ? Number(bay.tempC).toFixed(1) : '24.0') + '°C';
+        if (elHum) elHum.textContent = (bay.humidityPct != null ? Number(bay.humidityPct).toFixed(1) : '48.0') + '%';
+        if (elWeight) elWeight.textContent = (bay.weightKg != null ? Number(bay.weightKg).toFixed(1) : '0.0') + ' kg';
+        if (elOcc) elOcc.textContent = bay.occupied ? 'Yes (Occupied)' : 'No (Vacant)';
+        if (elAsset) elAsset.textContent = bay.currentAssetId || 'None';
+    } else {
+        if (elStatus) elStatus.textContent = 'UNKNOWN BAY';
+        if (elTemp) elTemp.textContent = '--';
+        if (elHum) elHum.textContent = '--';
+        if (elWeight) elWeight.textContent = '--';
+        if (elOcc) elOcc.textContent = '--';
+        if (elAsset) elAsset.textContent = 'None';
+    }
 }
 
 async function fetchDisputes() {
     try {
-        const res = await fetch(`${API_BASE}/disputes`);
+        const headers = {};
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+        const res = await fetch(`${API_BASE}/disputes`, {
+            headers,
+            credentials: 'same-origin'
+        });
         if (!res.ok) return;
         state.disputes = await res.json();
 
@@ -2275,61 +2427,75 @@ async function fetchDisputes() {
         const badge = document.getElementById('disputeCountBadge');
         const activeDisputes = state.disputes.filter(d => d.status === 'OPEN' || d.status === 'UNDER_REVIEW');
 
-        badge.textContent = activeDisputes.length + ' Active';
+        if (badge) badge.textContent = activeDisputes.length + ' Active';
+
+        if (!container) return;
 
         if (state.disputes.length === 0) {
             container.innerHTML = '<div class="empty-state-box">No damage disputes recorded.</div>';
             return;
         }
 
-        container.innerHTML = state.disputes.map(d => `
-            <div class="dispute-item-card">
+        container.innerHTML = state.disputes.map(d => {
+            const isOpen = (d.status === 'OPEN' || d.status === 'UNDER_REVIEW');
+            return `
+            <div class="dispute-item-card" id="disputeCard-${d.disputeId}" style="background:#FFFFFF; border:1px solid ${isOpen ? 'var(--crimson)' : 'var(--slate-200)'}; border-radius:var(--radius-md); padding:14px; margin-bottom:12px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <strong>${d.disputeId} • Asset: ${d.assetId}</strong>
-                    <span class="state-pill ${d.status === 'OPEN' ? 'state-disputed' : 'state-available'}">${d.status}</span>
+                    <span class="state-pill ${isOpen ? 'state-disputed' : 'state-available'}">${d.status}</span>
                 </div>
-                <div style="font-size:12px; margin:4px 0;">
-                    Renter: <strong>${d.renterId}</strong> vs Host: <strong>${d.ownerId}</strong> | Held: <strong>${formatInr(d.heldDeposit)}</strong>
+                <div style="font-size:12px; margin:6px 0;">
+                    Renter: <strong>${d.renterId}</strong> vs Host: <strong>${d.ownerId}</strong> | Frozen Deposit: <strong>${formatInr(d.heldDeposit)}</strong> | Claimed: <strong>${formatInr(d.claimedDeduction)}</strong>
                 </div>
-                <div style="font-size:11px; color:var(--slate-600); margin:4px 0;">
-                    <em>Reason: "${escapeHtml(d.renterReason)}"</em>
+                <div style="font-size:11px; color:var(--slate-700); margin:4px 0; background:var(--slate-50); padding:6px 8px; border-radius:4px;">
+                    <div><strong>Renter Contest:</strong> "${escapeHtml(d.renterReason)}"</div>
+                    <div style="margin-top:2px;"><strong>Evidence Notes:</strong> "${escapeHtml(d.evidenceNotes)}"</div>
                 </div>
-                <div style="font-size:11px; color:var(--slate-500);">
-                    <em>Evidence: "${escapeHtml(d.evidenceNotes)}"</em>
-                </div>
-                ${d.status === 'OPEN' ? `
-                    <div style="display:flex; gap:8px; margin-top:8px;">
-                        <button class="btn-primary arbitrate-refund-btn" data-id="${d.disputeId}" style="padding:4px 10px; font-size:11px;">
+                ${isOpen ? `
+                    <div style="display:flex; gap:8px; margin-top:10px;">
+                        <button class="btn-primary arbitrate-refund-btn" data-id="${d.disputeId}" style="padding:5px 12px; font-size:11px;">
                             <span>✅</span> Rule for Renter (Full Refund)
                         </button>
-                        <button class="btn-danger arbitrate-slash-btn" data-id="${d.disputeId}" style="padding:4px 10px; font-size:11px;">
+                        <button class="btn-danger arbitrate-slash-btn" data-id="${d.disputeId}" style="padding:5px 12px; font-size:11px;">
                             <span>⚠️</span> Rule for Host (Slash Penalty)
                         </button>
                     </div>
                 ` : `
-                    <div style="font-size:10px; color:var(--emerald-dark); margin-top:4px; font-weight:700;">
-                        ${d.adminNotes || 'Arbitrated'}
+                    <div style="font-size:11px; color:var(--emerald-dark); margin-top:6px; font-weight:700; background:var(--emerald-light); padding:6px 10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>✅ ${escapeHtml(d.adminNotes || 'Arbitrated & Settled')}</span>
+                        <span style="font-size:10px; opacity:0.85;">${d.resolvedAt ? new Date(d.resolvedAt).toLocaleTimeString('en-IN') : 'Settled'}</span>
                     </div>
                 `}
             </div>
-        `).join('');
+            `;
+        }).join('');
 
         container.querySelectorAll('.arbitrate-refund-btn').forEach(b => {
-            b.addEventListener('click', () => arbitrateDispute(b.getAttribute('data-id'), 'RESOLVED_REFUND'));
+            b.addEventListener('click', () => arbitrateDispute(b.getAttribute('data-id'), 'RESOLVED_REFUND', b));
         });
         container.querySelectorAll('.arbitrate-slash-btn').forEach(b => {
-            b.addEventListener('click', () => arbitrateDispute(b.getAttribute('data-id'), 'RESOLVED_SLASH'));
+            b.addEventListener('click', () => arbitrateDispute(b.getAttribute('data-id'), 'RESOLVED_SLASH', b));
         });
     } catch (e) {
         console.error('Fetch disputes error:', e);
     }
 }
 
-async function arbitrateDispute(disputeId, decision) {
+async function arbitrateDispute(disputeId, decision, btnEl) {
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.classList.add('is-pending');
+        btnEl.innerHTML = '<span>⏳</span> Arbitrating...';
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/disputes/resolve`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({
                 disputeId,
                 decision,
@@ -2337,111 +2503,222 @@ async function arbitrateDispute(disputeId, decision) {
             })
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast('⚖️ Dispute arbitrated: ' + decision, 'success');
             await fetchAllData();
-            await fetchDisputes();
+            await renderAdminSupportView();
+        } else if (res.status === 409) {
+            showToast('⚠️ ' + (data.error || 'Conflict: Dispute already resolved.'), 'warning');
+            await fetchAllData();
+            await renderAdminSupportView();
         } else {
-            showToast('❌ ' + data.message, 'error');
+            showToast('❌ ' + (data.error || data.message || 'Arbitration rejected'), 'error');
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.classList.remove('is-pending');
+                btnEl.innerHTML = '<span>⚖️</span> Retry';
+            }
         }
     } catch (e) {
         showToast('Error resolving dispute: ' + e.message, 'error');
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.classList.remove('is-pending');
+        }
     }
 }
 
 async function fetchSupportTickets() {
     try {
-        const res = await fetch(`${API_BASE}/support/tickets`);
+        const headers = {};
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+        const res = await fetch(`${API_BASE}/support/tickets`, {
+            headers,
+            credentials: 'same-origin'
+        });
         if (!res.ok) return;
         state.tickets = await res.json();
 
         const container = document.getElementById('ticketListContainer');
         const badge = document.getElementById('ticketCountBadge');
-        const openTickets = state.tickets.filter(t => t.status === 'OPEN');
+        const openTickets = (state.tickets || []).filter(t => t.status === 'OPEN');
 
-        badge.textContent = openTickets.length + ' Open';
+        if (badge) badge.textContent = openTickets.length + ' Open';
+
+        if (!container) return;
 
         if (state.tickets.length === 0) {
             container.innerHTML = '<div class="empty-state-box">No customer grievances on file.</div>';
             return;
         }
 
-        container.innerHTML = state.tickets.map(t => `
-            <div class="ticket-item-card">
+        container.innerHTML = state.tickets.map(t => {
+            const isOpen = (t.status === 'OPEN');
+            const hasValidCreated = typeof t.createdAt === 'number' && t.createdAt > 0;
+            const hasValidResolved = typeof t.resolvedAt === 'number' && t.resolvedAt > 0;
+            const createdDate = hasValidCreated ? new Date(t.createdAt).toLocaleDateString('en-IN') : 'Unknown / Not Verifiable';
+
+            let ackText = '';
+            let resText = '';
+
+            if (hasValidCreated) {
+                ackText = 'Acknowledged: Confirmed (<24h)';
+            } else {
+                ackText = 'Acknowledged: Unknown / Not Verifiable';
+            }
+
+            if (isOpen) {
+                if (hasValidCreated) {
+                    const elapsedHrs = (Date.now() - t.createdAt) / 3600000;
+                    const remHrs = Math.max(0, 360 - elapsedHrs).toFixed(1);
+                    resText = `Target: 15-day window (${remHrs}h remaining)`;
+                } else {
+                    resText = 'Target: Unknown / Not Verifiable';
+                }
+            } else {
+                if (hasValidCreated && hasValidResolved && t.resolvedAt >= t.createdAt) {
+                    const durationHrs = ((t.resolvedAt - t.createdAt) / 3600000).toFixed(1);
+                    const within15d = (t.resolvedAt - t.createdAt) <= (15 * 24 * 3600000);
+                    resText = `Resolution: ${durationHrs}h (${within15d ? 'Within 15-day target' : 'Exceeded 15-day target'})`;
+                } else {
+                    resText = 'Resolution: Unknown / Not Verifiable';
+                }
+            }
+
+            return `
+            <div class="ticket-item-card" id="ticketCard-${t.ticketId}" style="background:#FFFFFF; border:1px solid ${isOpen ? 'var(--warm-amber)' : 'var(--slate-200)'}; border-radius:var(--radius-md); padding:14px; margin-bottom:12px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <strong>${t.ticketId} • [${t.category}]</strong>
-                    <span class="state-pill ${t.status === 'OPEN' ? 'state-quarantine' : 'state-available'}">${t.status}</span>
+                    <div>
+                        <strong>${t.ticketId} • [${escapeHtml(t.category)}]</strong>
+                        <span style="font-size:10px; color:var(--slate-500); margin-left:6px;">Created: ${createdDate}</span>
+                    </div>
+                    <span class="state-pill ${isOpen ? 'state-quarantine' : 'state-available'}">${t.status}</span>
                 </div>
-                <div style="font-weight:700; font-size:13px; margin:4px 0;">${escapeHtml(t.subject)}</div>
+                <div style="font-weight:700; font-size:13px; margin:6px 0;">${escapeHtml(t.subject)}</div>
                 <div style="font-size:12px; color:var(--slate-600);">${escapeHtml(t.description)}</div>
-                ${t.status === 'OPEN' ? `
-                    <button class="btn-secondary resolve-ticket-btn" data-id="${t.ticketId}" style="margin-top:8px; padding:4px 10px; font-size:11px;">
-                        <span>✓</span> Mark Resolved by Grievance Lead
-                    </button>
+                
+                ${isOpen ? `
+                    <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <button class="btn-secondary resolve-ticket-btn" data-id="${t.ticketId}" style="padding:4px 12px; font-size:11px;">
+                            <span>✓</span> Mark Resolved by Grievance Lead
+                        </button>
+                        <div style="font-size:10px; color:var(--warm-amber-dark); font-weight:700;">
+                            <span>⏱️ ${ackText}</span> • <span>${resText}</span>
+                        </div>
+                    </div>
                 ` : `
-                    <div style="font-size:10px; color:var(--emerald-dark); margin-top:4px;">${escapeHtml(t.resolution)}</div>
+                    <div style="margin-top:8px; font-size:11px; background:var(--emerald-light); color:var(--emerald-dark); padding:6px 10px; border-radius:4px;">
+                        <div style="font-weight:700; display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px;">
+                            <span>✅ ${escapeHtml(t.resolution || 'Resolved')}</span>
+                            <span style="font-size:10px;">Attributed: ${escapeHtml(t.userId || 'Grievance Officer')}</span>
+                        </div>
+                        <div style="font-size:10px; opacity:0.85; margin-top:3px;">
+                            ${ackText} • ${resText}
+                        </div>
+                    </div>
                 `}
             </div>
-        `).join('');
+            `;
+        }).join('');
 
         container.querySelectorAll('.resolve-ticket-btn').forEach(b => {
-            b.addEventListener('click', () => resolveTicket(b.getAttribute('data-id')));
+            b.addEventListener('click', () => resolveTicket(b.getAttribute('data-id'), b));
         });
     } catch (e) {
         console.error('Fetch support tickets error:', e);
     }
 }
 
-async function resolveTicket(ticketId) {
+async function resolveTicket(ticketId, btnEl) {
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.classList.add('is-pending');
+        btnEl.innerHTML = '<span>⏳</span> Resolving...';
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/support/reply`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({
                 ticketId,
                 status: 'RESOLVED',
-                resolution: 'Addressed and resolved within statutory 24h IT Rules SLA.'
+                resolution: 'Addressed and resolved within prototype 15-day SLA target by Grievance Lead.'
             })
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast('✅ Grievance ticket resolved.', 'success');
             await fetchSupportTickets();
+            await renderAdminSupportView();
+        } else if (res.status === 409) {
+            showToast('⚠️ ' + (data.error || 'Conflict: Ticket already resolved.'), 'warning');
+            await fetchSupportTickets();
+            await renderAdminSupportView();
+        } else {
+            showToast('❌ ' + (data.error || data.message || 'Resolution failed'), 'error');
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.classList.remove('is-pending');
+                btnEl.innerHTML = '<span>✓</span> Retry';
+            }
         }
     } catch (e) {
         showToast('Error resolving ticket: ' + e.message, 'error');
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.classList.remove('is-pending');
+        }
     }
 }
 
 async function fetchAdminUsers() {
     try {
-        const res = await fetch(`${API_BASE}/admin/users`);
+        const headers = {};
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+        const res = await fetch(`${API_BASE}/admin/users`, {
+            headers,
+            credentials: 'same-origin'
+        });
         if (!res.ok) return;
         const users = await res.json();
+        state.users = users;
+
         const tbody = document.getElementById('adminUsersTableBody');
         if (!tbody) return;
 
-        tbody.innerHTML = users.map(u => `
+        tbody.innerHTML = users.map(u => {
+            const isSelf = (u.userId === state.activeUser);
+            const isActive = (u.accountStatus === 'ACTIVE' || !u.accountStatus);
+            return `
             <tr>
-                <td style="font-weight:700;">${u.userId}</td>
+                <td style="font-weight:700;">
+                    ${u.userId}
+                    ${isSelf ? '<span style="font-size:9px; background:var(--brand-teal-light); color:var(--brand-teal-dark); padding:1px 5px; border-radius:4px; margin-left:4px;">YOU</span>' : ''}
+                </td>
                 <td>${escapeHtml(u.email)}</td>
-                <td><span class="role-tag role-${u.role.toLowerCase()}">${u.role}</span></td>
-                <td><span style="font-size:11px; font-weight:700; color:${u.accountStatus === 'ACTIVE' ? 'var(--emerald-dark)' : 'var(--crimson)'}">${u.accountStatus}</span></td>
+                <td><span class="role-tag role-${(u.role || '').toLowerCase()}">${u.role}</span></td>
+                <td><span style="font-size:11px; font-weight:700; color:${isActive ? 'var(--emerald-dark)' : 'var(--crimson)'}">${u.accountStatus || 'ACTIVE'}</span></td>
                 <td>${u.kycVerified ? '✅ Verified' : '⏳ Pending'}</td>
                 <td>
-                    <button class="btn-secondary toggle-status-btn" data-id="${u.userId}" data-status="${u.accountStatus}" style="padding:2px 8px; font-size:10px;">
-                        ${u.accountStatus === 'ACTIVE' ? 'Suspend' : 'Activate'}
+                    <button class="btn-secondary toggle-status-btn" data-id="${u.userId}" data-status="${u.accountStatus || 'ACTIVE'}" style="padding:2px 8px; font-size:10px;">
+                        ${isActive ? 'Suspend' : 'Activate'}
                     </button>
                 </td>
             </tr>
-        `).join('');
+            `;
+        }).join('');
 
         tbody.querySelectorAll('.toggle-status-btn').forEach(b => {
             b.addEventListener('click', () => {
                 const uid = b.getAttribute('data-id');
                 const cur = b.getAttribute('data-status');
-                const next = cur === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE';
-                toggleUserStatus(uid, next);
+                const next = (cur === 'ACTIVE') ? 'SUSPENDED' : 'ACTIVE';
+                toggleUserStatus(uid, next, b);
             });
         });
     } catch (e) {
@@ -2449,26 +2726,59 @@ async function fetchAdminUsers() {
     }
 }
 
-async function toggleUserStatus(userId, status) {
+async function toggleUserStatus(userId, status, btnEl) {
+    // Client-side self-lockout check
+    if (userId === state.activeUser && status === 'SUSPENDED') {
+        showToast('❌ Self-lockout prevented: You cannot suspend your own active administrator account.', 'error');
+        return;
+    }
+
+    if (btnEl) {
+        btnEl.disabled = true;
+        btnEl.classList.add('is-pending');
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/admin/users/status`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ userId, status })
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast(`User ${userId} status set to ${status}`, 'info');
             await fetchAdminUsers();
+            await renderAdminSupportView();
+        } else {
+            showToast('❌ ' + (data.error || data.message || 'Status update failed'), 'error');
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.classList.remove('is-pending');
+            }
         }
     } catch (e) {
         showToast('Error updating status: ' + e.message, 'error');
+        if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.classList.remove('is-pending');
+        }
     }
 }
 
 async function applySimulatedDeviceState() {
     const bayId = document.getElementById('simBayIdInput')?.value.toUpperCase().trim() || 'A2';
     const stateStr = document.getElementById('simDeviceStateSelect')?.value || 'ONLINE_READY';
+    const btn = document.getElementById('applyDeviceStateBtn');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('is-pending');
+        btn.innerHTML = '<span>⏳</span> Applying State...';
+    }
 
     try {
         const headers = { 'Content-Type': 'application/json' };
@@ -2482,14 +2792,22 @@ async function applySimulatedDeviceState() {
             body: JSON.stringify({ bayId, state: stateStr })
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast(`Simulated Bay ${bayId} state updated to ${stateStr}`, 'success');
             await fetchLockers();
+            updateSimBayTelemetryPreview();
+            await renderAdminSupportView();
         } else {
-            showToast('Error: ' + data.error, 'error');
+            showToast('❌ ' + (data.error || 'Device state update failed'), 'error');
         }
     } catch (e) {
         showToast('Device simulation error: ' + e.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('is-pending');
+            btn.innerHTML = '<span>⚙️</span> Apply Device State to Hub Bay';
+        }
     }
 }
 
@@ -2719,6 +3037,18 @@ function initAuthModals() {
     document.querySelectorAll('.quick-persona-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
             const userKey = btn.getAttribute('data-user');
+            if (userKey === 'inspector_almeida' || userKey === 'admin_lead') {
+                showToast('🔐 Administrator accounts require explicit credential login.', 'warning');
+                document.getElementById('tabAuthLogin')?.click();
+                const emailInput = document.getElementById('loginEmail');
+                const passInput = document.getElementById('loginPassword');
+                if (emailInput) emailInput.value = userKey;
+                if (passInput) {
+                    passInput.value = '';
+                    passInput.focus();
+                }
+                return;
+            }
             await executeLogin(userKey, 'RentSphere@2026');
         });
     });

@@ -325,6 +325,9 @@ public class FlatFilePersistenceEngine {
             case "INSPECTION_QUARANTINE":
                 asset.setState(new InspectionQuarantineState());
                 break;
+            case "DISPUTED":
+                asset.setState(new DisputedState());
+                break;
             case "AVAILABLE":
             default:
                 asset.setState(new AvailableState());
