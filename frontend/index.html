@@ -462,9 +462,154 @@
         </section>
 
         <!-- ==================================================================
-             TAB 4: HOST INVENTORY, MULTI-UNIT CLONER & TRUST SCORE
+             TAB 4: HOST STUDIO, EQUIPMENT MANAGEMENT & LIVE RENTALS
              ================================================================== -->
         <section id="hostView" class="view-section">
+            <!-- Non-Host Permission / Become-a-Host Banner -->
+            <div id="hostPermBanner" class="host-perm-banner" style="display:none;">
+                <div class="host-perm-content">
+                    <div class="host-perm-icon">🔒</div>
+                    <div>
+                        <h3 class="host-perm-title">Host Operations & Studio Access</h3>
+                        <p class="host-perm-text" id="hostPermMessage">
+                            You are signed in as a Renter. To list equipment, manage incoming rentals, and inspect returned gear, publish a listing or switch to a Host account.
+                        </p>
+                    </div>
+                </div>
+                <div class="host-perm-actions">
+                    <button class="btn-primary" id="hostPermOnboardBtn">
+                        <span>➕</span> List Equipment to Become Host
+                    </button>
+                    <button class="btn-secondary" id="hostPermSwitchBtn">
+                        <span>🔄</span> Switch to Host Faaris
+                    </button>
+                </div>
+            </div>
+
+            <!-- Host Overview Header -->
+            <div class="host-overview-header" id="hostOverviewHeader">
+                <div class="host-header-info">
+                    <div class="host-persona-pill">
+                        <span class="host-dot"></span>
+                        <span id="hostPersonaLabel">Persona: Host / Gear Owner</span>
+                        <span class="host-node-tag">📍 Panjim Central Hub Node</span>
+                    </div>
+                    <h2 class="host-header-title">Host Operations Studio & Fleet Management</h2>
+                    <p class="host-header-desc">
+                        Manage your equipment fleet, monitor incoming bookings and active field leases, inspect returned gear in quarantine, and track realized rental earnings.
+                    </p>
+                </div>
+                <div class="host-header-actions">
+                    <div id="adminHostFilterContainer" style="display:none;" class="admin-host-filter">
+                        <label for="adminHostFilterSelect" style="font-size:11px; font-weight:700; color:var(--slate-600);">Filter by Host:</label>
+                        <select id="adminHostFilterSelect" class="filter-select">
+                            <option value="ALL">All Hosts (Admin View)</option>
+                            <option value="host_faaris" selected>Host Faaris (AST-101, 102, 105, 106)</option>
+                            <option value="host_ketan">Host Ketan (AST-103, 104, 107, 108)</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="openOnboardModalFromHostBtn">
+                        <span>➕</span> List New Equipment (Onboard)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Host Real-Time KPI Cards Bar -->
+            <div class="host-kpi-grid" id="hostKpiGrid">
+                <div class="host-kpi-card">
+                    <div class="host-kpi-top">
+                        <span class="host-kpi-icon teal">📦</span>
+                        <span class="host-kpi-label">Equipment in Fleet</span>
+                    </div>
+                    <div class="host-kpi-val" id="hostKpiTotalUnits">0</div>
+                    <div class="host-kpi-sub" id="hostKpiUnitsBreakdown">0 Available • 0 on Lease</div>
+                </div>
+
+                <div class="host-kpi-card">
+                    <div class="host-kpi-top">
+                        <span class="host-kpi-icon emerald">🚀</span>
+                        <span class="host-kpi-label">Active Field Leases</span>
+                    </div>
+                    <div class="host-kpi-val" id="hostKpiActiveLeases">0</div>
+                    <div class="host-kpi-sub" id="hostKpiLeasesSub">Generating daily rental income</div>
+                </div>
+
+                <div class="host-kpi-card">
+                    <div class="host-kpi-top">
+                        <span class="host-kpi-icon crimson">⚠️</span>
+                        <span class="host-kpi-label">Quarantine Inspection Hold</span>
+                    </div>
+                    <div class="host-kpi-val" id="hostKpiQuarantineHold">0</div>
+                    <div class="host-kpi-sub" id="hostKpiQuarantineSub">Returned gear awaiting verification</div>
+                </div>
+
+                <div class="host-kpi-card">
+                    <div class="host-kpi-top">
+                        <span class="host-kpi-icon amber">💰</span>
+                        <span class="host-kpi-label">Realized Earnings</span>
+                    </div>
+                    <div class="host-kpi-val">₹<span id="hostKpiEarnings">0.00</span></div>
+                    <div class="host-kpi-sub" id="hostKpiWalletSub">Available Wallet: ₹0.00</div>
+                </div>
+            </div>
+
+            <!-- Host Rental Management Section (Incoming & Active Rentals) -->
+            <div class="host-section-container" id="hostRentalsSection" style="margin-top:28px;">
+                <div class="section-title-bar">
+                    <div>
+                        <h3 class="section-title">
+                            <span>📋</span> Host Rental Management & Live Dispatches
+                        </h3>
+                        <p style="font-size:12px; color:var(--slate-500); margin-top:2px;">
+                            Incoming reservations, active leases in field, and returns awaiting condition inspection.
+                        </p>
+                    </div>
+                    <span class="tier-pill-small" style="background:var(--brand-teal-light); color:var(--brand-teal-dark); font-size:11px; font-weight:700;">
+                        Server-Confirmed Lifecycle
+                    </span>
+                </div>
+                <div class="host-rentals-deck" id="hostActiveRentalsGrid">
+                    <!-- Populated dynamically via renderHostRentalsDeck() -->
+                </div>
+            </div>
+
+            <!-- Host Equipment Fleet Section -->
+            <div class="host-section-container" id="hostEquipmentSection" style="margin-top:28px;">
+                <div class="section-title-bar" style="flex-wrap:wrap; gap:12px;">
+                    <div>
+                        <h3 class="section-title">
+                            <span>🛠️</span> My Equipment Fleet & Bay Allocations
+                        </h3>
+                        <p style="font-size:12px; color:var(--slate-500); margin-top:2px;">
+                            Active equipment listed by this host at Panjim Hub with locker bay coordinates and daily pricing.
+                        </p>
+                    </div>
+                    <div class="host-filter-pills" id="hostEquipFilterPills">
+                        <button class="host-pill active" data-filter="ALL">All (<span id="hostCountAll">0</span>)</button>
+                        <button class="host-pill" data-filter="AVAILABLE">Available (<span id="hostCountAvail">0</span>)</button>
+                        <button class="host-pill" data-filter="ACTIVE_LEASE">On Lease (<span id="hostCountLeased">0</span>)</button>
+                        <button class="host-pill" data-filter="INSPECTION_QUARANTINE">Quarantine (<span id="hostCountQuarantine">0</span>)</button>
+                    </div>
+                </div>
+                <div class="host-equip-grid" id="hostEquipmentCardsGrid">
+                    <!-- Populated dynamically via renderHostEquipmentDeck() -->
+                </div>
+            </div>
+
+            <!-- Separator for Academic & Meta-OOP Tools -->
+            <div style="margin-top:36px; padding-top:20px; border-top:1px dashed var(--slate-300);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                    <div>
+                        <h3 style="font-family:var(--font-heading); font-size:16px; font-weight:800; color:var(--slate-800);">
+                            <span>🔬</span> Academic OOT Engineering Studio (Meta-OOP Tools)
+                        </h3>
+                        <p style="font-size:12px; color:var(--slate-500);">
+                            Deep Prototype Cloning, Trust Score simulation, and runtime RTTI reflection benchmarks.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div class="host-studio-grid">
                 
                 <!-- Card 1: Multi-Unit Listing Cloner (Prototype Deep Cloning) -->
@@ -1172,6 +1317,6 @@
     <!-- Toast Notification Container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=phase5_final"></script>
 </body>
 </html>

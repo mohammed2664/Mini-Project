@@ -2274,3 +2274,673 @@ body {
     border-radius: var(--radius-sm);
 }
 
+/* Phase 4B: Quick-Dock Guest, Empty, Simulation & Feedback States */
+.dock-guest-card,
+.dock-empty-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--slate-50);
+    border: 1px dashed var(--slate-300);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+}
+
+.dock-guest-icon,
+.dock-empty-icon {
+    font-size: 28px;
+    background: #FFFFFF;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-md);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.dock-guest-content,
+.dock-empty-content {
+    flex: 1;
+}
+
+.dock-guest-content h4,
+.dock-empty-content h4 {
+    font-family: var(--font-heading);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--slate-900);
+    margin: 0 0 4px 0;
+}
+
+.dock-guest-content p,
+.dock-empty-content p {
+    font-size: 12px;
+    color: var(--slate-600);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.dock-sim-notice {
+    font-size: 11px;
+    color: var(--slate-600);
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-left: 3px solid var(--warm-amber);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    margin: 8px 0;
+    line-height: 1.4;
+}
+
+.dock-sim-notice code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.dock-alert-banner {
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    margin: 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+}
+
+.dock-alert-banner.alert-warning {
+    background: #FFFBEB;
+    color: #92400E;
+    border: 1px solid #FDE68A;
+}
+
+.dock-alert-banner.alert-danger {
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
+}
+
+.dock-active-lease-banner {
+    background: #ECFDF5;
+    border: 1px solid #A7F3D0;
+    border-left: 3px solid var(--emerald);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #065F46;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dock-quarantine-banner {
+    background: #FFF1F2;
+    border: 1px solid #FECDD3;
+    border-left: 3px solid var(--crimson);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #9F1239;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dock-feedback-banner {
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+.dock-feedback-banner.is-pending {
+    background: #EFF6FF;
+    color: #1E40AF;
+    border: 1px solid #BFDBFE;
+}
+
+.dock-feedback-banner.is-success {
+    background: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+}
+
+.dock-feedback-banner.is-error {
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px solid #FECACA;
+}
+
+.direct-pickup-btn:focus-visible,
+.direct-return-btn:focus-visible,
+.direct-goto-escrow-btn:focus-visible {
+    outline: 2px solid var(--brand-teal);
+    outline-offset: 2px;
+}
+
+.direct-pickup-btn:disabled,
+.direct-return-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+    .dock-guest-card,
+    .dock-empty-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ==========================================================================
+   HOST STUDIO & EQUIPMENT MANAGEMENT (PHASE 5 WARM HORIZON STITCH VARIANT 3)
+   ========================================================================== */
+
+.host-perm-banner {
+    background: #FFFBEB;
+    border: 1px solid #FCD34D;
+    border-radius: var(--radius-lg);
+    padding: 18px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+}
+
+.host-perm-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.host-perm-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.host-perm-title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 800;
+    color: #92400E;
+    margin-bottom: 4px;
+}
+
+.host-perm-text {
+    font-size: 12px;
+    color: #78350F;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.host-perm-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+.host-overview-header {
+    background: #FFFFFF;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-lg);
+    padding: 24px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+}
+
+.host-persona-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--brand-teal-light);
+    color: var(--brand-teal-dark);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    margin-bottom: 8px;
+}
+
+.host-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--brand-teal);
+    border-radius: 50%;
+}
+
+.host-node-tag {
+    color: var(--slate-600);
+    font-weight: 500;
+}
+
+.host-header-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--slate-900);
+    letter-spacing: -0.02em;
+    margin: 0 0 6px 0;
+}
+
+.host-header-desc {
+    font-size: 13px;
+    color: var(--slate-500);
+    margin: 0;
+    line-height: 1.5;
+    max-width: 720px;
+}
+
+.host-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.admin-host-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Host KPI Grid */
+.host-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.host-kpi-card {
+    background: #FFFFFF;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.host-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.host-kpi-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.host-kpi-icon {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+}
+
+.host-kpi-icon.teal { background: var(--brand-teal-light); }
+.host-kpi-icon.emerald { background: var(--emerald-light); }
+.host-kpi-icon.crimson { background: var(--crimson-light); }
+.host-kpi-icon.amber { background: var(--warm-amber-light); }
+
+.host-kpi-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--slate-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.host-kpi-val {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--slate-900);
+    line-height: 1.1;
+    margin-bottom: 4px;
+}
+
+.host-kpi-sub {
+    font-size: 11px;
+    color: var(--slate-400);
+    font-weight: 500;
+}
+
+/* Host Filter Pills */
+.host-filter-pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.host-pill {
+    background: var(--slate-100);
+    border: 1px solid var(--slate-200);
+    color: var(--slate-600);
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.host-pill:hover {
+    background: var(--slate-200);
+    color: var(--slate-900);
+}
+
+.host-pill.active {
+    background: var(--brand-teal);
+    border-color: var(--brand-teal);
+    color: #FFFFFF;
+    box-shadow: 0 2px 8px var(--brand-teal-glow);
+}
+
+.host-pill:focus-visible {
+    outline: 2px solid var(--brand-teal);
+    outline-offset: 2px;
+}
+
+/* Equipment Fleet Grid */
+.host-equip-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    margin-top: 14px;
+}
+
+.host-equip-card {
+    background: #FFFFFF;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.host-equip-card:hover {
+    border-color: var(--brand-teal);
+    box-shadow: var(--shadow-md);
+}
+
+.host-card-top-bar {
+    padding: 12px 16px;
+    background: var(--slate-50);
+    border-bottom: 1px solid var(--slate-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.host-card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.host-card-title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--slate-900);
+    margin: 0 0 8px 0;
+    line-height: 1.3;
+}
+
+.host-card-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--slate-500);
+    margin-bottom: 12px;
+}
+
+.host-pricing-box {
+    background: var(--slate-50);
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.host-lease-active-tag {
+    background: #FEF3C7;
+    border: 1px solid #FDE68A;
+    color: #92400E;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.host-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.host-btn-action {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--slate-200);
+    background: #FFFFFF;
+    color: var(--slate-700);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.host-btn-action:hover {
+    background: var(--slate-50);
+    border-color: var(--brand-teal);
+    color: var(--brand-teal-dark);
+}
+
+.host-btn-action:focus-visible {
+    outline: 2px solid var(--brand-teal);
+    outline-offset: 2px;
+}
+
+/* Host Rentals Deck */
+.host-rentals-deck {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.host-rental-card {
+    background: #FFFFFF;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-lg);
+    padding: 18px 22px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    transition: border-color var(--transition-fast);
+}
+
+.host-rental-card.is-quarantine {
+    border-color: var(--crimson);
+    background: #FFFDFD;
+}
+
+.host-rental-card.is-active-lease {
+    border-color: var(--brand-teal);
+}
+
+.host-rental-card.is-reserved {
+    border-color: var(--warm-amber);
+}
+
+.host-rental-info {
+    flex: 1;
+}
+
+.host-rental-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.host-rental-title {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--slate-900);
+    margin: 0;
+}
+
+.host-rental-details-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    color: var(--slate-600);
+    margin-top: 6px;
+    flex-wrap: wrap;
+}
+
+.host-rental-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    min-width: 220px;
+}
+
+/* Empty Card */
+.host-empty-card {
+    background: #FFFFFF;
+    border: 1px dashed var(--slate-300);
+    border-radius: var(--radius-lg);
+    padding: 36px 24px;
+    text-align: center;
+}
+
+.host-empty-icon {
+    font-size: 32px;
+    margin-bottom: 8px;
+}
+
+.host-empty-title {
+    font-family: var(--font-heading);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--slate-800);
+    margin-bottom: 4px;
+}
+
+.host-empty-text {
+    font-size: 12px;
+    color: var(--slate-500);
+    margin: 0;
+}
+
+/* In-flight button pending state */
+.btn-primary.is-pending,
+.btn-danger.is-pending,
+.btn-secondary.is-pending,
+.approve-inspection-btn.is-pending,
+.slash-inspection-btn.is-pending {
+    opacity: 0.65;
+    pointer-events: none;
+    cursor: wait !important;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1024px) {
+    .host-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .host-overview-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .host-rental-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .host-rental-actions {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .host-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+    .host-perm-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .host-perm-actions {
+        width: 100%;
+    }
+    .host-perm-actions button {
+        flex: 1;
+    }
+    .host-equip-grid {
+        grid-template-columns: 1fr;
+    }
+    .host-filter-pills {
+        flex-wrap: wrap;
+    }
+}
+
+

@@ -196,6 +196,162 @@
 - **Outstanding Issues**:
   - None for Phase 4A.
 - **Next Autonomous Action**:
-  - Phase 4B: Renter Active Pickup Flow (Variant 2) — Active pickup card with OTP display, 1-click remote unlock trigger, compartment feedback, and post-pickup lease state transition.
+  - Phase 4B: Renter Active Pickup Flow (Variant 2) — Completed in Checkpoint 5.
 
+### Checkpoint 5: Phase 4B — Renter Active Pickup Flow Completed & Verified
+- **Timestamp**: 2026-10-27T16:15:00+05:30
+- **Deliverables Completed**:
+  1. **Pickup Card & Real Booking State (Stitch Variant 2)**:
+     - Shows **strictly bookings belonging to the authenticated renter** (`a.renterId === state.activeUser`).
+     - Real asset attributes, booking status, assigned Hub bay, rental duration, and escrow deposit displayed from authoritative backend responses.
+     - **Zero OTP Leakage Invariant (CWE-200)**: Passcodes masked as `• • • • • •` for unauthenticated visitors and unauthorized personas. Cleartext 6-digit OTP PIN rendered **only when authorized by the backend** for the active reserving renter (`c.otpPin` populated only for reserving renter session or admin). Zero derived, hardcoded, logged, or client-side exposed OTPs.
+     - **Clear State Handling**:
+       - Unauthenticated / Guest session: renders clean guest card with `🔐 Sign In to View Active Pickups & Locker OTPs` notice and 1-click login action.
+       - Authenticated with 0 active bookings: renders clean empty state `📦 No Active Equipment Pickups or Leases` with catalog explore trigger.
+       - Missing bay assignment: displays prominent warning banner (`⚠️ Bay assignment missing from Smart Hub matrix`) and disables unlock.
+       - 15-minute brute-force lockout (CWE-307): displays security alert banner (`⛔ Bay Lockout (CWE-307): 3 failed attempts`) and remaining lockout countdown.
+       - Expired OTP (>60 min): displays expiry banner (`⏳ OTP Expired: 60-minute pickup window elapsed`) and disables unlock.
+       - Never substitutes fake bookings or fake success messages.
+  2. **1-Click Simulated Unlock & Solenoid Controls**:
+     - Connected directly to supported endpoint: `POST /api/assets/pickup` with Authorization Bearer header and session credentials.
+     - Visible, honest simulation labeling: `⚡ Simulated Solenoid Action: Lab prototype mode. Virtually disengages the solenoid latch via POST /api/assets/pickup`.
+     - **Duplicate Submission Defense**: Disables button during fetch and presents loading indicator (`⏳ Disengaging Solenoid... (Simulated)`).
+     - **Rejection & Network Error Handling**: Server rejection (e.g. invalid OTP, lockout, forbidden caller) or network error restores button state, displays clear visual feedback banner (`❌ Pickup Rejected: ...`), and **strictly prevents false UI advancement**.
+     - Visible lease and bay states update **only from confirmed server responses** and subsequent authoritative `fetchAllData()` sync.
+  3. **Lifecycle Integrity**:
+     - Full state machine transition verified:
+       - `RESERVED_ESCROW` (Stage 3): displays OTP vault, bay coordinate, and unlock trigger.
+       - `ACTIVE_LEASE` (Stage 4): displays active lease banner, Smart Escrow deposit confirmation, and simulated return button (`📦 Return to Bay (Enter Quarantine)`).
+       - `INSPECTION_QUARANTINE` (Stage 5): displays quarantine hold notice, explains Mandatory Quarantine Invariant, and links to Escrow & Returns deck.
+     - Preserves existing host inspection and escrow settlement: Host Faaris approves clean return via `POST /api/assets/inspect-approve`, releasing 100% of tariff to host and 100% of deposit to renter with zero capital trapped (F-01).
+  4. **Accessibility & Warm Horizon Styling**:
+     - Visual hierarchy matches Stitch Variant 2 specifications with high-contrast text and JetBrains Mono OTP lettering.
+     - High-contrast `:focus-visible` rings on all interactive buttons.
+     - Multimodal feedback: status icons, bold badges, and text ensure status is never communicated by color alone.
+- **Actual Files Modified**:
+  - `backend/src/rentsphere/api/MainServer.java`
+  - `frontend/js/app.js`
+  - `frontend/css/styles.css`
+  - `IMPLEMENTATION_STATUS.md`
+- **Real API Endpoints Used**:
+  - `GET /api/lockers`: Returns live 64-bay telemetry, `occupied`, `status`, `otpPin` (masked unless authorized), `lockedOut`, `failedAttempts`, `otpExpired`, and `lockoutRemainingSec`.
+  - `POST /api/assets/pickup`: `{ assetId, otpPin }`. Enforces session token, validates renter ownership, verifies OTP against CWE-307 lockout, transitions to `ACTIVE_LEASE`, dispatches simulated solenoid command, vacates bay, and logs WAL transaction.
+  - `POST /api/assets/return`: `{ assetId }`. Enforces Mandatory Quarantine Invariant, transitions to `INSPECTION_QUARANTINE`, locks compartment door, and updates load cell.
+  - `POST /api/assets/inspect-approve`: `{ assetId }`. Host clean inspection approval releasing tariff to host and collateral to renter.
+- **Real vs. Simulated Behavior**:
+  - *Real*: Session authentication, PBKDF2 cryptography, role-based access control, OTP masking and verification, brute-force lockout logic, state pattern lifecycle transitions, escrow accounting math, flat-file persistence, and append-only WAL.
+  - *Simulated*: Electromechanical solenoid latches and hardware GPIO buses run as software simulations via `SimulatedLockerDevice`. Clearly labeled as simulated prototype mode throughout the UI.
+- **Commands Executed & Verified**:
+  - `cmd.exe /c "javac -d bin -encoding UTF-8 @sources.txt"` -> Clean compilation (0 errors, 0 warnings).
+  - `java -cp bin tests.RentSphereVerificationTest` -> **113 / 113 Tests Passed (100% Success)** across all 16 test suites.
+  - Production data files preserved; test writes strictly isolated to `data/test_*`.
+- **Browser & Runtime Verification Evidence**:
+  - `quickdock_guest_mode_png_1793096329161.png`: Unauthenticated guest session displays honest login prompt without exposing any OTPs.
+  - `quickdock_renter_priya_view_png_1793096395532.png`: Renter Priya Sharma sees authorized OTP `1 2 8 5 1 8` with `● AUTHORIZED BY SERVER`, simulated solenoid notice, and returned quarantine hold.
+  - `nikhil_dock_scrolled_1793096775989.png`: Renter Nikhil Naik sees authorized OTP `2 3 0 3 1 2` for Bay A2.
+  - `pickup_unlocked_1793096809545.png`: 1-Click simulated unlock disengages virtual solenoid, transitions card to `🚀 ACTIVE LEASE (In Use)` with return button.
+  - `returned_verified_1793096840513.png`: Equipment returned to Bay D2 enters `⚠️ IN QUARANTINE (Inspection)` with link to Escrow deck.
+  - `host_faaris_quarantine_verified_1793097060312.png`: Host Faaris Khan reviews returned gear in quarantine hold with clean approval and damage slash controls.
+  - `host_settlement_completed_1793097083111.png`: Host approves clean return, receiving full multi-day tariff (wallet updated to ₹44,905.00), renter collateral refunded, zero escrow trapped.
+  - Browser session recordings: `phase4b_renter_pickup_1793096280453.webp`, `phase4b_pickup_complete_1793096743132.webp`, `host_faaris_quarantine_1793097034937.webp`.
+  - Zero browser console errors; zero broken network calls.
+- **Distinguish Verified Results from Assumptions**:
+  - *Verified*: Unauthenticated users receive `""` for OTPs in `/api/lockers` and cannot unlock bays (HTTP 401).
+  - *Verified*: Users attempting to pick up another user's reservation receive HTTP 403 Forbidden.
+  - *Verified*: Invalid OTP returns HTTP 400 with failed attempt counter, and 3 failed attempts triggers 15-minute lockout (CWE-307).
+  - *Verified*: Successful simulated pickup transitions asset to `ACTIVE_LEASE`, vacates locker bay (`DISPATCHED_ACTIVE`), and sets load cell to 0.0 kg.
+  - *Verified*: Equipment return strictly transitions to `INSPECTION_QUARANTINE` and locks compartment (`QUARANTINE_LOCKED`).
+  - *Verified*: Host Faaris approves clean return, receiving full tariff while collateral is refunded with zero funds trapped.
+- **Outstanding Issues & Defects**:
+  - None for Phase 4B.
+- **Next Autonomous Action**:
+  - Proceed to Phase 5: Host Management, Return Inspection and Settlement.
 
+---
+
+### Checkpoint 6: Phase 5 — Host Management, Return Inspection and Settlement Completed & Verified
+- **Timestamp**: 2026-10-27T18:20:00+05:30
+- **Deliverables Completed**:
+  1. **Host Overview & Fleet Equipment Management (Google Stitch Variant 3 Alignment)**:
+     - Directly integrated with authoritative backend endpoints: `GET /api/assets` and `GET /api/escrow/accounts`.
+     - Authoritative host metrics presented via 4 real-time KPI cards:
+       - **Equipment in Fleet**: Total units listed by host, broken down into Available vs. On Lease.
+       - **Active Field Leases**: Active leases currently generating daily rental revenue in the field.
+       - **Quarantine Inspection Hold**: Equipment returned to Smart Hub bays awaiting host physical condition verification.
+       - **Realized Earnings & Available Wallet**: Authoritative host earnings and wallet balance in ₹ INR from escrow ledger.
+     - **Equipment Fleet Deck (`#hostEquipmentCardsGrid`)**:
+       - Filter tabs (`All`, `Available`, `On Lease`, `Quarantine`) with dynamic count badges.
+       - Equipment cards displaying asset ID, category, leaf class, hub bay coordinate, protection tier, daily tariff rate, required collateral deposit, active lease banner with renter identity and duration, and state badge.
+       - Integrated academic Meta-OOP actions: 1-click Prototype Deep Cloning trigger and dynamic `java.lang.reflect` RTTI inspection trigger.
+     - **Onboarding Security & Impersonation Guard (OWASP A01)**:
+       - `POST /api/assets/onboard`: Safely binds `ownerId` to `caller.getUserId()`, strictly preventing hosts from registering inventory under another host's identity.
+     - **Prototype Listing Cloner Access Control**:
+       - `POST /api/assets/clone`: OWASP A01 ownership guard verifies caller owns the source asset before duplicating (`HTTP 403 Forbidden` if a host attempts to clone another host's equipment).
+  2. **Host Rental Management & Live Dispatches**:
+     - Dedicated live dispatch deck (`#hostActiveRentalsGrid`) presenting incoming reservations, active field rentals, and quarantine holds for the authenticated host.
+     - Displays renter user ID, rental duration in days, daily tariff rate, total tariff payable, escrow collateral held, and bay coordinates.
+     - Status-dependent workflows:
+       - `ACTIVE_LEASE`: displays live field rental indicator and renter information.
+       - `INSPECTION_QUARANTINE`: displays clean return approval and 20% damage slashing penalty triggers.
+       - `DISPUTED`: informs host that arbitration is active with hub administration.
+     - **Duplicate Submission Defense**:
+       - Inspection approval (`approveInspection`) and damage penalty (`slashInspection`) immediately disable trigger buttons (`disabled = true`, `is-pending`) with in-flight indicators (`⏳ Approving Clean Return...` / `⏳ Processing Slashing...`), preventing double-settlement on repeat clicks.
+  3. **Return Inspection & Quarantine Settlement**:
+     - Enforces the Mandatory Quarantine Invariant: assets returned to Smart Hub bays enter `INSPECTION_QUARANTINE` and require explicit inspection approval or arbitration before returning to `AVAILABLE`.
+     - Live settlement execution verified:
+       - Host Ketan Naik (`host_ketan`) approved clean return for AST-104 (Pioneer DDJ-FLX4 2-Channel DJ Controller & Studio Monitors).
+       - Confirmed server execution via `POST /api/assets/inspect-approve`:
+         - Tariff of ₹997.50 released to Ketan's wallet (wallet balance increased from ₹38,000.00 to ₹38,997.50; realized earnings increased to ₹15,197.50).
+         - Collateral of ₹3,850.00 fully refunded to renter Nikhil Bhaiju (`renter_nikhil`).
+         - Zero capital trapped in escrow (`lockedEscrow: 0.00`).
+         - Asset AST-104 transitioned to `AVAILABLE` in Bay D2.
+         - Append-only Write-Ahead Log entry logged (`data/audit_wal.txt`).
+     - Honest simulation disclosures: UI clearly states that pilot escrow and wallet accounting run via internal double-entry ledgers rather than a bank-held trust account.
+  4. **Host Permission & Boundary Enforcement**:
+     - **Renter Access Restriction**: Non-host callers (e.g. `renter_deepak`) visiting Host Studio are presented with `#hostPermBanner` ("Host Authorization Required"), explaining that fleet management and return inspections are restricted to verified hosts, providing "+ List Equipment to Become Host" and "⚡ Switch to Host Account" actions.
+     - **Cross-Host Isolation**: Hosts cannot inspect equipment or approve returns for assets owned by other hosts (`HTTP 403 Forbidden`). In the Escrow & Returns deck, cards belonging to other hosts display `🔒 Inspection reserved for Asset Owner or Hub Administrator`.
+     - **Administrative Oversight**: Admin persona (`inspector_almeida`) accesses the studio with `#adminHostFilterSelect` to inspect and manage equipment across all hosts or filter by specific host.
+  5. **Responsive Design & Visual Polish (Warm Horizon Theme)**:
+     - Verified at 1280px Desktop, 768px Tablet, and 375px Mobile viewports.
+     - 2-column KPI grid on tablet (768px), 1-column stacked cards on mobile (375px).
+     - Zero unintended horizontal page overflow across all viewports.
+     - Clear focus states, accessible typography, and readable currency amounts in Indian Rupees (`₹ INR`).
+- **Actual Files Modified**:
+  - `backend/src/rentsphere/api/MainServer.java`: Added `rentalDays` and `totalTariff` to asset serialization; bound onboard `ownerId` to `caller.getUserId()`; added OWASP A01 ownership check to `handleCloneListing`.
+  - `frontend/index.html`: Implemented `#hostPermBanner`, `#hostOverviewHeader`, `#hostKpiGrid`, `#hostRentalsSection` (`#hostActiveRentalsGrid`), `#hostEquipmentSection` (`#hostEquipmentCardsGrid`), and cache-busting script reference.
+  - `frontend/css/styles.css`: Added Warm Horizon styles for host banner, KPI grid, fleet cards, live rental cards, status pills, pending button states, and media queries for 1024px, 768px, and 640px.
+  - `frontend/js/app.js`: Implemented `renderHostStudio()`, `renderHostKPIs()`, `renderHostRentalsDeck()`, `renderHostEquipmentDeck()`, `populateHostDropdowns()`, repeat-click defenses on `approveInspection` and `slashInspection`, `state.accounts` synchronization, and persona switching event handlers.
+  - `IMPLEMENTATION_STATUS.md`: Documented Checkpoint 6 status, deliverables, and evidence.
+- **Real API Endpoints Used**:
+  - `GET /api/assets`: Returns all assets with authoritative `ownerId`, `renterId`, `state`, `rentalDays`, `totalTariff`, `lockerCoordinate`, and specs.
+  - `GET /api/escrow/accounts`: Returns all accounts with `userId`, `userName`, `role`, `walletBalance`, `lockedEscrow`, and `earnedRevenue`.
+  - `POST /api/assets/inspect-approve`: `{ assetId }`. Host/admin clean return inspection approval releasing multi-day tariff to host and collateral to renter.
+  - `POST /api/assets/inspect-slash`: `{ assetId }`. Host/admin damage penalty deducting 20% penalty to host and refunding remaining 80% collateral.
+  - `POST /api/assets/onboard`: Secure equipment onboarding with authenticated host attribution.
+  - `POST /api/assets/clone`: Prototype deep cloning with OWASP A01 caller ownership verification.
+  - `GET /api/wal`: Returns append-only Write-Ahead Log entries.
+- **Commands Executed & Verified**:
+  - `cmd.exe /c "javac -d bin -encoding UTF-8 @sources.txt"` -> Clean compilation (0 errors, 0 warnings).
+  - `node -c "frontend/js/app.js"` -> Clean syntax (exit code 0).
+  - `cmd.exe /c "java -cp bin tests.RentSphereVerificationTest"` -> **113 / 113 Tests Passed (100% Success)** across all 16 test suites.
+  - Test writes strictly isolated to `data/test_*`; production ledgers preserved.
+- **Browser & Runtime Verification Evidence**:
+  - `faaris_host_studio_success_1793105031273.png`: Host Faaris Khan overview displaying 4 fleet units, 1 active lease (AST-105 in Bay A4), ₹22,640.00 realized earnings, and ₹44,905.00 wallet balance.
+  - `ketan_host_studio_success_1793105055042.png`: Host Ketan Naik overview displaying 4 fleet units, 1 active lease (AST-107 in Bay H2), 1 quarantine hold (AST-108 in Bay H4), ₹15,197.50 realized earnings, and ₹38,997.50 wallet balance.
+  - `ketan_host_clean_return_approved_1793104835538.png`: Host Ketan approves clean return for AST-104 (Pioneer DJ Controller), confirming ₹997.50 tariff credit and asset transition to `AVAILABLE`, while Deepak's asset AST-109 displays ownership inspection lock.
+  - `deepak_renter_permission_denied_1793104905943.png`: Renter Deepak visiting Host Studio receives prominent `#hostPermBanner` ("Host Authorization Required") with host onboard and switch CTAs.
+  - `switched_to_faaris_host_studio_1793104918803.png`: Clicking "Switch to Host Account" banner CTA seamlessly transitions to Host Faaris Khan and reveals Host Studio.
+  - `admin_host_studio_oversight_1793102484439.png`: Admin Inspector Almeida viewing Host Studio with `#adminHostFilterSelect` dropdown.
+  - `tablet_host_studio_verified_1793105190049.png`: 768px tablet layout showing 2-column KPI grid, responsive card deck, and zero overflow.
+  - `mobile_host_studio_verified_1793105196822.png`: 375px mobile layout showing 1-column stacked cards, full-width controls, and readable numbers.
+  - Browser session recordings: `phase5_host_mgmt_verify_1793102209503.webp`, `phase5_subagent_run_1793104803732.webp`, `phase5_final_visual_proof_1793105009664.webp`, `phase5_responsive_proof_1793105124812.webp`.
+- **Distinguish Verified Results from Assumptions**:
+  - *Verified*: Unauthenticated users and renters cannot approve inspection or slash deposits (HTTP 401/403).
+  - *Verified*: Non-owner hosts cannot inspect or slash gear owned by another host.
+  - *Verified*: Clean inspection approval releases the exact multi-day tariff to host and refunds 100% of collateral to renter without capital leakage.
+  - *Verified*: Prototype cloner rejects requests to duplicate listings owned by other hosts.
+  - *Verified*: Host KPI metrics, fleet cards, and live dispatches match authoritative backend responses.
+- **Outstanding Issues & Defects**:
+  - None.
+- **Next Autonomous Action**:
+  - Stop at Checkpoint 6 for user review. Do NOT begin Phase 6 automatically.

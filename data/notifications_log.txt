@@ -1,6 +1,9 @@
 # RentSphere In-App Notification Center Ledger
+NOTIF-7c371d69|host_faaris|Inspection Required|Equipment Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been checked into Bay A2. Complete inspection within 24 hours.|WARNING|false|1793096912374
+NOTIF-e5498a54|host_faaris|Equipment Booked|Your asset Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been booked by renter_nikhil for 1 day(s).|INFO|false|1793096563502
 NOTIF-6390fa96|host_faaris|Inspection Required|Equipment Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been checked into Bay A2. Complete inspection within 24 hours.|WARNING|false|1793088193029
 NOTIF-da91ff40|host_faaris|Equipment Booked|Your asset Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been booked by renter_deepak for 2 day(s).|INFO|false|1793088023184
+NOTIF-3ec9b876|renter_priya|Equipment Collected|Hub Bay B1 unlocked. Active lease started for test.|INFO|false|1793096405652
 NOTIF-e5996bf8|renter_priya|Equipment Collected|Hub Bay B2 unlocked. Active lease started for test.|INFO|false|1793085275616
 NOTIF-2ff7ad8b|renter_priya|Booking Confirmed|Your reservation for test is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793040110431
 NOTIF-defbae18|renter_priya|Booking Confirmed|Your reservation for test is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793039883993
@@ -12,5 +15,11 @@ NOTIF-e0c69e4e|renter_deepak|Booking Confirmed|Your reservation for Maruti Suzuk
 NOTIF-858f18dc|renter_deepak|Inspection Required|Equipment test has been checked into Bay B2. Complete inspection within 24 hours.|WARNING|false|1793085279336
 NOTIF-b3d5c229|renter_deepak|Equipment Booked|Your asset test has been booked by renter_priya for 2 day(s).|INFO|false|1793040110432
 NOTIF-c43cab55|renter_deepak|Equipment Booked|Your asset test has been booked by renter_priya for 2 day(s).|INFO|false|1793039884002
+NOTIF-84705502|host_ketan|Inspection Required|Equipment Pioneer DDJ-FLX4 2-Channel DJ Controller & Studio Monitors has been checked into Bay D2. Complete inspection within 24 hours.|WARNING|false|1793096286370
 NOTIF-2cc72aaf|host_ketan|Equipment Booked|Your asset Maruti Suzuki Fronx Automatic (Wedding & Event Self-Drive) has been booked by renter_deepak for 2 day(s).|INFO|false|1793086896110
 NOTIF-b0095652|host_ketan|Dispute Notice|Renter has contested your damage assessment for JBL PartyBox 310 Portable Club Speaker + 2 Wireless Mics. RentSphere arbitration active.|WARNING|false|1793085312615
+NOTIF-be0ee318|renter_nikhil|Deposit Refunded|Clean inspection approved for Pioneer DDJ-FLX4 2-Channel DJ Controller & Studio Monitors. Full security deposit (₹3850.0) refunded.|SUCCESS|false|1793104829975
+NOTIF-088f4ab7|renter_nikhil|Deposit Refunded|Clean inspection approved for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit. Full security deposit (₹6000.0) refunded.|SUCCESS|false|1793097071386
+NOTIF-318b9c35|renter_nikhil|Equipment Collected|Hub Bay A2 unlocked. Active lease started for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit.|INFO|false|1793096799191
+NOTIF-8d086c74|renter_nikhil|Booking Confirmed|Your reservation for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793096563499
+NOTIF-b49f6532|renter_nikhil|Equipment Collected|Hub Bay D2 unlocked. Active lease started for Pioneer DDJ-FLX4 2-Channel DJ Controller & Studio Monitors.|INFO|false|1793096270817

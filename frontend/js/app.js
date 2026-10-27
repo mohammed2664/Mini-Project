@@ -11,6 +11,7 @@ const state = {
     activeUser: null,
     activeCategory: 'ALL',
     users: [],
+    accounts: [],
     assets: [],
     lockers: [],
     wal: [],
@@ -131,9 +132,7 @@ function initNavigation() {
             if (viewId === 'hubView') renderLockerGrid();
             if (viewId === 'escrowView') renderQuarantineDeck();
             if (viewId === 'hostView') {
-                populateHostDropdowns();
-                runTrustScoreCalculation();
-                runLiveReflection();
+                renderHostStudio();
             }
             if (viewId === 'adminSupportView') {
                 renderAdminSupportView();
@@ -242,6 +241,34 @@ function initEventListeners() {
     ['sliderCond', 'sliderPunct', 'sliderEscrow', 'sliderPeer', 'sliderKyc'].forEach(id => {
         document.getElementById(id)?.addEventListener('input', runTrustScoreCalculation);
     });
+
+    // Phase 5 Host Studio Event Handlers
+    document.querySelectorAll('.host-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.host-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            state.hostFilter = pill.getAttribute('data-filter') || 'ALL';
+            const user = state.users.find(u => u.userId === state.activeUser);
+            const isAdmin = user && (user.role === 'ADMIN' || user.role === 'INSPECTOR');
+            const targetHost = isAdmin ? (state.adminSelectedHost || 'ALL') : state.activeUser;
+            renderHostEquipmentDeck(targetHost);
+        });
+    });
+
+    document.getElementById('adminHostFilterSelect')?.addEventListener('change', (e) => {
+        state.adminSelectedHost = e.target.value;
+        renderHostStudio();
+    });
+
+    document.getElementById('openOnboardModalFromHostBtn')?.addEventListener('click', () => openModal('onboardModal'));
+    document.getElementById('hostPermOnboardBtn')?.addEventListener('click', () => openModal('onboardModal'));
+    document.getElementById('hostPermSwitchBtn')?.addEventListener('click', async () => {
+        const select = document.getElementById('activeUserSelect');
+        if (select) {
+            select.value = 'host_faaris';
+            select.dispatchEvent(new Event('change'));
+        }
+    });
 }
 
 // ============================================================================
@@ -290,7 +317,9 @@ async function fetchAccounts(silent = false) {
     try {
         const res = await fetch(`${API_BASE}/escrow/accounts`);
         if (!res.ok) return;
-        state.users = await res.json();
+        const data = await res.json();
+        state.users = data;
+        state.accounts = data;
         updateUserUI();
     } catch (e) {
         console.error('Accounts fetch error:', e);
@@ -304,6 +333,7 @@ async function fetchAssets(silent = false) {
         state.assets = await res.json();
         renderCatalog();
         populateHostDropdowns();
+        renderHostStudio();
         renderQuarantineDeck();
         renderRenterActiveBookings();
     } catch (e) {
@@ -313,7 +343,14 @@ async function fetchAssets(silent = false) {
 
 async function fetchLockers(silent = false) {
     try {
-        const res = await fetch(`${API_BASE}/lockers`);
+        const headers = {};
+        if (state.authToken) {
+            headers['Authorization'] = `Bearer ${state.authToken}`;
+        }
+        const res = await fetch(`${API_BASE}/lockers`, {
+            headers,
+            credentials: 'same-origin'
+        });
         if (!res.ok) return;
         state.lockers = await res.json();
         renderLockerGrid();
@@ -395,23 +432,23 @@ function updateUserUI() {
         if (navAdminTab) navAdminTab.style.display = 'none';
         if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
     } else { // RENTER
-        if (navHostTab) navHostTab.style.display = 'none';
+        if (navHostTab) navHostTab.style.display = 'inline-flex'; // Retain access so permission banner can explain host onboarding
         if (navAdminTab) navAdminTab.style.display = 'none';
-        if (listEquipBtn) listEquipBtn.style.display = 'none';
+        if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
     }
 
-    // Redirect to marketplace if currently viewing a role-restricted tab
+    // Redirect ONLY if adminSupportView is visited by non-admin
     const activeNav = document.querySelector('.nav-pill.active');
     if (activeNav) {
         const currentView = activeNav.getAttribute('data-view');
-        if ((currentView === 'hostView' && role === 'RENTER') || 
-            (currentView === 'adminSupportView' && !isAdminUser)) {
+        if (currentView === 'adminSupportView' && !isAdminUser) {
             const marketplaceTab = document.querySelector('.nav-pill[data-view="marketplaceView"]');
             if (marketplaceTab) marketplaceTab.click();
         }
     }
 
     renderRenterActiveBookings();
+    renderHostStudio();
     updateInspectorDetails();
 }
 
@@ -512,16 +549,75 @@ function renderRenterActiveBookings() {
     const container = document.getElementById('renterActiveBookingsContainer');
     if (!container) return;
 
+    // Handle Unauthenticated / Guest State with a clear, honest state
     if (!state.activeUser) {
-        container.style.display = 'none';
-        container.innerHTML = '';
+        container.style.display = 'block';
+        container.innerHTML = `
+            <div class="tactile-quick-dock">
+                <div class="dock-header">
+                    <h3 class="dock-title">
+                        <span>⚡</span> Active Rental Quick-Dock • 8×8 Smart Hub
+                    </h3>
+                    <span class="dock-stage-badge" style="background:var(--slate-100); color:var(--slate-600); border:1px solid var(--slate-300);">
+                        Guest Mode
+                    </span>
+                </div>
+                <div class="dock-guest-card">
+                    <div class="dock-guest-icon">🔐</div>
+                    <div class="dock-guest-content">
+                        <h4>Sign In to View Active Pickups & Locker OTPs</h4>
+                        <p>Compartment access OTPs and simulated unlock triggers are cryptographically authorized only for the reserving renter (CWE-200).</p>
+                    </div>
+                    <div>
+                        <button class="btn-primary" id="dockGuestSignInBtn" style="padding:8px 16px; font-weight:700;">
+                            <span>🔑</span> Sign In as Renter (Deepak Dev)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('dockGuestSignInBtn')?.addEventListener('click', async () => {
+            await executeLogin('renter_deepak', 'RentSphere@2026');
+        });
         return;
     }
 
-    const myRentals = state.assets.filter(a => a.renterId === state.activeUser && (a.state === 'RESERVED_ESCROW' || a.state === 'ACTIVE_LEASE'));
+    // Filter rentals strictly belonging to the currently authenticated renter
+    const myRentals = state.assets.filter(a =>
+        a.renterId === state.activeUser &&
+        (a.state === 'RESERVED_ESCROW' || a.state === 'ACTIVE_LEASE' || a.state === 'INSPECTION_QUARANTINE')
+    );
+
+    // Handle No Active Bookings State
     if (myRentals.length === 0) {
-        container.style.display = 'none';
-        container.innerHTML = '';
+        container.style.display = 'block';
+        container.innerHTML = `
+            <div class="tactile-quick-dock">
+                <div class="dock-header">
+                    <h3 class="dock-title">
+                        <span>⚡</span> Active Rental Quick-Dock (${escapeHtml(state.activeUser)})
+                    </h3>
+                    <span class="dock-stage-badge" style="background:var(--slate-100); color:var(--slate-600); border:1px solid var(--slate-300);">
+                        Stage 1: Ready to Rent
+                    </span>
+                </div>
+                <div class="dock-empty-card">
+                    <div class="dock-empty-icon">📦</div>
+                    <div class="dock-empty-content">
+                        <h4>No Active Equipment Pickups or Leases</h4>
+                        <p>You have no equipment currently reserved or out on lease. Browse the equipment catalog below, select gear, and book with 4-Gate Escrow protection.</p>
+                    </div>
+                    <div>
+                        <button class="btn-secondary" id="dockExploreBtn" style="padding:8px 16px; font-weight:700;">
+                            <span>🔍</span> Explore Equipment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('dockExploreBtn')?.addEventListener('click', () => {
+            document.getElementById('assetsGrid')?.scrollIntoView({ behavior: 'smooth' });
+        });
         return;
     }
 
@@ -530,63 +626,129 @@ function renderRenterActiveBookings() {
         <div class="tactile-quick-dock">
             <div class="dock-header">
                 <h3 class="dock-title">
-                    <span>⚡</span> Active Rental Quick-Dock (${myRentals.length})
+                    <span>⚡</span> Active Rental Quick-Dock (${myRentals.length} Booking${myRentals.length > 1 ? 's' : ''})
                 </h3>
                 <span class="dock-stage-badge">
-                    ${myRentals.some(a => a.state === 'RESERVED_ESCROW') ? 'Stage 3 of 5: Smart Locker Pickup' : 'Stage 4 of 5: Active Lease in Field'}
+                    ${myRentals.some(a => a.state === 'RESERVED_ESCROW')
+                        ? 'Stage 3 of 5: Smart Locker Pickup'
+                        : myRentals.some(a => a.state === 'ACTIVE_LEASE')
+                            ? 'Stage 4 of 5: Active Lease in Field'
+                            : 'Stage 5 of 5: Post-Return Inspection'}
                 </span>
             </div>
             <div class="dock-grid">
                 ${myRentals.map(a => {
                     const isReserved = a.state === 'RESERVED_ESCROW';
+                    const isActiveLease = a.state === 'ACTIVE_LEASE';
+                    const isQuarantine = a.state === 'INSPECTION_QUARANTINE';
+
                     const comp = state.lockers.find(c => c.bayId === a.lockerCoordinate);
-                    const hasOtp = comp && comp.otpPin && comp.otpPin.length === 6;
-                    const formattedOtp = hasOtp ? comp.otpPin.split('').join(' ') : '• • • • • •';
+                    const isBayMissing = !a.lockerCoordinate || !comp;
+                    const isLockedOut = comp && (comp.lockedOut || comp.failedAttempts >= 3);
+                    const isOtpExpired = comp && comp.otpExpired;
+                    const hasAuthorizedOtp = comp && comp.otpPin && comp.otpPin.length === 6;
+                    const formattedOtp = hasAuthorizedOtp ? comp.otpPin.split('').join(' ') : '• • • • • •';
 
                     return `
-                        <div class="dock-card">
+                        <div class="dock-card" id="dock-card-${a.id}">
                             <div>
                                 <div class="dock-card-top">
                                     <span class="cat-pill-badge" style="font-size:10px;">${getCategoryDisplayName(a.leafClass)}</span>
-                                    <span class="state-pill ${isReserved ? 'state-reserved' : 'state-active'}">
-                                        ${isReserved ? '🔒 RESERVED (Escrow Locked)' : '🚀 ACTIVE LEASE (In Use)'}
+                                    <span class="state-pill ${isReserved ? 'state-reserved' : isActiveLease ? 'state-active' : 'state-quarantine'}">
+                                        ${isReserved ? '🔒 RESERVED (Escrow Locked)' : isActiveLease ? '🚀 ACTIVE LEASE (In Use)' : '⚠️ IN QUARANTINE (Inspection)'}
                                     </span>
                                 </div>
                                 <h4 style="font-family:var(--font-heading); font-size:15px; font-weight:700; margin:0 0 6px 0; color:var(--slate-900);">
                                     ${escapeHtml(a.title)}
                                 </h4>
                                 <div style="font-size:12px; color:var(--slate-600); margin-bottom:8px;">
-                                    Smart Hub Bay: <strong style="color:var(--brand-teal);">${a.lockerCoordinate}</strong> • Host: <strong>${escapeHtml(a.ownerId)}</strong>
+                                    Smart Hub Bay: <strong style="color:var(--brand-teal);">${a.lockerCoordinate || 'Unassigned'}</strong> • Host: <strong>${escapeHtml(a.ownerId)}</strong>
                                 </div>
                                 <div class="dock-meter-row">
-                                    <span>Duration: <strong>${a.rentalDays || 1} day(s)</strong> (Tariff: ${formatInr(a.calculatedTariff * (a.rentalDays || 1))})</span>
+                                    <span>Duration: <strong>${a.rentalDays || 1} day(s)</strong> (${formatInr(a.calculatedTariff * (a.rentalDays || 1))})</span>
                                     <span>Escrow Deposit: <strong>${formatInr(a.requiredCollateral)}</strong></span>
                                 </div>
                             </div>
 
                             <div>
                                 ${isReserved ? `
+                                    ${isBayMissing ? `
+                                        <div class="dock-alert-banner alert-danger">
+                                            <span>⚠️</span> Bay assignment missing from Smart Hub matrix. Contact support.
+                                        </div>
+                                    ` : ''}
+
+                                    ${isLockedOut ? `
+                                        <div class="dock-alert-banner alert-danger">
+                                            <span>⛔</span> <strong>Bay Lockout (CWE-307):</strong> 3 failed attempts. Bay ${comp.bayId} locked for ${comp.lockoutRemainingSec || 900}s.
+                                        </div>
+                                    ` : ''}
+
+                                    ${isOtpExpired ? `
+                                        <div class="dock-alert-banner alert-warning">
+                                            <span>⏳</span> <strong>OTP Expired:</strong> 60-minute pickup window elapsed. Request OTP renewal.
+                                        </div>
+                                    ` : ''}
+
                                     <div class="dock-pin-vault">
                                         <div class="dock-pin-header">
                                             <span>One-Time Locker Access PIN</span>
-                                            <span class="hardware-paired-badge">● Hardware Paired</span>
+                                            <span class="hardware-paired-badge">${hasAuthorizedOtp ? '● Authorized by Server' : '🔒 Protected (CWE-200)'}</span>
                                         </div>
-                                        <div class="dock-pin-val">${escapeHtml(formattedOtp)}</div>
+                                        <div class="dock-pin-val" aria-label="One-Time Locker PIN: ${hasAuthorizedOtp ? comp.otpPin : 'Masked'}">${escapeHtml(formattedOtp)}</div>
                                         <div style="font-size:10px; color:rgba(255,255,255,0.7); text-align:center;">
-                                            Protected by 3-attempt brute-force lockout (CWE-307)
+                                            ${hasAuthorizedOtp
+                                                ? `Authorized for renter ${escapeHtml(state.activeUser)} • 3-attempt brute-force defense`
+                                                : `OTP masked by server. Only the reserving renter or admin can view PIN.`}
                                         </div>
                                     </div>
-                                    <button class="btn-primary direct-pickup-btn" data-id="${a.id}" data-bay="${a.lockerCoordinate}" data-otp="${hasOtp ? escapeHtml(comp.otpPin) : ''}" style="width:100%; justify-content:center; padding:10px 14px; font-weight:700;">
-                                        <span>🔓</span> 1-Click Remote Unlock Bay ${a.lockerCoordinate}
-                                    </button>
-                                ` : `
-                                    <div style="background:var(--emerald-light); border:1px solid rgba(16,185,129,0.3); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:10px; font-size:11px; color:var(--emerald-dark); font-weight:600; display:flex; align-items:center; gap:6px;">
-                                        <span>✓</span> Equipment active in field. Deposit guaranteed in Smart Escrow.
+
+                                    <div class="dock-sim-notice">
+                                        ⚡ <strong>Simulated Solenoid Action:</strong> Lab prototype mode. Virtually disengages the solenoid latch via <code>POST /api/assets/pickup</code>.
                                     </div>
-                                    <button class="btn-danger direct-return-btn" data-id="${a.id}" data-bay="${a.lockerCoordinate}" style="width:100%; justify-content:center; padding:10px 14px; font-weight:700;">
+
+                                    <button class="btn-primary direct-pickup-btn" 
+                                            data-id="${a.id}" 
+                                            data-bay="${a.lockerCoordinate}" 
+                                            data-otp="${hasAuthorizedOtp ? escapeHtml(comp.otpPin) : ''}"
+                                            ${(isLockedOut || isOtpExpired || isBayMissing) ? 'disabled' : ''}
+                                            aria-label="1-Click Simulated Remote Unlock for Bay ${a.lockerCoordinate}"
+                                            style="width:100%; justify-content:center; padding:10px 14px; font-weight:700;">
+                                        <span>🔓</span> 1-Click Remote Unlock Bay ${a.lockerCoordinate} (Simulated)
+                                    </button>
+                                ` : isActiveLease ? `
+                                    <div class="dock-active-lease-banner">
+                                        <span>🚀</span> <div><strong>Active Lease in Field</strong> — Deposit of ${formatInr(a.requiredCollateral)} held in Smart Escrow.</div>
+                                    </div>
+                                    <div style="font-size:12px; color:var(--slate-600); margin: 6px 0;">
+                                        Designated Return Bay: <strong style="color:var(--brand-teal);">${a.lockerCoordinate}</strong> • When returned, equipment enters <strong>Mandatory Quarantine</strong> for host condition inspection.
+                                    </div>
+                                    <div class="dock-sim-notice">
+                                        ⚡ <strong>Simulated Solenoid Action:</strong> Virtually locks door latch and resets load cell telemetry upon return.
+                                    </div>
+                                    <button class="btn-danger direct-return-btn" 
+                                            data-id="${a.id}" 
+                                            data-bay="${a.lockerCoordinate}"
+                                            aria-label="Return equipment to Bay ${a.lockerCoordinate} and enter Mandatory Quarantine"
+                                            style="width:100%; justify-content:center; padding:10px 14px; font-weight:700;">
                                         <span>📦</span> Return to Bay ${a.lockerCoordinate} (Enter Quarantine)
                                     </button>
+                                ` : `
+                                    <div class="dock-quarantine-banner">
+                                        <span>⚠️</span> <div><strong>Equipment Returned (In Mandatory Quarantine)</strong> — Returned to Bay ${a.lockerCoordinate}. Awaiting host condition review.</div>
+                                    </div>
+                                    <div style="font-size:11px; color:var(--slate-600); margin: 6px 0 10px 0; line-height:1.4;">
+                                        Enforcing <strong>Mandatory Quarantine Invariant</strong>: Escrow deposit (${formatInr(a.requiredCollateral)}) remains securely held until host Faaris Khan approves return or logs damage contestation.
+                                    </div>
+                                    <button class="btn-secondary direct-goto-escrow-btn" 
+                                            data-id="${a.id}"
+                                            aria-label="View return inspection in Escrow and Returns deck"
+                                            style="width:100%; justify-content:center; padding:8px 12px; font-size:12px; font-weight:700;">
+                                        <span>🛡️</span> View in Escrow & Returns Deck
+                                    </button>
                                 `}
+
+                                <div class="dock-feedback-banner" id="dock-feedback-${a.id}" style="display:none;" role="status" aria-live="polite"></div>
                             </div>
                         </div>
                     `;
@@ -598,30 +760,77 @@ function renderRenterActiveBookings() {
     // Wire handlers for direct pickup
     container.querySelectorAll('.direct-pickup-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
+            if (btn.disabled || btn.classList.contains('is-pending')) return;
+
             const assetId = btn.getAttribute('data-id');
             const bayId = btn.getAttribute('data-bay');
             const prefilledOtp = btn.getAttribute('data-otp');
+            const feedbackEl = document.getElementById(`dock-feedback-${assetId}`);
+
             let otp = prefilledOtp;
-            if (!otp) {
-                otp = prompt(`Enter 6-Digit Pickup OTP for Bay ${bayId}:`);
+            if (!otp || otp.length !== 6) {
+                otp = prompt(`Enter 6-Digit Pickup OTP for Bay ${bayId}:`, prefilledOtp || '');
             }
             if (!otp || !otp.trim()) return;
 
+            // Prevent duplicate submissions: set pending state
+            btn.disabled = true;
+            btn.classList.add('is-pending');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<span>⏳</span> Disengaging Solenoid... (Simulated)`;
+
+            if (feedbackEl) {
+                feedbackEl.style.display = 'flex';
+                feedbackEl.className = 'dock-feedback-banner is-pending';
+                feedbackEl.innerHTML = `<span>⏳</span> <strong>Simulating Solenoid Action:</strong> Sending pickup command to Bay ${bayId}...`;
+            }
+
             try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
                 const res = await fetch(`${API_BASE}/assets/pickup`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
+                    credentials: 'same-origin',
                     body: JSON.stringify({ assetId, otpPin: otp.trim() })
                 });
+
                 const data = await res.json();
-                if (data.success) {
-                    showToast('🔓 ' + data.message, 'success');
+
+                if (res.ok && data.success) {
+                    if (feedbackEl) {
+                        feedbackEl.className = 'dock-feedback-banner is-success';
+                        feedbackEl.innerHTML = `<span>🔓</span> <strong>Solenoid Disengaged (Simulated):</strong> ${escapeHtml(data.message)}`;
+                    }
+                    showToast('🔓 Solenoid Unlatched (Simulated): ' + data.message, 'success');
+                    // Authoritatively update state from server
                     await fetchAllData();
                 } else {
-                    showToast('❌ ' + (data.message || data.error), 'error');
+                    // Rejection: do NOT advance UI
+                    btn.disabled = false;
+                    btn.classList.remove('is-pending');
+                    btn.innerHTML = originalHtml;
+
+                    const errMsg = data.message || data.error || `Server rejected pickup (HTTP ${res.status})`;
+                    if (feedbackEl) {
+                        feedbackEl.className = 'dock-feedback-banner is-error';
+                        feedbackEl.innerHTML = `<span>❌</span> <strong>Pickup Rejected:</strong> ${escapeHtml(errMsg)}`;
+                    }
+                    showToast('❌ Pickup rejected: ' + errMsg, 'error');
+                    // Refresh lockers to reflect any lockout or attempt increments
+                    await fetchLockers(true);
                 }
             } catch (e) {
-                showToast('Pickup failed: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.classList.remove('is-pending');
+                btn.innerHTML = originalHtml;
+
+                if (feedbackEl) {
+                    feedbackEl.className = 'dock-feedback-banner is-error';
+                    feedbackEl.innerHTML = `<span>⚠️</span> <strong>Network Failure:</strong> ${escapeHtml(e.message)}`;
+                }
+                showToast('Pickup network error: ' + e.message, 'error');
             }
         });
     });
@@ -629,26 +838,79 @@ function renderRenterActiveBookings() {
     // Wire handlers for direct return
     container.querySelectorAll('.direct-return-btn').forEach(btn => {
         btn.addEventListener('click', async () => {
+            if (btn.disabled || btn.classList.contains('is-pending')) return;
+
             const assetId = btn.getAttribute('data-id');
             const bayId = btn.getAttribute('data-bay');
+            const feedbackEl = document.getElementById(`dock-feedback-${assetId}`);
+
             if (!confirm(`Return equipment to Hub Bay ${bayId}? It will strictly enter Mandatory Quarantine for host condition inspection.`)) return;
 
+            btn.disabled = true;
+            btn.classList.add('is-pending');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = `<span>⏳</span> Locking Door Latch... (Simulated)`;
+
+            if (feedbackEl) {
+                feedbackEl.style.display = 'flex';
+                feedbackEl.className = 'dock-feedback-banner is-pending';
+                feedbackEl.innerHTML = `<span>⏳</span> <strong>Simulating Solenoid Action:</strong> Engaging door latch and setting load cell for Bay ${bayId}...`;
+            }
+
             try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
                 const res = await fetch(`${API_BASE}/assets/return`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers,
+                    credentials: 'same-origin',
                     body: JSON.stringify({ assetId })
                 });
+
                 const data = await res.json();
-                if (data.success) {
+
+                if (res.ok && data.success) {
+                    if (feedbackEl) {
+                        feedbackEl.className = 'dock-feedback-banner is-success';
+                        feedbackEl.innerHTML = `<span>📦</span> <strong>Returned to Quarantine:</strong> ${escapeHtml(data.message)}`;
+                    }
                     showToast('📦 ' + data.message, 'success');
                     await fetchAllData();
                 } else {
-                    showToast('❌ ' + (data.message || data.error), 'error');
+                    btn.disabled = false;
+                    btn.classList.remove('is-pending');
+                    btn.innerHTML = originalHtml;
+
+                    const errMsg = data.message || data.error || `Server rejected return (HTTP ${res.status})`;
+                    if (feedbackEl) {
+                        feedbackEl.className = 'dock-feedback-banner is-error';
+                        feedbackEl.innerHTML = `<span>❌</span> <strong>Return Rejected:</strong> ${escapeHtml(errMsg)}`;
+                    }
+                    showToast('❌ Return rejected: ' + errMsg, 'error');
                 }
             } catch (e) {
-                showToast('Return failed: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.classList.remove('is-pending');
+                btn.innerHTML = originalHtml;
+
+                if (feedbackEl) {
+                    feedbackEl.className = 'dock-feedback-banner is-error';
+                    feedbackEl.innerHTML = `<span>⚠️</span> <strong>Network Failure:</strong> ${escapeHtml(e.message)}`;
+                }
+                showToast('Return network error: ' + e.message, 'error');
             }
+        });
+    });
+
+    // Wire handlers for navigate to escrow
+    container.querySelectorAll('.direct-goto-escrow-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const escrowNav = document.querySelector('.nav-pill[data-view="escrowView"]');
+            if (escrowNav) escrowNav.click();
+            setTimeout(() => {
+                document.getElementById('quarantineDeck')?.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
         });
     });
 }
@@ -1200,21 +1462,38 @@ async function pickupSelectedBayGear() {
     const otpInput = prompt(`Enter 6-Digit Pickup OTP Passcode for Bay ${comp.bayId}:`, comp.otpPin || '');
     if (!otpInput) return;
 
+    const btn = document.getElementById('pickupFromLockerBtn');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Unlocking... (Simulated)';
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/assets/pickup`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ assetId: asset.id, otpPin: otpInput.trim() })
         });
         const data = await res.json();
-        if (data.success) {
-            showToast('🔓 ' + data.message, 'success');
+        if (res.ok && data.success) {
+            showToast('🔓 Solenoid Unlatched (Simulated): ' + data.message, 'success');
             await fetchAllData();
         } else {
-            showToast('❌ ' + data.message, 'error');
+            showToast('❌ Pickup rejected: ' + (data.message || data.error), 'error');
+            await fetchLockers(true);
         }
     } catch (e) {
         showToast('Error during pickup: ' + e.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
     }
 }
 
@@ -1225,21 +1504,39 @@ async function returnSelectedBayGear() {
         return;
     }
 
+    if (!confirm(`Return equipment to Hub Bay ${state.selectedBayId}? It will strictly enter Mandatory Quarantine for host condition inspection.`)) return;
+
+    const btn = document.getElementById('returnToQuarantineBtn');
+    const origHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳</span> Returning... (Simulated)';
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/assets/return`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ assetId: asset.id })
         });
         const data = await res.json();
-        if (data.success) {
+        if (res.ok && data.success) {
             showToast('📦 ' + data.message, 'success');
             await fetchAllData();
         } else {
-            showToast('❌ ' + data.message, 'error');
+            showToast('❌ Return rejected: ' + (data.message || data.error), 'error');
         }
     } catch (e) {
         showToast('Error returning equipment: ' + e.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
     }
 }
 
@@ -1271,6 +1568,12 @@ function renderQuarantineDeck() {
         const isRenter = a.renterId === state.activeUser;
         const canHostInspect = isAssetOwner || isAdmin;
 
+        const days = a.rentalDays || 1;
+        const totalTariff = a.totalTariff || (a.calculatedTariff * days);
+        const collateral = a.requiredCollateral || 0;
+        const slashPenalty = collateral * 0.20;
+        const netRefundOnSlash = Math.max(0, collateral - slashPenalty);
+
         return `
             <div class="quarantine-card ${isDisputed ? 'disputed-card' : ''}">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -1284,15 +1587,19 @@ function renderQuarantineDeck() {
                     </span>
                 </div>
 
-                <div style="background:var(--slate-50); padding:12px; border-radius:var(--radius-md); margin:14px 0; border:1px solid var(--slate-200);">
-                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
-                        <span>Held Security Collateral:</span>
-                        <strong style="color:var(--crimson); font-size:14px;">${formatInr(a.requiredCollateral)}</strong>
+                <div style="background:var(--slate-50); padding:14px; border-radius:var(--radius-md); margin:14px 0; border:1px solid var(--slate-200);">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;">
+                        <span>Held Escrow Collateral:</span>
+                        <strong style="color:var(--crimson); font-size:14px;">${formatInr(collateral)}</strong>
                     </div>
-                    <div style="font-size:11px; color:var(--slate-500);">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:6px;">
+                        <span>Rental Duration & Tariff:</span>
+                        <strong style="color:var(--brand-teal-dark); font-size:13px;">${days}d • ${formatInr(totalTariff)} (${formatInr(a.calculatedTariff)}/day)</strong>
+                    </div>
+                    <div style="font-size:11px; color:var(--slate-500); border-top:1px dashed var(--slate-300); padding-top:6px; margin-top:6px;">
                         ${isDisputed 
-                            ? 'Arbitration active by Goa Hub Lead. Deposit release frozen pending evidence review.' 
-                            : 'Host must approve condition within 24h. Renter may contest deductions.'}
+                            ? '⚖️ Arbitration active by Hub Administrator. Escrow funds frozen pending evidence review.' 
+                            : 'Host verifies physical condition before releasing deposit. Clean return releases full tariff to host and refunds 100% deposit to renter.'}
                     </div>
                 </div>
 
@@ -1300,10 +1607,10 @@ function renderQuarantineDeck() {
                     ${canHostInspect ? `
                         <div style="display:flex; flex-direction:column; gap:8px;">
                             <button class="btn-primary approve-inspection-btn" data-id="${a.id}" style="justify-content:center;">
-                                <span>✅</span> Approve Clean Return (100% Deposit Refund)
+                                <span>✅</span> Approve Clean Return (Release ${formatInr(totalTariff)} Tariff, Refund ${formatInr(collateral)})
                             </button>
                             <button class="btn-danger slash-inspection-btn" data-id="${a.id}" style="justify-content:center;">
-                                <span>⚠️</span> Flag 20% Damage Penalty
+                                <span>⚠️</span> Flag 20% Damage Penalty (Slashes ${formatInr(slashPenalty)} to Host, Refunds ${formatInr(netRefundOnSlash)})
                             </button>
                             <div style="font-size:11px; color:var(--slate-500); text-align:center;">
                                 Host Inspection Authority: Verify physical condition before releasing escrow.
@@ -1311,7 +1618,7 @@ function renderQuarantineDeck() {
                         </div>
                     ` : isRenter ? `
                         <div style="display:flex; flex-direction:column; gap:8px;">
-                            <button class="btn-secondary contest-dispute-btn" data-id="${a.id}" data-collateral="${a.requiredCollateral}" data-title="${escapeHtml(a.title)}" style="justify-content:center; font-size:12px;">
+                            <button class="btn-secondary contest-dispute-btn" data-id="${a.id}" data-collateral="${collateral}" data-title="${escapeHtml(a.title)}" style="justify-content:center; font-size:12px;">
                                 <span>⚖️</span> Contest Claim / File Formal Dispute
                             </button>
                             <div style="font-size:11px; color:var(--slate-500); text-align:center;">
@@ -1334,11 +1641,11 @@ function renderQuarantineDeck() {
 
     // Attach Handlers
     container.querySelectorAll('.approve-inspection-btn').forEach(btn => {
-        btn.addEventListener('click', () => approveInspection(btn.getAttribute('data-id')));
+        btn.addEventListener('click', () => approveInspection(btn.getAttribute('data-id'), btn));
     });
 
     container.querySelectorAll('.slash-inspection-btn').forEach(btn => {
-        btn.addEventListener('click', () => slashInspection(btn.getAttribute('data-id')));
+        btn.addEventListener('click', () => slashInspection(btn.getAttribute('data-id'), btn));
     });
 
     container.querySelectorAll('.contest-dispute-btn').forEach(btn => {
@@ -1351,43 +1658,86 @@ function renderQuarantineDeck() {
     });
 }
 
-async function approveInspection(assetId) {
+async function approveInspection(assetId, triggerBtn) {
+    if (triggerBtn) {
+        triggerBtn.disabled = true;
+        triggerBtn.classList.add('is-pending');
+        triggerBtn.innerHTML = '<span>⏳</span> Approving Clean Return...';
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/assets/inspect-approve`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ assetId, hostId: state.activeUser })
         });
         const data = await res.json();
         if (data.success) {
             showToast('✅ ' + data.message, 'success');
             await fetchAllData();
+            renderHostStudio();
         } else {
-            showToast('❌ ' + data.message, 'error');
+            showToast('❌ ' + (data.message || data.error || 'Server rejected inspection approval'), 'error');
+            if (triggerBtn) {
+                triggerBtn.disabled = false;
+                triggerBtn.classList.remove('is-pending');
+                triggerBtn.innerHTML = '<span>✅</span> Approve Clean Return';
+            }
         }
     } catch (e) {
         showToast('Error approving inspection: ' + e.message, 'error');
+        if (triggerBtn) {
+            triggerBtn.disabled = false;
+            triggerBtn.classList.remove('is-pending');
+            triggerBtn.innerHTML = '<span>✅</span> Approve Clean Return';
+        }
     }
 }
 
-async function slashInspection(assetId) {
+async function slashInspection(assetId, triggerBtn) {
+    if (triggerBtn) {
+        triggerBtn.disabled = true;
+        triggerBtn.classList.add('is-pending');
+        triggerBtn.innerHTML = '<span>⏳</span> Processing Slashing...';
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/assets/inspect-slash`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ assetId, hostId: state.activeUser, damagePercentage: 20.0 })
         });
         const data = await res.json();
         if (data.success) {
             showToast('⚠️ ' + data.message, 'warning');
             await fetchAllData();
+            renderHostStudio();
         } else {
-            showToast('❌ ' + data.message, 'error');
+            showToast('❌ ' + (data.message || data.error || 'Server rejected deposit slashing'), 'error');
+            if (triggerBtn) {
+                triggerBtn.disabled = false;
+                triggerBtn.classList.remove('is-pending');
+                triggerBtn.innerHTML = '<span>⚠️</span> Flag 20% Damage Penalty';
+            }
         }
     } catch (e) {
         showToast('Error slashing collateral: ' + e.message, 'error');
+        if (triggerBtn) {
+            triggerBtn.disabled = false;
+            triggerBtn.classList.remove('is-pending');
+            triggerBtn.innerHTML = '<span>⚠️</span> Flag 20% Damage Penalty';
+        }
     }
 }
+
 
 function renderWalTable() {
     const tbody = document.getElementById('walTableBody');
@@ -1413,20 +1763,366 @@ function renderWalTable() {
 }
 
 // ============================================================================
-// TAB 4: HOST STUDIO, CLONER & TRUST SCORE ENGINE
+// TAB 4: HOST STUDIO, FLEET INVENTORY & LIVE RENTAL DISPATCHES
 // ============================================================================
-function populateHostDropdowns() {
+
+state.hostFilter = 'ALL';
+state.adminSelectedHost = 'ALL';
+
+function renderHostStudio() {
+    const user = state.users.find(u => u.userId === state.activeUser);
+    const role = user ? user.role : 'RENTER';
+    const isAdmin = role === 'ADMIN' || role === 'INSPECTOR' || (user && user.userId === 'inspector_almeida');
+    const isHost = role === 'HOST';
+
+    const permBanner = document.getElementById('hostPermBanner');
+    const hostHeader = document.getElementById('hostOverviewHeader');
+    const kpiGrid = document.getElementById('hostKpiGrid');
+    const rentalsSec = document.getElementById('hostRentalsSection');
+    const equipSec = document.getElementById('hostEquipmentSection');
+    const adminFilterBox = document.getElementById('adminHostFilterContainer');
+
+    if (!isHost && !isAdmin) {
+        // Authenticated as Renter or unauthenticated visitor
+        if (permBanner) {
+            permBanner.style.display = 'flex';
+            const permMsg = document.getElementById('hostPermMessage');
+            if (permMsg) {
+                permMsg.textContent = `You are currently signed in as Renter (${user ? user.userName : state.activeUser}). Equipment listing, live rental tracking, and return quarantine inspections are managed by equipment hosts. You can list equipment to become a host or switch to an existing host account.`;
+            }
+        }
+        if (hostHeader) hostHeader.style.display = 'none';
+        if (kpiGrid) kpiGrid.style.display = 'none';
+        if (rentalsSec) rentalsSec.style.display = 'none';
+        if (equipSec) equipSec.style.display = 'none';
+        return;
+    }
+
+    // Host or Admin
+    if (permBanner) permBanner.style.display = 'none';
+    if (hostHeader) hostHeader.style.display = 'flex';
+    if (kpiGrid) kpiGrid.style.display = 'grid';
+    if (rentalsSec) rentalsSec.style.display = 'block';
+    if (equipSec) equipSec.style.display = 'block';
+
+    let targetHostId = state.activeUser;
+    if (isAdmin) {
+        if (adminFilterBox) adminFilterBox.style.display = 'flex';
+        targetHostId = state.adminSelectedHost || 'ALL';
+        const label = document.getElementById('hostPersonaLabel');
+        if (label) label.textContent = `Persona: Hub Administrator (${targetHostId === 'ALL' ? 'Managing All Hosts' : 'Filtering ' + targetHostId})`;
+    } else {
+        if (adminFilterBox) adminFilterBox.style.display = 'none';
+        const label = document.getElementById('hostPersonaLabel');
+        if (label) label.textContent = `Persona: Host / Gear Owner • ${user.userName}`;
+    }
+
+    renderHostKPIs(targetHostId);
+    renderHostRentalsDeck(targetHostId);
+    renderHostEquipmentDeck(targetHostId);
+    populateHostDropdowns(targetHostId);
+    runTrustScoreCalculation();
+    runLiveReflection();
+}
+
+function renderHostKPIs(targetHostId) {
+    const hostAssets = state.assets.filter(a => targetHostId === 'ALL' ? true : a.ownerId === targetHostId);
+    const totalCount = hostAssets.length;
+    const availCount = hostAssets.filter(a => a.state === 'AVAILABLE').length;
+    const leasedCount = hostAssets.filter(a => a.state === 'ACTIVE_LEASE').length;
+    const quarantineCount = hostAssets.filter(a => a.state === 'INSPECTION_QUARANTINE' || a.state === 'DISPUTED').length;
+
+    // Get financial stats from escrow accounts
+    let walletBalance = 0;
+    let earnedRevenue = 0;
+    const accountList = state.accounts || state.users || [];
+    if (targetHostId === 'ALL') {
+        const hostAccounts = accountList.filter(acc => acc.role === 'HOST');
+        walletBalance = hostAccounts.reduce((sum, acc) => sum + (acc.walletBalance || 0), 0);
+        earnedRevenue = hostAccounts.reduce((sum, acc) => sum + (acc.earnedRevenue || 0), 0);
+    } else {
+        const hostAcc = accountList.find(acc => acc.userId === targetHostId);
+        if (hostAcc) {
+            walletBalance = hostAcc.walletBalance || 0;
+            earnedRevenue = hostAcc.earnedRevenue || 0;
+        }
+    }
+
+    const totalEl = document.getElementById('hostKpiTotalUnits');
+    if (totalEl) totalEl.textContent = totalCount;
+
+    const breakdownEl = document.getElementById('hostKpiUnitsBreakdown');
+    if (breakdownEl) breakdownEl.textContent = `${availCount} Available • ${leasedCount} on Lease`;
+
+    const leasedEl = document.getElementById('hostKpiActiveLeases');
+    if (leasedEl) leasedEl.textContent = leasedCount;
+
+    const leasedSub = document.getElementById('hostKpiLeasesSub');
+    if (leasedSub) leasedSub.textContent = leasedCount > 0 ? `${leasedCount} equipment currently generating rental income` : 'No equipment currently in field';
+
+    const quarantineEl = document.getElementById('hostKpiQuarantineHold');
+    if (quarantineEl) quarantineEl.textContent = quarantineCount;
+
+    const quarantineSub = document.getElementById('hostKpiQuarantineSub');
+    if (quarantineSub) quarantineSub.textContent = quarantineCount > 0 ? `${quarantineCount} unit(s) returned awaiting host verification` : 'Zero items in quarantine hold';
+
+    const earnEl = document.getElementById('hostKpiEarnings');
+    if (earnEl) earnEl.textContent = formatInr(earnedRevenue).replace('₹', '');
+
+    const walletSub = document.getElementById('hostKpiWalletSub');
+    if (walletSub) walletSub.textContent = `Available Wallet: ${formatInr(walletBalance)}`;
+}
+
+function renderHostRentalsDeck(targetHostId) {
+    const container = document.getElementById('hostActiveRentalsGrid');
+    if (!container) return;
+
+    const activeRentals = state.assets.filter(a => 
+        (targetHostId === 'ALL' || a.ownerId === targetHostId) &&
+        (a.state === 'RESERVED_ESCROW' || a.state === 'ACTIVE_LEASE' || a.state === 'INSPECTION_QUARANTINE' || a.state === 'DISPUTED')
+    );
+
+    if (activeRentals.length === 0) {
+        container.innerHTML = `
+            <div class="host-empty-card">
+                <div class="host-empty-icon">✨</div>
+                <div class="host-empty-title">No Active Rentals or Pending Returns</div>
+                <p class="host-empty-text">All listed equipment is currently stored in Panjim Hub bays and available for booking.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = activeRentals.map(a => {
+        const isQuarantine = a.state === 'INSPECTION_QUARANTINE';
+        const isDisputed = a.state === 'DISPUTED';
+        const isActiveLease = a.state === 'ACTIVE_LEASE';
+        const isReserved = a.state === 'RESERVED_ESCROW';
+
+        const days = a.rentalDays || 1;
+        const totalTariff = a.totalTariff || (a.calculatedTariff * days);
+        const collateral = a.requiredCollateral || 0;
+
+        let statusClass = 'is-active-lease';
+        let statusBadge = '<span class="state-badge state-active">🚀 ACTIVE LEASE</span>';
+        if (isQuarantine) {
+            statusClass = 'is-quarantine';
+            statusBadge = '<span class="state-badge state-quarantine">⚠️ IN QUARANTINE (Inspection)</span>';
+        } else if (isDisputed) {
+            statusClass = 'is-quarantine';
+            statusBadge = '<span class="state-badge" style="background:var(--purple-light); color:var(--purple);">⚖️ IN DISPUTE</span>';
+        } else if (isReserved) {
+            statusClass = 'is-reserved';
+            statusBadge = '<span class="state-badge state-reserved">🔒 RESERVED (Pickup Pending)</span>';
+        }
+
+        const user = state.users.find(u => u.userId === state.activeUser);
+        const isAdmin = user && (user.role === 'ADMIN' || user.role === 'INSPECTOR');
+        const canInspect = isQuarantine && (isAdmin || a.ownerId === state.activeUser);
+
+        return `
+            <div class="host-rental-card ${statusClass}">
+                <div class="host-rental-info">
+                    <div class="host-rental-top">
+                        <span class="cat-pill-badge">${getCategoryDisplayName(a.leafClass)}</span>
+                        <h4 class="host-rental-title">${escapeHtml(a.title)}</h4>
+                        ${statusBadge}
+                        <span class="asset-id-chip">${a.id}</span>
+                    </div>
+                    <div class="host-rental-details-row">
+                        <span>📍 Hub Bay: <strong>${a.lockerCoordinate}</strong></span>
+                        <span>👤 Renter: <strong>${escapeHtml(a.renterId || 'Unassigned')}</strong></span>
+                        <span>⏱️ Duration: <strong>${days} Day${days > 1 ? 's' : ''}</strong></span>
+                        <span>💰 Rental Tariff: <strong>${formatInr(totalTariff)}</strong> (${formatInr(a.calculatedTariff)}/day)</span>
+                        <span>🛡️ Escrow Collateral: <strong>${formatInr(collateral)}</strong></span>
+                    </div>
+                    ${isQuarantine ? `
+                        <div style="margin-top:10px; font-size:12px; color:var(--crimson); background:var(--crimson-light); padding:8px 12px; border-radius:var(--radius-sm); border:1px solid #FECACA;">
+                            ⚠️ Equipment returned to Hub Bay ${a.lockerCoordinate}. Collateral (${formatInr(collateral)}) is locked until host inspection.
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="host-rental-actions">
+                    ${canInspect ? `
+                        <button class="btn-primary approve-inspection-btn" data-id="${a.id}" style="justify-content:center; font-size:12px;">
+                            <span>✅</span> Approve Clean Return (${formatInr(totalTariff)})
+                        </button>
+                        <button class="btn-danger slash-inspection-btn" data-id="${a.id}" style="justify-content:center; font-size:12px;">
+                            <span>⚠️</span> Flag 20% Damage Penalty
+                        </button>
+                    ` : isQuarantine ? `
+                        <div style="font-size:11px; color:var(--slate-500); text-align:center;">
+                            🔒 Inspection reserved for owner (${escapeHtml(a.ownerId)}) or Hub Admin.
+                        </div>
+                    ` : isActiveLease ? `
+                        <div style="font-size:12px; color:var(--brand-teal-dark); text-align:center; padding:6px; background:var(--brand-teal-light); border-radius:var(--radius-sm); font-weight:600;">
+                            ● Field Rental Active
+                        </div>
+                    ` : `
+                        <div style="font-size:12px; color:var(--warm-amber-dark); text-align:center; padding:6px; background:var(--warm-amber-light); border-radius:var(--radius-sm); font-weight:600;">
+                            ⏳ Waiting for Renter OTP Pickup
+                        </div>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Attach Handlers
+    container.querySelectorAll('.approve-inspection-btn').forEach(btn => {
+        btn.addEventListener('click', () => approveInspection(btn.getAttribute('data-id'), btn));
+    });
+
+    container.querySelectorAll('.slash-inspection-btn').forEach(btn => {
+        btn.addEventListener('click', () => slashInspection(btn.getAttribute('data-id'), btn));
+    });
+}
+
+function renderHostEquipmentDeck(targetHostId) {
+    const container = document.getElementById('hostEquipmentCardsGrid');
+    if (!container) return;
+
+    const allHostAssets = state.assets.filter(a => targetHostId === 'ALL' ? true : a.ownerId === targetHostId);
+
+    // Update filter counts
+    const availCount = allHostAssets.filter(a => a.state === 'AVAILABLE').length;
+    const leasedCount = allHostAssets.filter(a => a.state === 'ACTIVE_LEASE').length;
+    const quarantineCount = allHostAssets.filter(a => a.state === 'INSPECTION_QUARANTINE' || a.state === 'DISPUTED').length;
+
+    const cntAll = document.getElementById('hostCountAll');
+    if (cntAll) cntAll.textContent = allHostAssets.length;
+    const cntAvail = document.getElementById('hostCountAvail');
+    if (cntAvail) cntAvail.textContent = availCount;
+    const cntLeased = document.getElementById('hostCountLeased');
+    if (cntLeased) cntLeased.textContent = leasedCount;
+    const cntQuarantine = document.getElementById('hostCountQuarantine');
+    if (cntQuarantine) cntQuarantine.textContent = quarantineCount;
+
+    // Filter by active pill
+    let filtered = allHostAssets;
+    if (state.hostFilter === 'AVAILABLE') {
+        filtered = allHostAssets.filter(a => a.state === 'AVAILABLE');
+    } else if (state.hostFilter === 'ACTIVE_LEASE') {
+        filtered = allHostAssets.filter(a => a.state === 'ACTIVE_LEASE');
+    } else if (state.hostFilter === 'INSPECTION_QUARANTINE') {
+        filtered = allHostAssets.filter(a => a.state === 'INSPECTION_QUARANTINE' || a.state === 'DISPUTED');
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="host-empty-card" style="grid-column: 1/-1;">
+                <div class="host-empty-icon">📦</div>
+                <div class="host-empty-title">No Equipment Found</div>
+                <p class="host-empty-text">No equipment in this status category. Click "+ List New Equipment" to add gear.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = filtered.map(a => {
+        let stateTag = `<span class="state-badge state-available">Available Now</span>`;
+        if (a.state === 'ACTIVE_LEASE') {
+            stateTag = `<span class="state-badge state-active">Active Lease</span>`;
+        } else if (a.state === 'RESERVED_ESCROW') {
+            stateTag = `<span class="state-badge state-reserved">Reserved</span>`;
+        } else if (a.state === 'INSPECTION_QUARANTINE') {
+            stateTag = `<span class="state-badge state-quarantine">Quarantine Hold</span>`;
+        } else if (a.state === 'DISPUTED') {
+            stateTag = `<span class="state-badge" style="background:var(--purple-light); color:var(--purple);">In Dispute</span>`;
+        }
+
+        const isRented = a.state === 'ACTIVE_LEASE' || a.state === 'RESERVED_ESCROW';
+
+        return `
+            <div class="host-equip-card" data-id="${a.id}">
+                <div class="host-card-top-bar">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span class="cat-pill-badge">${getCategoryDisplayName(a.leafClass)}</span>
+                        <span class="asset-id-chip">${a.id}</span>
+                    </div>
+                    ${stateTag}
+                </div>
+                <div class="host-card-body">
+                    <h4 class="host-card-title">${escapeHtml(a.title)}</h4>
+                    <div class="host-card-meta-row">
+                        <span>📍 Bay: <strong>${a.lockerCoordinate || 'Unassigned'}</strong></span>
+                        <span>🛡️ ${escapeHtml(a.protectionTier || 'Standard Shield')}</span>
+                    </div>
+
+                    ${isRented ? `
+                        <div class="host-lease-active-tag">
+                            <span>🚀</span>
+                            <span>Rented by <strong>${escapeHtml(a.renterId || 'Active Renter')}</strong> (${a.rentalDays || 1}d)</span>
+                        </div>
+                    ` : ''}
+
+                    <div class="host-pricing-box">
+                        <div>
+                            <span style="font-size:10px; color:var(--slate-500); text-transform:uppercase; display:block;">Daily Tariff</span>
+                            <strong style="color:var(--brand-teal-dark); font-size:14px;">${formatInr(a.calculatedTariff)}</strong><span style="font-size:11px; color:var(--slate-500);">/day</span>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:10px; color:var(--slate-500); text-transform:uppercase; display:block;">Escrow Deposit</span>
+                            <strong style="color:var(--slate-700); font-size:13px;">${formatInr(a.requiredCollateral)}</strong>
+                        </div>
+                    </div>
+
+                    <div class="host-card-actions">
+                        <button class="host-btn-action host-clone-trigger" data-id="${a.id}">
+                            <span>🧬</span> Clone Listing
+                        </button>
+                        <button class="host-btn-action host-rtti-trigger" data-id="${a.id}">
+                            <span>🔍</span> JVM RTTI
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Attach Card Actions
+    container.querySelectorAll('.host-clone-trigger').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const assetId = btn.getAttribute('data-id');
+            const cloneSel = document.getElementById('cloneSourceSelect');
+            if (cloneSel) {
+                cloneSel.value = assetId;
+                updateClonerMemoryPreview();
+            }
+            document.getElementById('cloneSourceSelect')?.scrollIntoView({ behavior: 'smooth' });
+            showToast(`Selected ${assetId} for Prototype Deep Cloning.`, 'info');
+        });
+    });
+
+    container.querySelectorAll('.host-rtti-trigger').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const assetId = btn.getAttribute('data-id');
+            const metaSel = document.getElementById('metaAssetSelect');
+            if (metaSel) {
+                metaSel.value = assetId;
+                runLiveReflection();
+            }
+            document.getElementById('metaAssetSelect')?.scrollIntoView({ behavior: 'smooth' });
+            showToast(`Inspecting ${assetId} with java.lang.reflect RTTI.`, 'info');
+        });
+    });
+}
+
+function populateHostDropdowns(targetHostId = 'ALL') {
     const cloneSel = document.getElementById('cloneSourceSelect');
     const metaSel = document.getElementById('metaAssetSelect');
 
+    const relevantAssets = state.assets.filter(a => targetHostId === 'ALL' ? true : a.ownerId === targetHostId);
+    const assetList = relevantAssets.length > 0 ? relevantAssets : state.assets;
+
     if (cloneSel) {
-        cloneSel.innerHTML = state.assets.map(a => `
+        cloneSel.innerHTML = assetList.map(a => `
             <option value="${a.id}">${a.title} (${a.id} • ${formatInrCompact(a.calculatedTariff)}/day)</option>
         `).join('');
     }
 
     if (metaSel) {
-        metaSel.innerHTML = state.assets.map(a => `
+        metaSel.innerHTML = assetList.map(a => `
             <option value="${a.id}">${a.title} (${a.leafClass})</option>
         `).join('');
     }
@@ -1451,21 +2147,39 @@ async function submitCloneListing() {
 
     if (!sourceId) return;
 
+    const btn = document.getElementById('executeCloneListingBtn');
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('is-pending');
+        btn.innerHTML = '<span>⏳</span> Duplicating & Allocating Bay...';
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/assets/clone`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ assetId: sourceId, targetBay })
         });
         const data = await res.json();
         if (data.success) {
             showToast('⚡ ' + data.message, 'success');
             await fetchAllData();
+            renderHostStudio();
         } else {
-            showToast('❌ ' + data.message, 'error');
+            showToast('❌ ' + (data.message || data.error || 'Cloning failed'), 'error');
         }
     } catch (e) {
         showToast('Error cloning listing: ' + e.message, 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('is-pending');
+            btn.innerHTML = '<span>⚡</span> Duplicate Listing & Allocate Hub Bay';
+        }
     }
 }
 
@@ -2251,10 +2965,21 @@ async function submitOnboardAsset() {
         return;
     }
 
+    const confirmBtn = document.getElementById('confirmOnboardBtn');
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.add('is-pending');
+        confirmBtn.innerHTML = '<span>⏳</span> Publishing & Allocating Bay...';
+    }
+
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/assets/onboard`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({
                 leafClass,
                 title,
@@ -2269,11 +2994,18 @@ async function submitOnboardAsset() {
             closeModal('onboardModal');
             showToast('✅ ' + data.message, 'success');
             await fetchAllData();
+            renderHostStudio();
         } else {
-            showToast('❌ ' + data.message, 'error');
+            showToast('❌ ' + (data.message || data.error || 'Failed to onboard equipment'), 'error');
         }
     } catch (e) {
         showToast('Error onboarding asset: ' + e.message, 'error');
+    } finally {
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('is-pending');
+            confirmBtn.innerHTML = '<span>➕</span> Publish Listing & Allocate Hub Bay';
+        }
     }
 }
 

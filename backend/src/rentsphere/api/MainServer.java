@@ -349,6 +349,8 @@ public class MainServer {
         LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
         String otp = "000000";
         if (comp != null) {
+            comp.setOccupied(true);
+            comp.setCurrentAssetId(asset.getId());
             comp.setStatus("RESERVED_LOCKED");
             otp = comp.generateNewOtp();
         }
@@ -399,19 +401,43 @@ public class MainServer {
         }
 
         RentableAsset asset = optAsset.get();
-        if (!asset.getCurrentState().canPickup()) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Asset is not in a reserved pickup state.\"}");
-            return;
-        }
-
         if (!isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(asset.getRenterId())) {
             sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the reserving renter or administrator can pick up this asset.\"}");
             return;
         }
 
+        if (!asset.getCurrentState().canPickup()) {
+            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Asset is not in a reserved pickup state.\"}");
+            return;
+        }
+
         LockerCompartment comp = lockerGrid.getCompartment(asset.getLockerCoordinate());
-        if (comp == null || !comp.verifyOtp(otp)) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Invalid or expired 6-Digit Pickup OTP passcode for Bay " + asset.getLockerCoordinate() + "\"}");
+        if (comp == null) {
+            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Locker bay " + asset.getLockerCoordinate() + " not assigned or not found.\"}");
+            return;
+        }
+
+        if (comp.isLockedOut()) {
+            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Bay " + comp.getBayId() + " is temporarily locked out due to multiple failed attempts (CWE-307). Lockout remaining: " + comp.getLockoutRemainingSeconds() + "s. Contact hub administration.\"}");
+            return;
+        }
+
+        if (comp.isOtpExpired()) {
+            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Pickup OTP for Bay " + comp.getBayId() + " has expired (>60m). Please request an OTP re-issue.\"}");
+            return;
+        }
+
+        if (!comp.verifyOtp(otp)) {
+            persistenceEngine.saveLockers(lockerGrid);
+            if (comp.isLockedOut()) {
+                persistenceEngine.appendWal(assetId, "PICKUP_LOCKOUT", asset.getCurrentState().getStateName(), asset.getCurrentState().getStateName(), caller.getUserId(),
+                        "3 failed OTP attempts! Bay " + comp.getBayId() + " locked out for 15m (CWE-307)");
+                sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"3 consecutive invalid OTP attempts! Bay " + comp.getBayId() + " has been locked out for 15 minutes against brute-force attacks (CWE-307).\"}");
+            } else {
+                persistenceEngine.appendWal(assetId, "PICKUP_ATTEMPT_FAILED", asset.getCurrentState().getStateName(), asset.getCurrentState().getStateName(), caller.getUserId(),
+                        "Invalid OTP attempt " + comp.getFailedOtpAttempts() + "/3 for bay " + comp.getBayId());
+                sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Invalid 6-Digit Pickup OTP passcode for Bay " + comp.getBayId() + ". Failed attempt " + comp.getFailedOtpAttempts() + " of 3.\"}");
+            }
             return;
         }
 
@@ -647,10 +673,11 @@ public class MainServer {
             return;
         }
 
+        UserAccount caller = resolveUser(exchange);
         Map<String, String> b = parseJsonBody(exchange);
         String leafClass = b.getOrDefault("leafClass", "CameraAndOpticsGear");
         String title = b.getOrDefault("title", "New Equipment");
-        String ownerId = b.getOrDefault("ownerId", "host_faaris");
+        String ownerId = (caller != null && !isUserAdmin(caller)) ? caller.getUserId() : b.getOrDefault("ownerId", "host_faaris");
         String bay = b.getOrDefault("lockerBay", "A1").toUpperCase();
         double baseRate = parseDouble(b.get("baseDailyRate"), 500.0);
         double collateral = parseDouble(b.get("securityCollateral"), 2000.0);
@@ -731,6 +758,7 @@ public class MainServer {
             return;
         }
 
+        UserAccount caller = resolveUser(exchange);
         Map<String, String> b = parseJsonBody(exchange);
         String sourceId = b.get("assetId");
         String targetBay = b.getOrDefault("targetBay", "").toUpperCase();
@@ -742,6 +770,11 @@ public class MainServer {
         }
 
         RentableAsset source = opt.get();
+        if (caller != null && !isUserAdmin(caller) && !caller.getUserId().equalsIgnoreCase(source.getOwnerId())) {
+            sendJsonResponse(exchange, 403, "{\"error\":\"Forbidden: Only the equipment owner or administrator can clone this listing.\"}");
+            return;
+        }
+
         RentableAsset clone = source.deepClone();
         String newId = "AST-" + (100 + assetRepo.count() + 1);
 
@@ -821,20 +854,26 @@ public class MainServer {
             String maskedOtp = "";
             if (isAdmin) {
                 maskedOtp = c.getOtpPin();
-            } else if (caller != null && c.isOccupied()) {
-                Optional<RentableAsset> optAsset = assetRepo.findById(c.getCurrentAssetId());
-                if (optAsset.isPresent() && caller.getUserId().equalsIgnoreCase(optAsset.get().getRenterId())) {
-                    maskedOtp = c.getOtpPin();
+            } else if (caller != null) {
+                String assetId = c.getCurrentAssetId();
+                Optional<RentableAsset> optAsset = (assetId != null && !assetId.isBlank())
+                        ? assetRepo.findById(assetId)
+                        : assetRepo.findAll().stream().filter(a -> c.getBayId().equalsIgnoreCase(a.getLockerCoordinate())).findFirst();
+                if (optAsset.isPresent()) {
+                    RentableAsset asset = optAsset.get();
+                    if (caller.getUserId().equalsIgnoreCase(asset.getRenterId()) && asset.getCurrentState().canPickup()) {
+                        maskedOtp = c.getOtpPin();
+                    }
                 }
             }
 
             sb.append(String.format(Locale.US,
                     "{\"bayId\":\"%s\",\"row\":%d,\"col\":%d,\"sizeTier\":\"%s\",\"occupied\":%b," +
                     "\"currentAssetId\":\"%s\",\"status\":\"%s\",\"otpPin\":\"%s\",\"tempC\":%.1f," +
-                    "\"humidityPct\":%.1f,\"weightKg\":%.1f}",
+                    "\"humidityPct\":%.1f,\"weightKg\":%.1f,\"lockedOut\":%b,\"failedAttempts\":%d,\"otpExpired\":%b,\"lockoutRemainingSec\":%d}",
                     c.getBayId(), c.getRow(), c.getCol(), c.getSizeTier().name(), c.isOccupied(),
                     c.getCurrentAssetId(), c.getStatus(), maskedOtp, c.getTempC(),
-                    c.getHumidityPct(), c.getWeightKg()));
+                    c.getHumidityPct(), c.getWeightKg(), c.isLockedOut(), c.getFailedOtpAttempts(), c.isOtpExpired(), c.getLockoutRemainingSeconds()));
         }
         sb.append("]");
         sendJsonResponse(exchange, 200, sb.toString());
@@ -1740,6 +1779,8 @@ public class MainServer {
         sb.append(String.format(Locale.US, "\"securityCollateral\":%.2f,", a.getSecurityCollateral()));
         sb.append(String.format(Locale.US, "\"calculatedTariff\":%.2f,", a.calculateDailyRentalTariff(1)));
         sb.append(String.format(Locale.US, "\"requiredCollateral\":%.2f,", a.calculateRequiredCollateral()));
+        sb.append("\"rentalDays\":").append(a.getRentalDays()).append(",");
+        sb.append(String.format(Locale.US, "\"totalTariff\":%.2f,", a.calculateDailyRentalTariff(a.getRentalDays())));
         sb.append("\"lockerCoordinate\":\"").append(a.getLockerCoordinate()).append("\",");
 
         if (a instanceof CategorizedRentalAsset) {
