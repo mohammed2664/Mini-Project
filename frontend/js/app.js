@@ -204,13 +204,36 @@ function initUserSelector() {
     });
 }
 
+function suggestNextAvailableBay(leafClass) {
+    if (!state.lockers || !Array.isArray(state.lockers) || state.lockers.length === 0) {
+        return leafClass === 'EventAndMobilityVehicle' ? 'H1' : 'A1';
+    }
+    const isVehicle = leafClass === 'EventAndMobilityVehicle';
+    const match = state.lockers.find(c => {
+        if (c.occupied) return false;
+        const row = c.row !== undefined ? c.row : (c.bayId.charCodeAt(0) - 65);
+        return isVehicle ? (row === 7) : (row < 7);
+    });
+    return match ? match.bayId : (isVehicle ? 'H1' : 'A1');
+}
+
+function prepareOnboardModal() {
+    const catSelect = document.getElementById('onboardLeafClass');
+    const bayInput = document.getElementById('onboardBay');
+    const currentCat = catSelect ? catSelect.value : 'CameraAndOpticsGear';
+    if (bayInput) {
+        bayInput.value = suggestNextAvailableBay(currentCat);
+    }
+    openModal('onboardModal');
+}
+
 function initEventListeners() {
     // Search & State Filters
     document.getElementById('searchInput')?.addEventListener('input', renderCatalog);
     document.getElementById('stateFilter')?.addEventListener('change', renderCatalog);
 
     // Modals
-    document.getElementById('openListEquipmentBtn')?.addEventListener('click', () => openModal('onboardModal'));
+    document.getElementById('openListEquipmentBtn')?.addEventListener('click', prepareOnboardModal);
     document.getElementById('closeOnboardModal')?.addEventListener('click', () => closeModal('onboardModal'));
     document.getElementById('closeReserveModal')?.addEventListener('click', () => closeModal('reserveModal'));
     document.getElementById('closePaymentSandboxModal')?.addEventListener('click', () => closeModal('paymentSandboxModal'));
@@ -246,6 +269,14 @@ function initEventListeners() {
     // Form Submissions
     document.getElementById('confirmOnboardBtn')?.addEventListener('click', submitOnboardAsset);
 
+    // Dynamic Bay Recommendation when changing Equipment Category in Onboard Modal
+    document.getElementById('onboardLeafClass')?.addEventListener('change', (e) => {
+        const bayInput = document.getElementById('onboardBay');
+        if (bayInput) {
+            bayInput.value = suggestNextAvailableBay(e.target.value);
+        }
+    });
+
     // Image Preset & Live Preview Handlers for Listing Onboard Modal
     document.querySelectorAll('.btn-preset-img').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -255,11 +286,15 @@ function initEventListeners() {
             const imgInput = document.getElementById('onboardImageUrl');
             const titleInput = document.getElementById('onboardTitle');
             const catSelect = document.getElementById('onboardLeafClass');
+            const bayInput = document.getElementById('onboardBay');
             const previewWrap = document.getElementById('onboardImgPreviewWrap');
             const previewImg = document.getElementById('onboardImgPreview');
 
             if (imgInput && url) imgInput.value = url;
-            if (catSelect && cat) catSelect.value = cat;
+            if (catSelect && cat) {
+                catSelect.value = cat;
+                if (bayInput) bayInput.value = suggestNextAvailableBay(cat);
+            }
             if (titleInput && title && (!titleInput.value || titleInput.value.trim().length === 0)) {
                 titleInput.value = title;
             }
@@ -358,8 +393,8 @@ function initEventListeners() {
         renderHostStudio();
     });
 
-    document.getElementById('openOnboardModalFromHostBtn')?.addEventListener('click', () => openModal('onboardModal'));
-    document.getElementById('hostPermOnboardBtn')?.addEventListener('click', () => openModal('onboardModal'));
+    document.getElementById('openOnboardModalFromHostBtn')?.addEventListener('click', prepareOnboardModal);
+    document.getElementById('hostPermOnboardBtn')?.addEventListener('click', prepareOnboardModal);
     document.getElementById('hostPermSwitchBtn')?.addEventListener('click', async () => {
         const select = document.getElementById('activeUserSelect');
         if (select) {
@@ -3251,9 +3286,13 @@ async function submitReserveAsset() {
         // Open Indian Payment Sandbox Modal
         closeModal('reserveModal');
         try {
+            const headers = { 'Content-Type': 'application/json' };
+            if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
             const res = await fetch(`${API_BASE}/payments/create-order`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
+                credentials: 'same-origin',
                 body: JSON.stringify({ assetId, renterId: state.activeUser, rentalDays: days })
             });
             const data = await res.json();
@@ -3265,7 +3304,7 @@ async function submitReserveAsset() {
                 document.getElementById('sandboxTotal').textContent = formatInr(data.totalAmountPayable);
                 openModal('paymentSandboxModal');
             } else {
-                showToast('❌ Order creation failed: ' + data.message, 'error');
+                showToast('❌ Order creation failed: ' + (data.message || data.error || 'Unknown error'), 'error');
             }
         } catch (e) {
             showToast('Gateway order error: ' + e.message, 'error');
@@ -3282,9 +3321,13 @@ async function authorizeSandboxPayment() {
     const { orderId, assetId, days } = state.pendingPaymentOrder;
 
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const verifyRes = await fetch(`${API_BASE}/payments/verify`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ orderId, signature: 'sandbox_valid_sig' })
         });
         const verifyData = await verifyRes.json();
@@ -3293,7 +3336,7 @@ async function authorizeSandboxPayment() {
             showToast('✅ Payment Captured via Indian Gateway Sandbox!', 'success');
             await executeReservation(assetId, days);
         } else {
-            showToast('❌ Payment verification failed', 'error');
+            showToast('❌ Payment verification failed: ' + (verifyData.message || 'Signature rejected'), 'error');
         }
     } catch (e) {
         showToast('Payment processing error: ' + e.message, 'error');
@@ -3302,18 +3345,25 @@ async function authorizeSandboxPayment() {
 
 async function executeReservation(assetId, days) {
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/assets/reserve`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({ assetId, renterId: state.activeUser, rentalDays: days })
         });
         const data = await res.json();
         if (data.success) {
             closeModal('reserveModal');
-            showToast(`🛡️ ${data.message} (Pickup OTP: ${data.otpPin})`, 'success');
+            const otp = data.otpPin || data.otpCode || '';
+            showToast(`🛡️ ${data.message} ${otp ? `(Pickup OTP: ${otp})` : ''}`, 'success');
             await fetchAllData();
         } else {
-            showToast(`❌ Gate ${data.gateIndex} (${data.gateName}): ${data.message}`, 'error');
+            const err = data.message || data.error || 'Reservation was rejected';
+            const gate = data.gateName ? `Gate ${data.gateIndex} (${data.gateName}): ` : '';
+            showToast(`❌ ${gate}${err}`, 'error');
         }
     } catch (e) {
         showToast('Error reserving asset: ' + e.message, 'error');
@@ -3343,9 +3393,13 @@ async function submitDamageDispute() {
     }
 
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/disputes/file`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({
                 assetId,
                 renterId: state.activeUser,
@@ -3359,7 +3413,7 @@ async function submitDamageDispute() {
             showToast('⚖️ ' + data.message, 'success');
             await fetchAllData();
         } else {
-            showToast('❌ ' + data.message, 'error');
+            showToast('❌ ' + (data.message || data.error || 'Failed to file dispute'), 'error');
         }
     } catch (e) {
         showToast('Dispute filing error: ' + e.message, 'error');
@@ -3377,9 +3431,13 @@ async function submitSupportTicket() {
     }
 
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (state.authToken) headers['Authorization'] = `Bearer ${state.authToken}`;
+
         const res = await fetch(`${API_BASE}/support/tickets`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
+            credentials: 'same-origin',
             body: JSON.stringify({
                 userId: state.activeUser,
                 category: cat,
@@ -3392,6 +3450,8 @@ async function submitSupportTicket() {
             closeModal('supportModal');
             showToast(`📨 Ticket ${data.ticketId} registered. SLA: 24h.`, 'success');
             await fetchSupportTickets();
+        } else {
+            showToast('❌ ' + (data.message || data.error || 'Failed to submit ticket'), 'error');
         }
     } catch (e) {
         showToast('Support ticket error: ' + e.message, 'error');
@@ -3402,16 +3462,20 @@ async function submitSupportTicket() {
 // ONBOARDING NEW ASSET
 // ============================================================================
 async function submitOnboardAsset() {
-    const leafClass = document.getElementById('onboardLeafClass')?.value;
+    const leafClass = document.getElementById('onboardLeafClass')?.value || 'CameraAndOpticsGear';
     const title = document.getElementById('onboardTitle')?.value.trim();
     const baseDailyRate = document.getElementById('onboardRate')?.value;
     const securityCollateral = document.getElementById('onboardCollateral')?.value;
-    const lockerBay = document.getElementById('onboardBay')?.value.toUpperCase().trim();
+    let lockerBay = document.getElementById('onboardBay')?.value.toUpperCase().trim();
     const imageUrl = document.getElementById('onboardImageUrl')?.value?.trim() || '';
 
     if (!title) {
         showToast('Please enter equipment title.', 'warning');
         return;
+    }
+
+    if (!lockerBay) {
+        lockerBay = suggestNextAvailableBay(leafClass);
     }
 
     const confirmBtn = document.getElementById('confirmOnboardBtn');
@@ -3443,6 +3507,15 @@ async function submitOnboardAsset() {
         if (data.success) {
             closeModal('onboardModal');
             showToast('✅ ' + data.message, 'success');
+
+            // Reset form
+            const titleInput = document.getElementById('onboardTitle');
+            if (titleInput) titleInput.value = '';
+            const imgInput = document.getElementById('onboardImageUrl');
+            if (imgInput) imgInput.value = '';
+            const previewWrap = document.getElementById('onboardImgPreviewWrap');
+            if (previewWrap) previewWrap.style.display = 'none';
+
             await fetchAllData();
             renderHostStudio();
         } else {

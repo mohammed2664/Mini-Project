@@ -699,7 +699,7 @@ public class MainServer {
         String leafClass = b.getOrDefault("leafClass", "CameraAndOpticsGear");
         String title = b.getOrDefault("title", "New Equipment");
         String ownerId = (caller != null && !isUserAdmin(caller)) ? caller.getUserId() : b.getOrDefault("ownerId", "host_faaris");
-        String bay = b.getOrDefault("lockerBay", "A1").toUpperCase();
+        String requestedBay = b.getOrDefault("lockerBay", "").toUpperCase().trim();
         double baseRate = parseDouble(b.get("baseDailyRate"), 500.0);
         double collateral = parseDouble(b.get("securityCollateral"), 2000.0);
 
@@ -712,43 +712,33 @@ public class MainServer {
             return;
         }
 
-        LockerCompartment comp = lockerGrid.getCompartment(bay);
-        if (comp == null) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Invalid locker bay coordinate: " + bay + "\"}");
-            return;
-        }
-        if (comp.isOccupied()) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Locker bay " + bay + " is already occupied by asset " + comp.getCurrentAssetId() + "\"}");
-            return;
-        }
-
         String assetId = "AST-" + (100 + assetRepo.count() + 1);
         RentableAsset newAsset;
 
         if ("CameraAndOpticsGear".equalsIgnoreCase(leafClass)) {
             newAsset = new CameraAndOpticsGear(
-                    assetId, title, ownerId, baseRate, collateral, bay,
+                    assetId, title, ownerId, baseRate, collateral, "A1",
                     1.20, "Creator Comprehensive", "Studio & Outdoor", "Dual Batteries", 3,
                     parseDouble(b.get("sensorMp"), 24.2), Boolean.parseBoolean(b.getOrDefault("is4k", "true")),
                     b.getOrDefault("mount", "Standard Mount")
             );
         } else if ("EventAudioAndLighting".equalsIgnoreCase(leafClass)) {
             newAsset = new EventAudioAndLighting(
-                    assetId, title, ownerId, baseRate, collateral, bay,
+                    assetId, title, ownerId, baseRate, collateral, "A1",
                     1.25, "Event Pro Shield", "Indoor/Outdoor Sound", "240W RMS", 4,
                     parseInt(b.get("soundDb"), 104), parseInt(b.get("mics"), 2),
                     Boolean.parseBoolean(b.getOrDefault("rgb", "true"))
             );
         } else if ("PowerToolEquipment".equalsIgnoreCase(leafClass)) {
             newAsset = new PowerToolEquipment(
-                    assetId, title, ownerId, baseRate, collateral, bay,
+                    assetId, title, ownerId, baseRate, collateral, "A1",
                     1.15, "Standard Utility Shield", b.getOrDefault("power", "600W Motor"),
                     "ISI Certified", Boolean.parseBoolean(b.getOrDefault("cordless", "false")),
                     parseInt(b.get("bits"), 50)
             );
         } else {
             newAsset = new EventAndMobilityVehicle(
-                    assetId, title, ownerId, baseRate, collateral, bay,
+                    assetId, title, ownerId, baseRate, collateral, "H1",
                     1.30, "Commercial Vehicle Cover", b.getOrDefault("power", "1.2L Engine"),
                     "ARAI Certified", parseInt(b.get("seats"), 5), b.getOrDefault("fuel", "Petrol"),
                     Boolean.parseBoolean(b.getOrDefault("auto", "true"))
@@ -759,21 +749,34 @@ public class MainServer {
             newAsset.setImageUrl(b.get("imageUrl").trim());
         }
 
-        // Validate Row H Ground Slot Invariant
-        if (!lockerGrid.validateGroundSlotPlacement(newAsset, bay)) {
-            sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Vehicles and heavy event gear must be assigned to Row H Ground Slots (H1-H8). Specified bay: " + bay + "\"}");
-            return;
+        // Intelligently allocate locker/bay:
+        // If requested bay is valid, unoccupied, and satisfies spatial invariants, assign it.
+        // Otherwise, automatically fall back to the first available compatible compartment!
+        String assignedBay = requestedBay;
+        LockerCompartment comp = assignedBay.isEmpty() ? null : lockerGrid.getCompartment(assignedBay);
+        if (comp == null || comp.isOccupied() || !lockerGrid.validateGroundSlotPlacement(newAsset, assignedBay)) {
+            final RentableAsset targetAsset = newAsset;
+            comp = lockerGrid.getAllCompartments().stream()
+                    .filter(c -> !c.isOccupied() && lockerGrid.validateGroundSlotPlacement(targetAsset, c.getBayId()))
+                    .findFirst()
+                    .orElse(null);
+            if (comp == null) {
+                sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"RentSphere Locker Hub is full. No compatible free compartment available.\"}");
+                return;
+            }
+            assignedBay = comp.getBayId();
         }
 
+        newAsset.setLockerCoordinate(assignedBay);
         assetRepo.save(newAsset);
-        lockerGrid.assignAssetToBay(newAsset, bay);
+        lockerGrid.assignAssetToBay(newAsset, assignedBay);
 
         persistenceEngine.saveAssets(assetRepo);
         persistenceEngine.saveLockers(lockerGrid);
         persistenceEngine.appendWal(assetId, "ONBOARD_ASSET", "NONE", "AVAILABLE", ownerId,
-                "Onboarded new " + leafClass + " in Bay " + bay);
+                "Onboarded new " + leafClass + " in Bay " + assignedBay);
 
-        sendJsonResponse(exchange, 201, "{\"success\":true,\"assetId\":\"" + assetId + "\",\"message\":\"Listing successfully added to RentSphere!\"}");
+        sendJsonResponse(exchange, 201, "{\"success\":true,\"assetId\":\"" + assetId + "\",\"lockerBay\":\"" + assignedBay + "\",\"message\":\"Listing successfully added to RentSphere! Assigned to Hub Bay " + assignedBay + ".\"}");
     }
 
     private void handleCloneListing(HttpExchange exchange) throws IOException {

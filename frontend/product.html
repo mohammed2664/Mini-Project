@@ -516,58 +516,58 @@
         }
 
         /* WhatsApp Button */
-        .pd-btn-whatsapp {
-            background: #25D366;
-            color: #FFFFFF;
-            border: none;
-            border-radius: var(--radius-pill);
-            padding: 12px 18px;
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.25);
-            transition: all var(--transition-fast);
-        }
-        .pd-btn-whatsapp:hover {
-            background: #20BD5A;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 14px rgba(37, 211, 102, 0.35);
-        }
-
-        /* Confirm Booking Primary Button (Warm Amber / Brand Teal Blend) */
+        /* Primary Booking Action: Brand Teal Glow */
         .pd-btn-confirm {
-            background: #E0A96D;
-            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
             color: #FFFFFF;
             border: none;
             border-radius: var(--radius-pill);
-            padding: 13px 20px;
+            padding: 14px 22px;
             font-size: 14px;
-            font-weight: 800;
-            letter-spacing: 0.03em;
-            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.02em;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
+            box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
             transition: all var(--transition-fast);
+            width: 100%;
         }
         .pd-btn-confirm:hover:not(:disabled) {
-            background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+            background: linear-gradient(135deg, #0F766E 0%, #115E59 100%);
             transform: translateY(-1px);
-            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+            box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45);
         }
         .pd-btn-confirm:disabled {
             background: var(--slate-300);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+        }
+
+        /* Secondary Support Action: Clean Subtle Outline */
+        .pd-btn-whatsapp {
+            background: #FFFFFF;
+            color: var(--slate-700);
+            border: 1px solid var(--slate-300);
+            border-radius: var(--radius-pill);
+            padding: 10px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all var(--transition-fast);
+            width: 100%;
+        }
+        .pd-btn-whatsapp:hover {
+            background: var(--slate-50);
+            border-color: var(--slate-400);
+            color: var(--slate-900);
         }
 
         /* OTP Code Reveal Card */
@@ -792,18 +792,15 @@
                     <span>Accept terms & escrow conditions (Mandatory post-return quarantine inspection).</span>
                 </label>
 
-                <!-- Action 1: Book Through WhatsApp -->
-                <a href="#" target="_blank" class="pd-btn-whatsapp" id="btnWhatsAppBooking">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.588-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.311.045-.698.059-1.146-.086-.297-.097-.68-.225-1.168-.436-2.038-.883-3.376-2.951-3.479-3.088-.102-.137-.824-1.096-.824-2.091 0-.994.52-1.482.705-1.688.185-.205.405-.257.54-.257.135 0 .27.001.389.007.126.006.294-.047.46.353.172.417.587 1.433.639 1.537.052.105.086.228.017.367-.069.139-.103.226-.205.348-.103.121-.217.271-.31.365-.103.104-.211.218-.09.426.12.208.535.882 1.147 1.427.789.702 1.455.918 1.663 1.022.207.104.329.088.452-.053.123-.142.527-.614.667-.824.14-.21.28-.175.471-.104.191.071 1.212.571 1.421.675.209.105.348.157.399.245.052.088.052.51-.092.915z"/>
-                    </svg>
-                    Book Through WhatsApp
-                </a>
-
-                <!-- Action 2: Confirm Booking Direct Action -->
+                <!-- Primary Action: Confirm Booking Direct Escrow Lock -->
                 <button type="button" class="pd-btn-confirm" id="btnConfirmReserve">
-                    <span>⚡</span> Confirm Booking
+                    <span>⚡</span> Confirm Booking & Lock Escrow
                 </button>
+
+                <!-- Secondary Action: Inquire with Hub Desk -->
+                <a href="https://wa.me/?text=Hello%20RentSphere%20Hub,%20I%20have%20an%20inquiry%20regarding%20equipment%20rental" target="_blank" class="pd-btn-whatsapp" id="btnWhatsAppBooking">
+                    <span>💬</span> Inquire with Hub Desk via WhatsApp
+                </a>
 
                 <!-- Revealed OTP Passcode Card -->
                 <div class="pd-otp-box-revealed" id="pdOtpSuccessCard">
@@ -1026,30 +1023,33 @@
             let displayTitle = cleanTitle;
             let displaySubtitle = 'Goa University Hub · Identity Verified Host';
 
-            if (a.id === 'AST-107') {
+            if (a.id === 'AST-107' || (a.title && a.title.toLowerCase().includes('fronx'))) {
                 displayTitle = 'Maruti Suzuki Fronx';
                 displaySubtitle = 'Automatic Crossover · Wedding & Event Self-Drive · 1.2L DualJet';
-            } else if (a.id === 'AST-108') {
+            } else if (a.id === 'AST-108' || (a.title && a.title.toLowerCase().includes('ather'))) {
                 displayTitle = 'Ather 450X Gen 3';
                 displaySubtitle = 'Electric Scooter · Campus & Coastal Commute · 6kW PMSM';
-            } else if (a.id === 'AST-101') {
+            } else if (a.id === 'AST-101' || (a.title && a.title.toLowerCase().includes('sony alpha'))) {
                 displayTitle = 'Sony Alpha A7 IV';
                 displaySubtitle = 'Full-Frame Mirrorless Kit · 28-70mm Lens · 4K 60p 10-Bit';
-            } else if (a.id === 'AST-102') {
+            } else if (a.id === 'AST-102' || (a.title && a.title.toLowerCase().includes('projector'))) {
                 displayTitle = 'Epson Full-HD Projector';
                 displaySubtitle = 'High-Lumen Optical Presentation & Movie Display with 100" Screen';
-            } else if (a.id === 'AST-103') {
+            } else if (a.id === 'AST-103' || (a.title && a.title.toLowerCase().includes('jbl'))) {
                 displayTitle = 'JBL PartyBox 310';
                 displaySubtitle = '240W RMS Portable Club Sound System with Dual Wireless Mics';
-            } else if (a.id === 'AST-104') {
+            } else if (a.id === 'AST-104' || (a.title && a.title.toLowerCase().includes('pioneer'))) {
                 displayTitle = 'Pioneer DDJ-FLX4';
                 displaySubtitle = '2-Channel DJ Controller with Performance Pads & Studio Audio';
-            } else if (a.id === 'AST-105') {
+            } else if (a.id === 'AST-105' || (a.title && a.title.toLowerCase().includes('drill'))) {
                 displayTitle = 'Bosch GSB 600W';
                 displaySubtitle = 'Corded Impact Power Drill with 100-Piece Accessory Kit';
-            } else if (a.id === 'AST-106') {
+            } else if (a.id === 'AST-106' || (a.title && a.title.toLowerCase().includes('karcher'))) {
                 displayTitle = 'Karcher K2 Compact';
                 displaySubtitle = 'High-Pressure Washer 1400W 110-Bar with Foam Cannon';
+            } else {
+                displayTitle = a.title;
+                displaySubtitle = `${formatCategoryName(a.leafClass)} · Hub Bay ${a.lockerCoordinate || 'A1'}`;
             }
 
             document.title = `${displayTitle} · RentSphere Rental`;
@@ -1132,41 +1132,42 @@
             let specs = [];
 
             if (a.leafClass === 'EventAndMobilityVehicle') {
-                if (a.id === 'AST-107') {
+                const isCar = (a.title && (a.title.toLowerCase().includes('car') || a.title.toLowerCase().includes('fronx') || a.title.toLowerCase().includes('thar') || a.title.toLowerCase().includes('maruti'))) || (a.seats && a.seats >= 4);
+                if (isCar) {
                     specs = [
                         { icon: '👤', value: '5 Seats', label: 'Capacity' },
                         { icon: '⚙️', value: 'Automatic', label: 'Transmission' },
-                        { icon: '⛽', value: 'Petrol', label: 'Fuel' },
-                        { icon: '🛡️', value: 'Insured', label: 'Safety' }
+                        { icon: '⛽', value: 'Petrol DualJet', label: 'Powertrain' },
+                        { icon: '🛡️', value: 'ARAI 5-Star', label: 'Safety Standard' }
                     ];
                 } else {
                     specs = [
                         { icon: '👤', value: '2 Seats', label: 'Capacity' },
                         { icon: '⚡', value: 'Direct Drive', label: 'Transmission' },
                         { icon: '🔋', value: 'Electric 3.7kWh', label: 'Powertrain' },
-                        { icon: '🛡️', value: 'ARAI Cert', label: 'Safety' }
+                        { icon: '🛡️', value: 'ARAI Certified', label: 'Safety Standard' }
                     ];
                 }
             } else if (a.leafClass === 'CameraAndOpticsGear') {
                 specs = [
                     { icon: '📷', value: (a.sensorResolutionMp || 33.0) + ' MP', label: 'Sensor Res' },
                     { icon: '🎬', value: '4K 60fps', label: 'Recording' },
-                    { icon: '🔍', value: 'E-Mount', label: 'Lens Mount' },
-                    { icon: '🛡️', value: 'Full Cover', label: 'Safety' }
+                    { icon: '🔍', value: 'Standard / E-Mount', label: 'Lens Mount' },
+                    { icon: '🛡️', value: 'Full Creator Cover', label: 'Protection Tier' }
                 ];
             } else if (a.leafClass === 'EventAudioAndLighting') {
                 specs = [
                     { icon: '🔊', value: '104 dB', label: 'Sound Output' },
-                    { icon: '🎤', value: '2 Wireless', label: 'Microphones' },
-                    { icon: '🌈', value: 'RGB Beat', label: 'Light Sync' },
-                    { icon: '🛡️', value: 'Event Pro', label: 'Safety' }
+                    { icon: '🎤', value: '2 Wireless Mics', label: 'Input Channels' },
+                    { icon: '🌈', value: 'RGB Beat Sync', label: 'Lighting' },
+                    { icon: '🛡️', value: 'Event Pro Shield', label: 'Protection Tier' }
                 ];
             } else {
                 specs = [
-                    { icon: '⚡', value: '1400W 110-Bar', label: 'Power Output' },
-                    { icon: '🛡️', value: 'IPX5 Rated', label: 'Waterproof' },
-                    { icon: '🔌', value: '220V Cord', label: 'Power Type' },
-                    { icon: '🧰', value: '4 Nozzles', label: 'Attachments' }
+                    { icon: '⚡', value: a.powerOrEngineSpec || '1400W Motor', label: 'Power Rating' },
+                    { icon: '🛡️', value: 'IPX5 Ingress Safe', label: 'Safety Standard' },
+                    { icon: '🔌', value: '220V AC Mains', label: 'Power Supply' },
+                    { icon: '🧰', value: 'Attachments Kit', label: 'Accessories' }
                 ];
             }
 
@@ -1191,25 +1192,26 @@
 
             if (a.leafClass === 'EventAndMobilityVehicle') {
                 heading.innerHTML = '<span>🚗</span> About This Vehicle';
-                if (a.id === 'AST-107') {
-                    aboutText = 'Fronx is a comfortable crossover suitable for city travel, weekend beach trips, wedding guest transfers, and outstation journeys across Goa. Features zero-dep commercial insurance, wireless Apple CarPlay, and hill-hold assist.';
+                const isCar = (a.title && (a.title.toLowerCase().includes('car') || a.title.toLowerCase().includes('fronx') || a.title.toLowerCase().includes('thar') || a.title.toLowerCase().includes('maruti'))) || (a.seats && a.seats >= 4);
+                if (isCar) {
+                    aboutText = `${displayTitle} is a comfortable crossover suitable for city travel, weekend beach trips, wedding guest transfers, and outstation journeys across Goa. Features zero-dep commercial insurance, wireless connectivity, and hill-hold assist.`;
                     items = ['5 Seats Capacity', 'Automatic Transmission', 'Petrol DualJet Engine', '350 km/day Allowance', 'Fastag Recharged (₹1,000)', 'ARAI 5-Star Safety'];
                 } else {
-                    aboutText = 'Ather 450X provides agile, instant electric torque for campus commuting and scenic coastal cruising with Google Maps navigation and warp mode.';
-                    items = ['2 Seats Capacity', 'Warp & Eco Driving Modes', '3.7 kWh Lithium Pack', '105 km True Range', '7" Touchscreen Navigation', 'Sanitized Helmet Included'];
+                    aboutText = `${displayTitle} provides agile, instant electric torque for campus commuting and scenic coastal cruising with Google Maps navigation and warp mode.`;
+                    items = ['2 Seats Capacity', 'Warp & Eco Driving Modes', '3.7 kWh Lithium Pack', '105 km True Range', 'Digital Touchscreen Console', 'Sanitized Helmet Included'];
                 }
             } else if (a.leafClass === 'CameraAndOpticsGear') {
-                heading.innerHTML = '<span>📷</span> About This Camera Kit';
+                heading.innerHTML = '<span>📷</span> About This Creator Gear';
                 aboutText = `${displayTitle} is verified for wedding documentarians, campus media creators, and filmmakers requiring 10-bit color, fast autofocus, and dual memory card protection.`;
-                items = ['Dual SDXC 128GB Cards Included', '4K 60fps 10-Bit Recording', 'Dual NP-FZ100 Batteries + Charger', 'Weather-Sealed Body', 'Standard Zoom Optics', 'Hard Transport Case'];
+                items = ['Dual SDXC 128GB Cards Included', '4K 60fps 10-Bit Recording', 'Dual Rechargeable Batteries + Charger', 'Weather-Sealed Body', 'Standard Zoom Optics', 'Hard Transport Case'];
             } else if (a.leafClass === 'EventAudioAndLighting') {
-                heading.innerHTML = '<span>🔊</span> About This Audio Kit';
+                heading.innerHTML = '<span>🔊</span> About This Audio Rig';
                 aboutText = `${displayTitle} delivers room-filling acoustic punch and synchronized lighting for campus festivals, ceremonies, presentations, and beachside gatherings.`;
                 items = ['104 dB Peak Output', '2 UHF Wireless Microphones', 'Bluetooth 5.1 & XLR Inputs', 'Beat-Synced Dynamic RGB Rings', 'AC Mains or Battery Operation', 'Heavy Duty Transport Wheels'];
             } else {
-                heading.innerHTML = '<span>🛠️</span> About This Tool';
+                heading.innerHTML = '<span>🛠️</span> About This Equipment';
                 aboutText = `${displayTitle} is certified for vehicle cleaning, home maintenance, patio washing, and DIY fabrication with high-pressure safety valves.`;
-                items = ['1400W High-Torque Motor', 'IPX5 Water Ingress Protection', 'Brass Quick-Coupler Fitting', '10m Steel-Braided Hose', 'Variable Jet & Foam Cannons', 'ISI Certified 220V Grounding'];
+                items = ['High-Torque Power Motor', 'IPX5 Water Ingress Protection', 'Brass Quick-Coupler Fitting', 'Reinforced Pressure Hosing / Cord', 'Variable Jet & Foam Cannons', 'ISI Certified 220V Grounding'];
             }
 
             desc.textContent = aboutText;
