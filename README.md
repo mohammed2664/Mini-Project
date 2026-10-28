@@ -166,9 +166,9 @@ Use these repository-relative links on GitHub (only files present in your checko
 - [`IMPLEMENTATION_STATUS.md`](IMPLEMENTATION_STATUS.md) — implementation inventory and verification checkpoints.
 - [`PROJECT_ARCHITECTURE.md`](PROJECT_ARCHITECTURE.md) — architecture and package overview.
 - [`docs/UML_DIAGRAMS.md`](docs/UML_DIAGRAMS.md) — UML diagrams, if included in the checkout.
-- [`TEST_REPORT.md`](TEST_REPORT.md) — test-suite results and verification notes.
+- [`docs/05_TEST_RESULTS.md`](docs/05_TEST_RESULTS.md) — test-suite results and verification notes.
 - [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md) — security findings and limitations.
-- [`TEAM_HANDOVER.md`](TEAM_HANDOVER.md) — team handover and demo notes.
+- [`docs/01_PROJECT_HANDOVER.md`](docs/01_PROJECT_HANDOVER.md) — team handover and demo notes.
 - [`docs/VIVA_PREPARATION.md`](docs/VIVA_PREPARATION.md) — short project-flow explanations and viva questions.
 
 If a link does not exist in your repository, remove it or update it to the actual path before publishing.

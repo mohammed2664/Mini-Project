@@ -6,6 +6,7 @@
 **Verification Audit Date**: 2026-10-28  
 **Automated Test Suite**: 163 Tests across 17 Suites — **163 / 163 PASSED (100% Success)**  
 **Verification Command**: `java -cp bin tests.RentSphereVerificationTest`  
+**Current-result note**: The 163/163 result in the header and final verification section is authoritative. Older checkpoint entries below intentionally preserve project history and may mention 113 or 154 tests.
 **Classification Standard**:
 - **IMPLEMENTED & VERIFIED**: Code exists, and automated tests or live execution independently verify it.
 - **IMPLEMENTED, UNVERIFIED**: Code exists, but no dedicated automated test or execution proof was observed.

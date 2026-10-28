@@ -28,7 +28,7 @@
 - **Initial Verification Notes**:
   - Java runtime verified: Java SE `25.0.3 LTS` installed with `javac` compiler ready.
   - Zero-database architectural rule confirmed: Human-readable pipe-delimited flat files (`assets_ledger.txt`, `escrow_vault.txt`, `locker_grid_8x8.txt`, `audit_wal.txt`) in `data/` synchronized with in-memory `ConcurrentHashMap` stores.
-  - REST API & UI delivery mechanism: Dual-mode support using pure Java SE embedded HTTP server (`MainServer`) and Spring Boot Web structure (`pom.xml`) so it can run immediately without third-party downloads.
+  - REST API & UI delivery mechanism: Pure Java SE embedded HTTP server (`MainServer`) serves the frontend and JSON API. `pom.xml` is retained as an optional build descriptor; Spring Boot is not part of the runtime path.
 - **Next Milestone**: Await Phase 2 approval of `IMPLEMENTATION_PLAN.md` before executing Phase 3 Step-by-Step implementation.
 
 ---
