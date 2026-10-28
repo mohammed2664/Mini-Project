@@ -4,188 +4,294 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentSphere · Equipment Details & Direct Booking</title>
-    <link rel="stylesheet" href="css/styles.css?v=ux-refresh-2">
+    <link rel="stylesheet" href="css/styles.css?v=ux-refresh-3">
     <style>
-        /* Product Showcase Page - Theme Matching Warm Horizon Design System */
-        .pd-page-container {
-            max-width: 1240px;
-            margin: 0 auto;
-            padding: 24px 20px 64px 20px;
-        }
+        /* ==========================================================================
+           RentSphere Product Showcase - Warm Horizon Design System
+           Matches RentSphere's Palette (Canvas #F4F7FB, Teal #0D9488, Amber #F59E0B)
+           ========================================================================== */
 
-        /* Breadcrumbs */
-        .pd-breadcrumb-bar {
+        /* Top Bar Layout */
+        .pd-topbar {
+            background: #FFFFFF;
+            border-bottom: 1px solid var(--slate-200);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+        .pd-topbar-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .pd-nav-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .pd-btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-700);
+            background: var(--slate-100);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-pill);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+        }
+        .pd-btn-back:hover {
+            background: var(--slate-200);
+            color: var(--slate-900);
+            transform: translateX(-2px);
+        }
+        .pd-brand-pill {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 13px;
-            color: var(--slate-500);
+            text-decoration: none;
+            color: var(--slate-900);
+            font-weight: 700;
+            font-family: var(--font-heading);
+            font-size: 16px;
+        }
+        .pd-nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Page Container */
+        .pd-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 24px 24px 64px 24px;
+        }
+
+        /* Breadcrumb Bar */
+        .pd-breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--slate-400);
             margin-bottom: 20px;
         }
-        .pd-breadcrumb-bar a {
-            color: var(--slate-600);
+        .pd-breadcrumbs a {
+            color: var(--slate-500);
             text-decoration: none;
-            font-weight: 500;
             transition: color var(--transition-fast);
         }
-        .pd-breadcrumb-bar a:hover {
+        .pd-breadcrumbs a:hover {
             color: var(--brand-teal);
         }
-        .pd-breadcrumb-sep {
+        .pd-breadcrumbs .sep {
             color: var(--slate-300);
         }
-        .pd-breadcrumb-active {
-            color: var(--slate-900);
-            font-weight: 600;
+        .pd-breadcrumbs .active {
+            color: var(--brand-teal-dark);
         }
 
         /* 2-Column Responsive Layout */
-        .pd-main-grid {
+        .pd-layout-grid {
             display: grid;
-            grid-template-columns: 1fr 420px;
-            gap: 32px;
+            grid-template-columns: 1fr 440px;
+            gap: 36px;
             align-items: start;
         }
-        @media (max-width: 1024px) {
-            .pd-main-grid {
+        @media (max-width: 1040px) {
+            .pd-layout-grid {
                 grid-template-columns: 1fr;
             }
         }
 
         /* Left Showcase Column */
-        .pd-showcase-column {
+        .pd-showcase-col {
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: 20px;
         }
 
-        /* Header Row on Left */
-        .pd-title-area {
+        /* Badge Row & Main Title */
+        .pd-header-meta {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
         }
-        .pd-pill-row {
+        .pd-badge-row {
             display: flex;
             align-items: center;
             gap: 8px;
             flex-wrap: wrap;
         }
-        .pd-title-heading {
+        .pd-pill-available {
+            background: var(--emerald-light);
+            color: var(--emerald-dark);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .pd-pill-reserved {
+            background: var(--warm-amber-light);
+            color: var(--warm-amber-dark);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .pd-pill-active {
+            background: #DBEAFE;
+            color: #1E40AF;
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: var(--radius-pill);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .pd-cat-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--slate-500);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .pd-hero-title {
             font-family: var(--font-heading);
-            font-size: 30px;
+            font-size: 36px;
             font-weight: 800;
             color: var(--slate-900);
             letter-spacing: -0.02em;
-            line-height: 1.2;
+            line-height: 1.15;
+            margin: 0;
+        }
+        .pd-hero-subtitle {
+            font-size: 15px;
+            color: var(--slate-600);
+            font-weight: 500;
             margin: 0;
         }
 
-        /* Product Hero Showcase Card */
-        .pd-hero-card {
+        /* Hero Image Container */
+        .pd-hero-showcase-box {
             background: #FFFFFF;
             border: 1px solid var(--slate-200);
             border-radius: var(--radius-lg);
-            padding: 28px;
+            padding: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             box-shadow: var(--card-shadow);
             position: relative;
-            min-height: 340px;
-            max-height: 440px;
+            min-height: 380px;
+            max-height: 480px;
             overflow: hidden;
         }
-        .pd-hero-img {
+        .pd-hero-img-element {
             max-width: 100%;
-            max-height: 380px;
+            max-height: 440px;
             width: auto;
             height: auto;
             object-fit: contain;
-            border-radius: var(--radius-sm);
+            border-radius: var(--radius-md);
             transition: transform var(--transition-normal);
         }
-        .pd-hero-card:hover .pd-hero-img {
+        .pd-hero-showcase-box:hover .pd-hero-img-element {
             transform: scale(1.02);
         }
 
-        /* 4 Feature Badges Grid */
-        .pd-specs-quad {
+        /* 4 Spec Cards Quad */
+        .pd-specs-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 14px;
+            gap: 12px;
         }
-        @media (max-width: 768px) {
-            .pd-specs-quad {
+        @media (max-width: 640px) {
+            .pd-specs-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-        .pd-spec-card {
+        .pd-spec-item {
             background: #FFFFFF;
             border: 1px solid var(--slate-200);
             border-radius: var(--radius-md);
             padding: 16px 14px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
-            transition: transform var(--transition-fast), border-color var(--transition-fast);
+            gap: 4px;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03);
+            transition: all var(--transition-fast);
         }
-        .pd-spec-card:hover {
+        .pd-spec-item:hover {
             border-color: var(--brand-teal);
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
         }
-        .pd-spec-icon-badge {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: var(--brand-teal-light);
-            color: var(--brand-teal-dark);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
+        .pd-spec-icon {
+            font-size: 20px;
+            margin-bottom: 2px;
         }
-        .pd-spec-val {
+        .pd-spec-val-text {
             font-family: var(--font-heading);
             font-size: 15px;
             font-weight: 700;
             color: var(--slate-900);
-            margin-top: 4px;
+            line-height: 1.2;
         }
-        .pd-spec-lbl {
-            font-size: 11px;
-            font-weight: 600;
+        .pd-spec-lbl-text {
+            font-size: 10px;
+            font-weight: 700;
             color: var(--slate-500);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
         }
 
-        /* About Section Card */
-        .pd-content-card {
+        /* About & Description Section */
+        .pd-about-card {
             background: #FFFFFF;
             border: 1px solid var(--slate-200);
             border-radius: var(--radius-lg);
             padding: 24px 28px;
             box-shadow: var(--card-shadow);
         }
-        .pd-content-card h2 {
+        .pd-about-card h3 {
             font-family: var(--font-heading);
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 17px;
+            font-weight: 800;
             color: var(--slate-900);
             margin: 0 0 12px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        .pd-desc-p {
+        .pd-about-text {
             font-size: 14px;
             line-height: 1.65;
             color: var(--slate-600);
             margin: 0 0 20px 0;
         }
-        .pd-check-list {
+        .pd-checklist-box {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px 20px;
@@ -193,11 +299,11 @@
             border-top: 1px solid var(--slate-100);
         }
         @media (max-width: 640px) {
-            .pd-check-list {
+            .pd-checklist-box {
                 grid-template-columns: 1fr;
             }
         }
-        .pd-check-row {
+        .pd-check-item {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -205,7 +311,7 @@
             font-weight: 600;
             color: var(--slate-700);
         }
-        .pd-check-dot {
+        .pd-check-circle {
             width: 18px;
             height: 18px;
             border-radius: 50%;
@@ -215,11 +321,12 @@
             align-items: center;
             justify-content: center;
             font-size: 11px;
+            font-weight: 800;
             flex-shrink: 0;
         }
 
-        /* QA & Custody Box */
-        .pd-qa-box {
+        /* Hub Custody Audit Box */
+        .pd-audit-box {
             margin-top: 20px;
             padding: 14px 18px;
             background: var(--slate-50);
@@ -228,12 +335,9 @@
             font-size: 12px;
             color: var(--slate-600);
         }
-        .pd-qa-box strong {
-            color: var(--slate-800);
-        }
 
         /* Right Column: Sticky Booking Console */
-        .pd-booking-panel {
+        .pd-booking-card {
             background: #FFFFFF;
             border: 1.5px solid var(--slate-200);
             border-radius: var(--radius-lg);
@@ -245,57 +349,67 @@
             flex-direction: column;
             gap: 18px;
         }
-        .pd-booking-title-bar {
+        .pd-booking-header {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
             padding-bottom: 16px;
             border-bottom: 1px solid var(--slate-100);
         }
-        .pd-booking-title {
+        .pd-booking-title-main {
             font-family: var(--font-heading);
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 800;
             color: var(--slate-900);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             margin: 0;
         }
-        .pd-booking-price-tag {
+        .pd-booking-title-sub {
+            font-size: 11px;
+            color: var(--slate-500);
+            margin-top: 2px;
+            font-weight: 500;
+        }
+        .pd-booking-price-block {
             text-align: right;
         }
-        .pd-booking-tariff {
+        .pd-booking-rate-big {
             font-family: var(--font-heading);
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 800;
-            color: var(--brand-teal-dark);
+            color: var(--slate-900);
             line-height: 1;
         }
-        .pd-booking-deposit {
+        .pd-booking-rate-sub {
             font-size: 11px;
-            font-weight: 600;
-            color: var(--warm-amber-dark);
+            font-weight: 700;
+            color: var(--slate-400);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             margin-top: 4px;
         }
 
-        /* Date Pickers Form */
-        .pd-dates-row {
+        /* Date Pickers */
+        .pd-date-pair {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
-        .pd-input-wrap {
+        .pd-field-wrap {
             display: flex;
             flex-direction: column;
             gap: 5px;
         }
-        .pd-input-wrap label {
-            font-size: 11px;
+        .pd-field-label {
+            font-size: 10px;
             font-weight: 700;
-            color: var(--slate-600);
+            color: var(--slate-500);
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.06em;
         }
-        .pd-date-field {
-            padding: 8px 12px;
+        .pd-field-input {
+            padding: 9px 12px;
             border: 1.5px solid var(--slate-200);
             border-radius: var(--radius-sm);
             font-size: 13px;
@@ -303,15 +417,15 @@
             color: var(--slate-800);
             background: #FFFFFF;
             outline: none;
-            transition: border-color var(--transition-fast);
+            transition: all var(--transition-fast);
         }
-        .pd-date-field:focus {
+        .pd-field-input:focus {
             border-color: var(--brand-teal);
             box-shadow: 0 0 0 3px var(--brand-teal-glow);
         }
 
-        /* Hub Bay Box */
-        .pd-bay-banner {
+        /* Hub Bay Banner */
+        .pd-location-strip {
             background: var(--slate-50);
             border: 1px solid var(--slate-200);
             border-radius: var(--radius-sm);
@@ -321,32 +435,32 @@
             gap: 10px;
             font-size: 12px;
         }
-        .pd-bay-icon {
+        .pd-location-pin {
             font-size: 18px;
             flex-shrink: 0;
         }
 
-        /* Segmented Options */
-        .pd-segmented-group {
+        /* Segmented Toggles */
+        .pd-toggle-section {
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
-        .pd-seg-label {
-            font-size: 11px;
+        .pd-toggle-title {
+            font-size: 10px;
             font-weight: 700;
-            color: var(--slate-600);
+            color: var(--slate-500);
             text-transform: uppercase;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.06em;
         }
-        .pd-seg-buttons {
+        .pd-toggle-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
         }
-        .pd-seg-btn {
+        .pd-toggle-pill {
             background: var(--slate-50);
-            border: 1px solid var(--slate-200);
+            border: 1.5px solid var(--slate-200);
             border-radius: var(--radius-sm);
             padding: 8px 10px;
             font-size: 11px;
@@ -356,14 +470,14 @@
             cursor: pointer;
             transition: all var(--transition-fast);
         }
-        .pd-seg-btn.is-active {
+        .pd-toggle-pill.is-active {
             background: var(--brand-teal-light);
             border-color: var(--brand-teal);
             color: var(--brand-teal-dark);
         }
 
-        /* Price Breakdown Table */
-        .pd-calc-table {
+        /* Calculation Breakdown Table */
+        .pd-summary-table {
             background: var(--slate-50);
             border: 1px solid var(--slate-200);
             border-radius: var(--radius-sm);
@@ -373,12 +487,12 @@
             gap: 6px;
             font-size: 12px;
         }
-        .pd-calc-row {
+        .pd-summary-row {
             display: flex;
             justify-content: space-between;
             color: var(--slate-600);
         }
-        .pd-calc-total {
+        .pd-summary-total {
             border-top: 1px solid var(--slate-200);
             padding-top: 8px;
             font-size: 14px;
@@ -386,8 +500,8 @@
             color: var(--slate-900);
         }
 
-        /* Terms Checkbox */
-        .pd-terms-row {
+        /* Terms Row */
+        .pd-terms-check-row {
             display: flex;
             align-items: flex-start;
             gap: 8px;
@@ -396,18 +510,18 @@
             line-height: 1.4;
             cursor: pointer;
         }
-        .pd-terms-row input {
+        .pd-terms-check-row input {
             margin-top: 2px;
             accent-color: var(--brand-teal);
         }
 
-        /* Action Buttons */
-        .pd-btn-whatsapp-theme {
+        /* WhatsApp Button */
+        .pd-btn-whatsapp {
             background: #25D366;
             color: #FFFFFF;
             border: none;
             border-radius: var(--radius-pill);
-            padding: 11px 18px;
+            padding: 12px 18px;
             font-size: 13px;
             font-weight: 700;
             text-decoration: none;
@@ -418,65 +532,69 @@
             box-shadow: 0 4px 10px rgba(37, 211, 102, 0.25);
             transition: all var(--transition-fast);
         }
-        .pd-btn-whatsapp-theme:hover {
+        .pd-btn-whatsapp:hover {
             background: #20BD5A;
             transform: translateY(-1px);
             box-shadow: 0 6px 14px rgba(37, 211, 102, 0.35);
         }
-        .pd-btn-reserve-theme {
-            background: var(--brand-teal);
+
+        /* Confirm Booking Primary Button (Warm Amber / Brand Teal Blend) */
+        .pd-btn-confirm {
+            background: #E0A96D;
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
             color: #FFFFFF;
             border: none;
             border-radius: var(--radius-pill);
             padding: 13px 20px;
             font-size: 14px;
             font-weight: 800;
-            letter-spacing: -0.01em;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            box-shadow: 0 6px 14px rgba(13, 148, 136, 0.25);
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.3);
             transition: all var(--transition-fast);
         }
-        .pd-btn-reserve-theme:hover:not(:disabled) {
-            background: var(--brand-teal-dark);
+        .pd-btn-confirm:hover:not(:disabled) {
+            background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
             transform: translateY(-1px);
-            box-shadow: 0 8px 18px rgba(13, 148, 136, 0.35);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
         }
-        .pd-btn-reserve-theme:disabled {
+        .pd-btn-confirm:disabled {
             background: var(--slate-300);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        /* Success OTP Card */
-        .pd-otp-success-card {
+        /* OTP Code Reveal Card */
+        .pd-otp-box-revealed {
             background: var(--emerald-light);
-            border: 1px solid var(--emerald);
+            border: 1.5px solid var(--emerald);
             border-radius: var(--radius-md);
             padding: 16px;
             display: none;
             flex-direction: column;
             gap: 8px;
         }
-        .pd-otp-code-box {
+        .pd-otp-digits {
             font-family: monospace;
-            font-size: 24px;
+            font-size: 26px;
             font-weight: 800;
-            letter-spacing: 5px;
+            letter-spacing: 6px;
             text-align: center;
             background: #FFFFFF;
             border: 1px dashed var(--emerald-dark);
             border-radius: var(--radius-sm);
             color: var(--emerald-dark);
-            padding: 8px;
+            padding: 10px;
         }
 
-        /* Safe Escrow Guarantee Pill */
-        .pd-safe-guarantee {
+        /* Security Card at Bottom */
+        .pd-escrow-guarantee-strip {
             background: var(--slate-50);
             border: 1px solid var(--slate-200);
             border-radius: var(--radius-sm);
@@ -491,101 +609,102 @@
 </head>
 <body>
 
-    <!-- Header Navigation Bar (Identical to RentSphere Main System) -->
-    <header class="app-header">
-        <div class="header-top">
-            <a href="index.html" class="brand-wrapper" style="text-decoration:none;">
-                <div class="brand-logo">🌐</div>
-                <div>
-                    <h1 class="brand-title">RentSphere</h1>
-                    <p class="brand-subtitle">Peer-to-peer equipment rentals in Goa</p>
-                </div>
-            </a>
-
-            <!-- Hub Location Pill -->
-            <div class="hub-location-pill" title="Current simulated pickup hub">
-                <span class="hub-pin">📍</span>
-                <span class="hub-label">Hub:</span>
-                <strong style="color:var(--slate-800); font-size:12px;">Goa University Hub</strong>
-            </div>
-
-            <!-- User Selector & Actions -->
-            <div class="user-selector-bar">
-                <a href="index.html" class="btn-secondary" style="padding:6px 14px; font-size:12px; text-decoration:none;">
+    <!-- Sleek Top Navigation Bar -->
+    <header class="pd-topbar">
+        <div class="pd-topbar-inner">
+            <div class="pd-nav-left">
+                <a href="index.html" class="pd-btn-back">
                     <span>&larr;</span> Back to Marketplace
                 </a>
+                <a href="index.html" class="pd-brand-pill">
+                    <span style="font-size:20px;">🌐</span>
+                    <span>RentSphere</span>
+                </a>
+            </div>
 
-                <div class="active-user-badge">
+            <div class="pd-nav-right">
+                <!-- Current Hub Location -->
+                <div class="hub-location-pill" style="margin:0; font-size:12px;">
+                    <span class="hub-pin">📍</span>
+                    <strong style="color:var(--slate-800);">Goa University Hub</strong>
+                </div>
+
+                <!-- Active User Badge -->
+                <div class="active-user-badge" style="margin:0;">
                     <span id="userRoleBadge" class="role-tag role-renter">RENTER</span>
                     <span id="activeUserLabel" style="font-size:12px; color:var(--slate-700); font-weight:600;">Deepak Dev</span>
                 </div>
 
-                <div class="wallet-pill">
+                <!-- Live Escrow Wallet Pill -->
+                <div class="wallet-pill" style="margin:0;">
                     <span>💳</span>
-                    <span>Escrow Balance: <strong>₹<span id="headerWalletBalance">25000.00</span></strong></span>
+                    <span>Escrow: <strong><span id="headerWalletBalance">₹14,180.00</span></strong></span>
                 </div>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="pd-page-container">
+    <main class="pd-container">
 
-        <!-- Breadcrumb Navigation -->
-        <nav class="pd-breadcrumb-bar" aria-label="Breadcrumbs">
+        <!-- Breadcrumbs -->
+        <nav class="pd-breadcrumbs" aria-label="Breadcrumb">
+            <a href="index.html">Home</a>
+            <span class="sep">/</span>
             <a href="index.html">Marketplace</a>
-            <span class="pd-breadcrumb-sep">/</span>
+            <span class="sep">/</span>
             <span id="bcCategoryName">Equipment</span>
-            <span class="pd-breadcrumb-sep">/</span>
-            <span class="pd-breadcrumb-active" id="bcAssetTitle">Listing Details</span>
+            <span class="sep">/</span>
+            <span class="active" id="bcAssetTitle">Listing Details</span>
         </nav>
 
-        <!-- 2-Column Responsive Grid -->
-        <div class="pd-main-grid">
+        <!-- 2-Column Main Grid -->
+        <div class="pd-layout-grid">
 
             <!-- Left Showcase Column -->
-            <div class="pd-showcase-column">
+            <div class="pd-showcase-col">
 
-                <!-- Title & Meta Area -->
-                <div class="pd-title-area">
-                    <div class="pd-pill-row">
-                        <span class="asset-state-tag state-available" id="pdStateTag">Available Now</span>
-                        <span class="cat-pill-badge" id="pdCategoryPill">Cars & mobility</span>
+                <!-- Title & Meta Header -->
+                <div class="pd-header-meta">
+                    <div class="pd-badge-row">
+                        <span class="pd-pill-available" id="pdStateTag">Available Now</span>
+                        <span class="pd-cat-label" id="pdCategoryPill">Cars & mobility</span>
                         <span class="verified-host-tag" title="Identity verified host">
                             <span aria-hidden="true">✓</span> Verified Host
                         </span>
                         <span class="spec-pill" id="pdLockerBayPill">📍 Hub Bay H2</span>
                     </div>
 
-                    <h1 class="pd-title-heading" id="pdFullTitle">Equipment Model</h1>
+                    <h1 class="pd-hero-title" id="pdDisplayTitle">Equipment Model</h1>
+                    <p class="pd-hero-subtitle" id="pdDisplaySubtitle">Specifications & rental bailment terms</p>
                 </div>
 
-                <!-- Hero Photo Box -->
-                <div class="pd-hero-card">
-                    <img src="images/maruti-fronx.jpg" alt="Equipment Photo" class="pd-hero-img" id="pdHeroImg">
+                <!-- Hero Photo Showcase Box -->
+                <div class="pd-hero-showcase-box">
+                    <img src="images/maruti-fronx.jpg" alt="Equipment Showcase" class="pd-hero-img-element" id="pdHeroImg">
                 </div>
 
-                <!-- 4 Feature Badges Grid (Clean Theme Aligned) -->
-                <div class="pd-specs-quad" id="pdSpecsQuad">
+                <!-- 4 Spec Badges Quad -->
+                <div class="pd-specs-grid" id="pdSpecsGrid">
                     <!-- Populated dynamically via JS -->
                 </div>
 
-                <!-- "About This Equipment / Vehicle" Card -->
-                <article class="pd-content-card">
-                    <h2 id="pdAboutHeading">
+                <!-- About Equipment Card -->
+                <article class="pd-about-card">
+                    <h3 id="pdAboutHeading">
                         <span>📋</span> About This Equipment
-                    </h2>
-                    <p class="pd-desc-p" id="pdAboutDesc">
+                    </h3>
+                    <p class="pd-about-text" id="pdAboutText">
                         Loading detailed specifications and rental terms...
                     </p>
 
-                    <!-- Feature Checklist -->
-                    <div class="pd-check-list" id="pdChecklistGrid">
+                    <!-- Features Checklist Grid -->
+                    <div class="pd-checklist-box" id="pdChecklistGrid">
                         <!-- Populated dynamically via JS -->
                     </div>
 
-                    <!-- Verified Hub QA & Maintenance Log -->
-                    <div class="pd-qa-box">
+                    <!-- Hub QA Custody & Inspection Log -->
+                    <div class="pd-audit-box">
                         <strong>🛡️ Goa University Hub QA Custody & Inspection:</strong>
                         <div id="pdLogsList" style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
                             <!-- Populated dynamically via JS -->
@@ -596,118 +715,118 @@
             </div>
 
             <!-- Right Column: Dedicated Booking Console -->
-            <aside class="pd-booking-panel" aria-label="Booking Console">
-                <div class="pd-booking-title-bar">
+            <aside class="pd-booking-card" aria-label="Booking Console">
+                <div class="pd-booking-header">
                     <div>
-                        <h2 class="pd-booking-title">Rental Booking</h2>
-                        <div style="font-size:11px; color:var(--slate-500); margin-top:2px;">Software Escrow Bailment</div>
+                        <h2 class="pd-booking-title-main">Booking</h2>
+                        <div class="pd-booking-title-sub">Software Escrow Bailment</div>
                     </div>
-                    <div class="pd-booking-price-tag">
-                        <div class="pd-booking-tariff" id="pdDailyRateDisplay">&#8377;0.00</div>
-                        <div class="pd-booking-deposit" id="pdDepositNoteDisplay">&#8377;0 refundable deposit</div>
+                    <div class="pd-booking-price-block">
+                        <div class="pd-booking-rate-big" id="pdDailyRateDisplay">&#8377;0.00</div>
+                        <div class="pd-booking-rate-sub">Rent Per Day</div>
                     </div>
                 </div>
 
-                <!-- Date Pickers -->
-                <div class="pd-dates-row">
-                    <div class="pd-input-wrap">
-                        <label for="pickupDateInput">Pickup Date</label>
-                        <input type="date" class="pd-date-field" id="pickupDateInput">
+                <!-- Pickup & Dropoff Date Pickers -->
+                <div class="pd-date-pair">
+                    <div class="pd-field-wrap">
+                        <label class="pd-field-label" for="pickupDateInput">Pickup Date</label>
+                        <input type="date" class="pd-field-input" id="pickupDateInput">
                     </div>
-                    <div class="pd-input-wrap">
-                        <label for="dropoffDateInput">Return Date</label>
-                        <input type="date" class="pd-date-field" id="dropoffDateInput">
+                    <div class="pd-field-wrap">
+                        <label class="pd-field-label" for="dropoffDateInput">Dropoff Date</label>
+                        <input type="date" class="pd-field-input" id="dropoffDateInput">
                     </div>
                 </div>
 
                 <!-- Pickup Hub Information -->
-                <div class="pd-bay-banner">
-                    <span class="pd-bay-icon">📍</span>
+                <div class="pd-location-strip">
+                    <span class="pd-location-pin">📍</span>
                     <div>
                         <strong style="color:var(--slate-800);" id="pdPickupBayText">RentSphere Hub Bay H2</strong>
                         <div style="font-size:11px; color:var(--slate-500);">Goa University Campus, Taleigao Plateau, Goa</div>
                     </div>
                 </div>
 
-                <!-- Collateral Option -->
-                <div class="pd-segmented-group">
-                    <span class="pd-seg-label">Security Deposit Mode</span>
-                    <div class="pd-seg-buttons">
-                        <button type="button" class="pd-seg-btn is-active" id="btnDepositEscrow">Software Escrow</button>
-                        <button type="button" class="pd-seg-btn" id="btnDepositUpi">UPI Guarantee</button>
+                <!-- Security Deposit Mode Segmented Toggle -->
+                <div class="pd-toggle-section">
+                    <span class="pd-toggle-title">Security Deposit</span>
+                    <div class="pd-toggle-grid">
+                        <button type="button" class="pd-toggle-pill is-active" id="btnDepositEscrow">Software Escrow</button>
+                        <button type="button" class="pd-toggle-pill" id="btnDepositUpi">UPI Guarantee</button>
                     </div>
                 </div>
 
-                <!-- Payment Method -->
-                <div class="pd-segmented-group">
-                    <span class="pd-seg-label">Payment Method</span>
-                    <div class="pd-seg-buttons">
-                        <button type="button" class="pd-seg-btn is-active" id="btnPayWallet">Escrow Wallet</button>
-                        <button type="button" class="pd-seg-btn" id="btnPayUpi">UPI / NetBanking</button>
+                <!-- Payment Method Segmented Toggle -->
+                <div class="pd-toggle-section">
+                    <span class="pd-toggle-title">Payment Method</span>
+                    <div class="pd-toggle-grid">
+                        <button type="button" class="pd-toggle-pill is-active" id="btnPayWallet">Escrow Wallet</button>
+                        <button type="button" class="pd-toggle-pill" id="btnPayUpi">UPI / NetBanking</button>
                     </div>
                 </div>
 
-                <!-- Live Price Calculation Breakdown -->
-                <div class="pd-calc-table">
-                    <div class="pd-calc-row">
-                        <span>Duration:</span>
-                        <strong id="pdCalcDays">1 day</strong>
+                <!-- Live Price Calculation Breakdown Table -->
+                <div class="pd-summary-table">
+                    <div class="pd-summary-row">
+                        <span>Rental Duration:</span>
+                        <strong id="pdCalcDays">2 days</strong>
                     </div>
-                    <div class="pd-calc-row">
-                        <span>Tariff (<span id="pdCalcDaysCount">1</span> x <span id="pdCalcRate">&#8377;0</span>):</span>
+                    <div class="pd-summary-row">
+                        <span>Tariff (<span id="pdCalcDaysCount">2</span> x <span id="pdCalcRate">&#8377;0</span>):</span>
                         <span id="pdCalcTariffTotal">&#8377;0.00</span>
                     </div>
-                    <div class="pd-calc-row">
+                    <div class="pd-summary-row">
                         <span>Refundable Deposit (Held in Escrow):</span>
-                        <span id="pdCalcDepositTotal" style="color:var(--warm-amber-dark); font-weight:600;">&#8377;0.00</span>
+                        <span id="pdCalcDepositTotal" style="color:var(--warm-amber-dark); font-weight:700;">&#8377;0.00</span>
                     </div>
-                    <div class="pd-calc-row pd-calc-total">
+                    <div class="pd-summary-row pd-summary-total">
                         <span>Total Escrow Commitment:</span>
                         <span id="pdCalcGrandTotal" style="color:var(--brand-teal-dark); font-size:16px;">&#8377;0.00</span>
                     </div>
                 </div>
 
-                <!-- Bailment Terms Checkbox -->
-                <label class="pd-terms-row">
+                <!-- Terms & Bailment Checkbox -->
+                <label class="pd-terms-check-row">
                     <input type="checkbox" id="acceptBailmentCheck" checked>
-                    <span>I agree to standard Bailment Agreement terms and mandatory post-return quarantine inspection.</span>
+                    <span>Accept terms & escrow conditions (Mandatory post-return quarantine inspection).</span>
                 </label>
 
-                <!-- Action: WhatsApp Booking -->
-                <a href="#" target="_blank" class="pd-btn-whatsapp-theme" id="btnWhatsAppBooking">
+                <!-- Action 1: Book Through WhatsApp -->
+                <a href="#" target="_blank" class="pd-btn-whatsapp" id="btnWhatsAppBooking">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.588-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.311.045-.698.059-1.146-.086-.297-.097-.68-.225-1.168-.436-2.038-.883-3.376-2.951-3.479-3.088-.102-.137-.824-1.096-.824-2.091 0-.994.52-1.482.705-1.688.185-.205.405-.257.54-.257.135 0 .27.001.389.007.126.006.294-.047.46.353.172.417.587 1.433.639 1.537.052.105.086.228.017.367-.069.139-.103.226-.205.348-.103.121-.217.271-.31.365-.103.104-.211.218-.09.426.12.208.535.882 1.147 1.427.789.702 1.455.918 1.663 1.022.207.104.329.088.452-.053.123-.142.527-.614.667-.824.14-.21.28-.175.471-.104.191.071 1.212.571 1.421.675.209.105.348.157.399.245.052.088.052.51-.092.915z"/>
                     </svg>
                     Book Through WhatsApp
                 </a>
 
-                <!-- Action: Direct Reserve -->
-                <button type="button" class="pd-btn-reserve-theme" id="btnConfirmReserve">
+                <!-- Action 2: Confirm Booking Direct Action -->
+                <button type="button" class="pd-btn-confirm" id="btnConfirmReserve">
                     <span>⚡</span> Confirm Booking
                 </button>
 
-                <!-- Success OTP Code Reveal -->
-                <div class="pd-otp-success-card" id="pdOtpSuccessCard">
+                <!-- Revealed OTP Passcode Card -->
+                <div class="pd-otp-box-revealed" id="pdOtpSuccessCard">
                     <div style="font-weight:700; color:var(--emerald-dark); font-size:13px;">
                         🎉 Booking Confirmed! Escrow Locked.
                     </div>
                     <div style="font-size:12px; color:var(--slate-700);">
-                        Your 6-digit locker pickup OTP code for Bay <strong id="pdOtpBay"></strong>:
+                        Your 6-digit locker pickup OTP for Bay <strong id="pdOtpBay"></strong>:
                     </div>
-                    <div class="pd-otp-code-box" id="pdOtpCode">------</div>
+                    <div class="pd-otp-digits" id="pdOtpCode">------</div>
                     <div style="display:flex; gap:8px; margin-top:4px;">
-                        <a href="index.html" class="btn-secondary" style="flex:1; justify-content:center; text-align:center; padding:8px 12px; font-size:12px;">
-                            View in Pickup Hub
+                        <a href="index.html#pickup" class="btn-secondary" style="flex:1; justify-content:center; text-align:center; padding:8px 12px; font-size:12px; text-decoration:none;">
+                            View in Pickup Hub ↗
                         </a>
                     </div>
                 </div>
 
-                <!-- Safety Guarantee Note -->
-                <div class="pd-safe-guarantee">
-                    <span style="font-size:16px;">🛡️</span>
+                <!-- Bottom Escrow Guarantee Pill -->
+                <div class="pd-escrow-guarantee-strip">
+                    <span style="font-size:18px;">🛡️</span>
                     <div>
-                        <strong style="color:var(--slate-800);">Escrow Protected Bailment</strong>
-                        <div>Inspected, tested & sanitized at Goa University Hub.</div>
+                        <strong style="color:var(--slate-800);">Secure Escrow Bailment</strong>
+                        <div>State Pattern protected & inspected at Goa University Hub.</div>
                     </div>
                 </div>
             </aside>
@@ -716,7 +835,7 @@
 
     </main>
 
-    <!-- Application Footer (Matches RentSphere Theme) -->
+    <!-- Application Footer -->
     <footer class="app-footer">
         <div class="footer-container">
             <div class="footer-brand">
@@ -761,7 +880,7 @@
         </div>
         <div class="footer-bottom">
             <span>© 2026 RentSphere · Equipment rentals in Goa</span>
-            <span>Student project demonstration</span>
+            <span>MCA Object-Oriented Technology Lab Demonstration</span>
         </div>
     </footer>
 
@@ -773,7 +892,6 @@
         let selectedDepositMode = 'ESCROW';
         let selectedPaymentMode = 'WALLET';
 
-        // Load active user session from localStorage
         let activeUserId = localStorage.getItem('rentsphere_user') || 'renter_deepak';
         let authToken = localStorage.getItem('rentsphere_token') || null;
 
@@ -799,12 +917,71 @@
             return photoMap[a.id] || 'images/sony-a7iv.jpg';
         }
 
+        async function restoreSessionAndWallet() {
+            // 1. Verify /api/auth/me
+            try {
+                const res = await fetch(`${API_BASE}/auth/me`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && data.authenticated && data.user) {
+                        activeUserId = data.user.userId;
+                        updateUserBadgeUI(data.user);
+                    }
+                }
+            } catch (e) {}
+
+            // 2. If no valid authToken, login default demo renter
+            if (!authToken) {
+                try {
+                    const loginRes = await fetch(`${API_BASE}/auth/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: 'renter_deepak', password: 'RentSphere@2026' })
+                    });
+                    const loginData = await loginRes.json();
+                    if (loginData.success) {
+                        authToken = loginData.token;
+                        activeUserId = loginData.user.userId;
+                        localStorage.setItem('rentsphere_token', authToken);
+                        localStorage.setItem('rentsphere_user', activeUserId);
+                        updateUserBadgeUI(loginData.user);
+                    }
+                } catch (e) {}
+            }
+
+            // 3. Fetch real Escrow Balance from /api/escrow/accounts
+            try {
+                const escRes = await fetch(`${API_BASE}/escrow/accounts`);
+                if (escRes.ok) {
+                    const accounts = await escRes.json();
+                    const userAcc = accounts.find(acc => acc.userId === activeUserId) || accounts[0];
+                    if (userAcc) {
+                        const balEl = document.getElementById('headerWalletBalance');
+                        if (balEl) balEl.textContent = formatInr(userAcc.walletBalance || userAcc.balance);
+                    }
+                }
+            } catch (e) {}
+        }
+
+        function updateUserBadgeUI(u) {
+            const roleEl = document.getElementById('userRoleBadge');
+            const nameEl = document.getElementById('activeUserLabel');
+            if (roleEl) {
+                roleEl.textContent = (u.role || 'RENTER').toUpperCase();
+                roleEl.className = 'role-tag role-' + (u.role || 'renter').toLowerCase();
+            }
+            if (nameEl) nameEl.textContent = u.fullName || u.userId;
+        }
+
         async function initProductPage() {
+            // Restore session and wallet first
+            await restoreSessionAndWallet();
+
             // Read ?id= from URL (Default to AST-107 Fronx Car)
             const params = new URLSearchParams(window.location.search);
             const assetId = params.get('id') || 'AST-107';
 
-            // Initialize default dates (today to +2 days)
+            // Dates setup (Tomorrow to +3 days = 2 rental days)
             const today = new Date();
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
@@ -823,16 +1000,13 @@
                 dropoffInput.addEventListener('change', updateCalculatedPrice);
             }
 
-            // Wire up toggle buttons
             setupToggleButtons();
-
-            // Wire up Confirm Booking
             document.getElementById('btnConfirmReserve')?.addEventListener('click', handleConfirmBooking);
 
             // Fetch Assets
             try {
                 const res = await fetch(`${API_BASE}/assets`);
-                if (!res.ok) throw new Error('Failed to load asset details');
+                if (!res.ok) throw new Error('Failed to load assets');
                 const assets = await res.json();
                 const asset = assets.find(x => x.id === assetId) || assets[0];
                 currentAsset = asset;
@@ -847,20 +1021,61 @@
             if (!a) return;
 
             const cleanTitle = (a.title || '').replace(/\\u0026/g, '&');
-            document.title = `${cleanTitle} · RentSphere Rental`;
+            
+            // Clean Short Display Title & Subtitle
+            let displayTitle = cleanTitle;
+            let displaySubtitle = 'Goa University Hub · Identity Verified Host';
+
+            if (a.id === 'AST-107') {
+                displayTitle = 'Maruti Suzuki Fronx';
+                displaySubtitle = 'Automatic Crossover · Wedding & Event Self-Drive · 1.2L DualJet';
+            } else if (a.id === 'AST-108') {
+                displayTitle = 'Ather 450X Gen 3';
+                displaySubtitle = 'Electric Scooter · Campus & Coastal Commute · 6kW PMSM';
+            } else if (a.id === 'AST-101') {
+                displayTitle = 'Sony Alpha A7 IV';
+                displaySubtitle = 'Full-Frame Mirrorless Kit · 28-70mm Lens · 4K 60p 10-Bit';
+            } else if (a.id === 'AST-102') {
+                displayTitle = 'Epson Full-HD Projector';
+                displaySubtitle = 'High-Lumen Optical Presentation & Movie Display with 100" Screen';
+            } else if (a.id === 'AST-103') {
+                displayTitle = 'JBL PartyBox 310';
+                displaySubtitle = '240W RMS Portable Club Sound System with Dual Wireless Mics';
+            } else if (a.id === 'AST-104') {
+                displayTitle = 'Pioneer DDJ-FLX4';
+                displaySubtitle = '2-Channel DJ Controller with Performance Pads & Studio Audio';
+            } else if (a.id === 'AST-105') {
+                displayTitle = 'Bosch GSB 600W';
+                displaySubtitle = 'Corded Impact Power Drill with 100-Piece Accessory Kit';
+            } else if (a.id === 'AST-106') {
+                displayTitle = 'Karcher K2 Compact';
+                displaySubtitle = 'High-Pressure Washer 1400W 110-Bar with Foam Cannon';
+            }
+
+            document.title = `${displayTitle} · RentSphere Rental`;
 
             // Breadcrumbs
             const bcTitle = document.getElementById('bcAssetTitle');
-            if (bcTitle) bcTitle.textContent = cleanTitle;
+            if (bcTitle) bcTitle.textContent = displayTitle;
             const bcCat = document.getElementById('bcCategoryName');
             if (bcCat) bcCat.textContent = formatCategoryName(a.leafClass);
 
             // Badges
             const stateTag = document.getElementById('pdStateTag');
             if (stateTag) {
-                const isAvail = a.state === 'AVAILABLE';
-                stateTag.textContent = isAvail ? 'Available Now' : a.state.replace('_', ' ');
-                stateTag.className = 'asset-state-tag ' + (isAvail ? 'state-available' : 'state-reserved');
+                if (a.state === 'AVAILABLE') {
+                    stateTag.textContent = 'Available Now';
+                    stateTag.className = 'pd-pill-available';
+                } else if (a.state === 'RESERVED_ESCROW') {
+                    stateTag.textContent = 'Reserved (Escrow Locked)';
+                    stateTag.className = 'pd-pill-reserved';
+                } else if (a.state === 'ACTIVE_LEASE') {
+                    stateTag.textContent = 'Active Lease';
+                    stateTag.className = 'pd-pill-active';
+                } else {
+                    stateTag.textContent = a.state.replace('_', ' ');
+                    stateTag.className = 'pd-pill-reserved';
+                }
             }
 
             const catPill = document.getElementById('pdCategoryPill');
@@ -872,31 +1087,31 @@
             const pickupBayText = document.getElementById('pdPickupBayText');
             if (pickupBayText) pickupBayText.textContent = `RentSphere Hub Bay ${a.lockerCoordinate || 'A1'}`;
 
-            // Main Title
-            const mainTitle = document.getElementById('pdFullTitle');
-            if (mainTitle) mainTitle.textContent = cleanTitle;
+            // Titles
+            const mainTitle = document.getElementById('pdDisplayTitle');
+            if (mainTitle) mainTitle.textContent = displayTitle;
 
-            // Photo
+            const subTitle = document.getElementById('pdDisplaySubtitle');
+            if (subTitle) subTitle.textContent = displaySubtitle;
+
+            // Hero Image
             const heroImg = document.getElementById('pdHeroImg');
             if (heroImg) {
                 heroImg.src = getAssetPhoto(a);
-                heroImg.alt = cleanTitle;
+                heroImg.alt = displayTitle;
             }
 
             // Rates
             const rateDisplay = document.getElementById('pdDailyRateDisplay');
-            if (rateDisplay) rateDisplay.textContent = formatInr(a.baseDailyRate || a.calculatedTariff) + ' /day';
+            if (rateDisplay) rateDisplay.textContent = formatInr(a.baseDailyRate || a.calculatedTariff);
 
-            const depositDisplay = document.getElementById('pdDepositNoteDisplay');
-            if (depositDisplay) depositDisplay.textContent = `↩ ${formatInr(a.securityCollateral || a.requiredCollateral)} refundable deposit`;
+            // Specs Quad
+            renderSpecsGrid(a);
 
-            // Dynamic 4-Spec Quad
-            renderSpecsQuad(a);
+            // About section
+            renderAboutCard(a, displayTitle);
 
-            // About section and features checklist
-            renderAboutSection(a);
-
-            // Verified QA & Maintenance logs
+            // QA Logs
             const logsList = document.getElementById('pdLogsList');
             if (logsList && a.serviceLogs && a.serviceLogs.length > 0) {
                 logsList.innerHTML = a.serviceLogs.slice(-3).map(log => `
@@ -906,64 +1121,67 @@
                     </div>
                 `).join('');
             } else if (logsList) {
-                logsList.innerHTML = '<div style="display:flex; align-items:center; gap:6px;"><span style="color:var(--emerald-dark); font-weight:700;">✓</span> QA verified and sanitized at Goa University Rental Hub</div>';
+                logsList.innerHTML = '<div style="display:flex; align-items:center; gap:6px;"><span style="color:var(--emerald-dark); font-weight:700;">✓</span> QA verified, inspected, and sanitized at Goa University Rental Hub</div>';
             }
         }
 
-        function renderSpecsQuad(a) {
-            const quad = document.getElementById('pdSpecsQuad');
-            if (!quad) return;
+        function renderSpecsGrid(a) {
+            const grid = document.getElementById('pdSpecsGrid');
+            if (!grid) return;
 
             let specs = [];
 
             if (a.leafClass === 'EventAndMobilityVehicle') {
-                specs = [
-                    { icon: '👤', value: '5 Seats', label: 'Capacity' },
-                    { icon: '⚙️', value: 'Automatic', label: 'Transmission' },
-                    { icon: '⛽', value: 'Petrol', label: 'Fuel Type' },
-                    { icon: '🛡️', value: 'Insured', label: 'Safety Coverage' }
-                ];
-                if (a.id === 'AST-108') {
-                    specs[0].value = '2 Seats';
-                    specs[1].value = 'Direct Drive';
-                    specs[2].value = 'Electric 3.7kWh';
-                    specs[3].value = 'ARAI Certified';
+                if (a.id === 'AST-107') {
+                    specs = [
+                        { icon: '👤', value: '5 Seats', label: 'Capacity' },
+                        { icon: '⚙️', value: 'Automatic', label: 'Transmission' },
+                        { icon: '⛽', value: 'Petrol', label: 'Fuel' },
+                        { icon: '🛡️', value: 'Insured', label: 'Safety' }
+                    ];
+                } else {
+                    specs = [
+                        { icon: '👤', value: '2 Seats', label: 'Capacity' },
+                        { icon: '⚡', value: 'Direct Drive', label: 'Transmission' },
+                        { icon: '🔋', value: 'Electric 3.7kWh', label: 'Powertrain' },
+                        { icon: '🛡️', value: 'ARAI Cert', label: 'Safety' }
+                    ];
                 }
             } else if (a.leafClass === 'CameraAndOpticsGear') {
                 specs = [
-                    { icon: '📷', value: (a.sensorResolutionMp || 33.0) + ' MP', label: 'Resolution' },
+                    { icon: '📷', value: (a.sensorResolutionMp || 33.0) + ' MP', label: 'Sensor Res' },
                     { icon: '🎬', value: '4K 60fps', label: 'Recording' },
-                    { icon: '🔍', value: 'Sony E-Mount', label: 'Lens Mount' },
-                    { icon: '🛡️', value: 'Comprehensive', label: 'Protection Tier' }
+                    { icon: '🔍', value: 'E-Mount', label: 'Lens Mount' },
+                    { icon: '🛡️', value: 'Full Cover', label: 'Safety' }
                 ];
             } else if (a.leafClass === 'EventAudioAndLighting') {
                 specs = [
                     { icon: '🔊', value: '104 dB', label: 'Sound Output' },
                     { icon: '🎤', value: '2 Wireless', label: 'Microphones' },
-                    { icon: '🌈', value: 'RGB + DMX', label: 'Light Sync' },
-                    { icon: '🛡️', value: 'Event Pro', label: 'Equipment Shield' }
+                    { icon: '🌈', value: 'RGB Beat', label: 'Light Sync' },
+                    { icon: '🛡️', value: 'Event Pro', label: 'Safety' }
                 ];
             } else {
                 specs = [
                     { icon: '⚡', value: '1400W 110-Bar', label: 'Power Output' },
-                    { icon: '🛡️', value: 'IPX5 Rated', label: 'Waterproof Spec' },
-                    { icon: '🔌', value: 'Corded 220V', label: 'Power Source' },
-                    { icon: '🧰', value: '4 Nozzles', label: 'Kit Attachments' }
+                    { icon: '🛡️', value: 'IPX5 Rated', label: 'Waterproof' },
+                    { icon: '🔌', value: '220V Cord', label: 'Power Type' },
+                    { icon: '🧰', value: '4 Nozzles', label: 'Attachments' }
                 ];
             }
 
-            quad.innerHTML = specs.map(s => `
-                <div class="pd-spec-card">
-                    <div class="pd-spec-icon-badge">${s.icon}</div>
-                    <div class="pd-spec-val">${s.value}</div>
-                    <div class="pd-spec-lbl">${s.label}</div>
+            grid.innerHTML = specs.map(s => `
+                <div class="pd-spec-item">
+                    <div class="pd-spec-icon">${s.icon}</div>
+                    <div class="pd-spec-val-text">${s.value}</div>
+                    <div class="pd-spec-lbl-text">${s.label}</div>
                 </div>
             `).join('');
         }
 
-        function renderAboutSection(a) {
+        function renderAboutCard(a, displayTitle) {
             const heading = document.getElementById('pdAboutHeading');
-            const desc = document.getElementById('pdAboutDesc');
+            const desc = document.getElementById('pdAboutText');
             const checklist = document.getElementById('pdChecklistGrid');
 
             if (!desc || !checklist) return;
@@ -974,30 +1192,30 @@
             if (a.leafClass === 'EventAndMobilityVehicle') {
                 heading.innerHTML = '<span>🚗</span> About This Vehicle';
                 if (a.id === 'AST-107') {
-                    aboutText = 'The Maruti Suzuki Fronx Automatic is a stylish, comfortable crossover suitable for city travel, weekend beach trips, wedding guest transfers, and outstation journeys across Goa. Features zero-dep commercial insurance, wireless Apple CarPlay, and hill-hold assist.';
+                    aboutText = 'Fronx is a comfortable crossover suitable for city travel, weekend beach trips, wedding guest transfers, and outstation journeys across Goa. Features zero-dep commercial insurance, wireless Apple CarPlay, and hill-hold assist.';
                     items = ['5 Seats Capacity', 'Automatic Transmission', 'Petrol DualJet Engine', '350 km/day Allowance', 'Fastag Recharged (₹1,000)', 'ARAI 5-Star Safety'];
                 } else {
-                    aboutText = 'The Ather 450X Electric Scooter provides agile, high-torque campus commuting and coastal exploration across Taleigao, Panaji, and Dona Paula with zero emissions and instant warp mode acceleration.';
+                    aboutText = 'Ather 450X provides agile, instant electric torque for campus commuting and scenic coastal cruising with Google Maps navigation and warp mode.';
                     items = ['2 Seats Capacity', 'Warp & Eco Driving Modes', '3.7 kWh Lithium Pack', '105 km True Range', '7" Touchscreen Navigation', 'Sanitized Helmet Included'];
                 }
             } else if (a.leafClass === 'CameraAndOpticsGear') {
                 heading.innerHTML = '<span>📷</span> About This Camera Kit';
-                aboutText = `${a.title} is calibrated for wedding documentarians, campus content creators, and independent filmmakers requiring high dynamic range, fast autofocus, and dual-card safety redundancy.`;
+                aboutText = `${displayTitle} is verified for wedding documentarians, campus media creators, and filmmakers requiring 10-bit color, fast autofocus, and dual memory card protection.`;
                 items = ['Dual SDXC 128GB Cards Included', '4K 60fps 10-Bit Recording', 'Dual NP-FZ100 Batteries + Charger', 'Weather-Sealed Body', 'Standard Zoom Optics', 'Hard Transport Case'];
             } else if (a.leafClass === 'EventAudioAndLighting') {
-                heading.innerHTML = '<span>🔊</span> About This Audio System';
-                aboutText = `${a.title} delivers clean acoustic punch and synchronized light effects for college fests, private ceremonies, corporate presentations, and open-air gatherings.`;
-                items = ['104 dB Peak Acoustic Output', '2 UHF Wireless Microphones', 'Bluetooth 5.1 & XLR Inputs', 'Beat-Synced Dynamic RGB Rings', 'AC Mains or Battery Operation', 'Heavy Duty Transport Wheels'];
+                heading.innerHTML = '<span>🔊</span> About This Audio Kit';
+                aboutText = `${displayTitle} delivers room-filling acoustic punch and synchronized lighting for campus festivals, ceremonies, presentations, and beachside gatherings.`;
+                items = ['104 dB Peak Output', '2 UHF Wireless Microphones', 'Bluetooth 5.1 & XLR Inputs', 'Beat-Synced Dynamic RGB Rings', 'AC Mains or Battery Operation', 'Heavy Duty Transport Wheels'];
             } else {
                 heading.innerHTML = '<span>🛠️</span> About This Tool';
-                aboutText = `${a.title} is verified for household maintenance, vehicle pressure washing, and DIY fabrication with industrial safety insulation.`;
+                aboutText = `${displayTitle} is certified for vehicle cleaning, home maintenance, patio washing, and DIY fabrication with high-pressure safety valves.`;
                 items = ['1400W High-Torque Motor', 'IPX5 Water Ingress Protection', 'Brass Quick-Coupler Fitting', '10m Steel-Braided Hose', 'Variable Jet & Foam Cannons', 'ISI Certified 220V Grounding'];
             }
 
             desc.textContent = aboutText;
             checklist.innerHTML = items.map(it => `
-                <div class="pd-check-row">
-                    <div class="pd-check-dot">✓</div>
+                <div class="pd-check-item">
+                    <div class="pd-check-circle">✓</div>
                     <span>${it}</span>
                 </div>
             `).join('');
@@ -1009,7 +1227,7 @@
             const pickupVal = document.getElementById('pickupDateInput')?.value;
             const dropoffVal = document.getElementById('dropoffDateInput')?.value;
 
-            let days = 1;
+            let days = 2;
             if (pickupVal && dropoffVal) {
                 const p = new Date(pickupVal);
                 const d = new Date(dropoffVal);
@@ -1030,16 +1248,16 @@
             document.getElementById('pdCalcDepositTotal').textContent = formatInr(deposit);
             document.getElementById('pdCalcGrandTotal').textContent = formatInr(grandTotal);
 
-            // Update WhatsApp Link
+            // WhatsApp link
             const waBtn = document.getElementById('btnWhatsAppBooking');
             if (waBtn) {
                 const text = encodeURIComponent(
-                    `Hello RentSphere! I would like to reserve ${currentAsset.title} (ID: ${currentAsset.id}) from ${pickupVal} to ${dropoffVal} (${days} days). Estimated tariff: ${formatInr(totalRent)} + Escrow deposit: ${formatInr(deposit)} = Total: ${formatInr(grandTotal)}.`
+                    `Hello RentSphere! I want to book ${currentAsset.title} (ID: ${currentAsset.id}) from ${pickupVal} to ${dropoffVal} (${days} days). Tariff: ${formatInr(totalRent)} + Escrow Deposit: ${formatInr(deposit)} = Total: ${formatInr(grandTotal)}.`
                 );
                 waBtn.href = `https://wa.me/919876543210?text=${text}`;
             }
 
-            // Disable button if not available
+            // Confirm button
             const confirmBtn = document.getElementById('btnConfirmReserve');
             if (confirmBtn) {
                 if (currentAsset.state !== 'AVAILABLE') {
@@ -1085,13 +1303,13 @@
 
             const check = document.getElementById('acceptBailmentCheck');
             if (!check.checked) {
-                alert('Please accept the Bailment Agreement terms to proceed.');
+                alert('Please accept terms & escrow conditions to proceed.');
                 return;
             }
 
             const pickupVal = document.getElementById('pickupDateInput')?.value;
             const dropoffVal = document.getElementById('dropoffDateInput')?.value;
-            let days = 1;
+            let days = 2;
             if (pickupVal && dropoffVal) {
                 const diff = (new Date(dropoffVal)) - (new Date(pickupVal));
                 days = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
@@ -1104,6 +1322,11 @@
             }
 
             try {
+                // Ensure auth token is present
+                if (!authToken) {
+                    await restoreSessionAndWallet();
+                }
+
                 const headers = { 'Content-Type': 'application/json' };
                 if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
@@ -1122,34 +1345,40 @@
                 if (data.success) {
                     currentAsset.state = 'RESERVED_ESCROW';
 
-                    // Update UI State Badge
+                    // Update State Pill
                     const stateTag = document.getElementById('pdStateTag');
                     if (stateTag) {
                         stateTag.textContent = 'Reserved (Escrow Locked)';
-                        stateTag.className = 'asset-state-tag state-reserved';
+                        stateTag.className = 'pd-pill-reserved';
                     }
 
-                    // Reveal OTP Code
+                    // Reveal OTP Pin Correctly (Checked data.otpPin & data.otpCode)
                     const card = document.getElementById('pdOtpSuccessCard');
                     const otpDisplay = document.getElementById('pdOtpCode');
                     const bayDisplay = document.getElementById('pdOtpBay');
+                    const actualOtp = data.otpPin || data.otpCode;
+                    const assignedBay = data.lockerBay || data.assignedBay || currentAsset.lockerCoordinate || 'H2';
+
                     if (card && otpDisplay && bayDisplay) {
                         card.style.display = 'flex';
-                        otpDisplay.textContent = data.otpCode || '582914';
-                        bayDisplay.textContent = currentAsset.lockerCoordinate || 'H2';
+                        otpDisplay.textContent = actualOtp;
+                        bayDisplay.textContent = assignedBay;
                     }
 
                     confirmBtn.textContent = '🔒 Gear Reserved';
+
+                    // Refresh wallet balance
+                    restoreSessionAndWallet();
                 } else {
                     alert('Booking failed: ' + (data.message || data.error));
                     confirmBtn.disabled = false;
-                    confirmBtn.innerHTML = '<span>⚡</span> Confirm Booking';
+                    updateCalculatedPrice();
                 }
             } catch (e) {
                 console.error(e);
                 alert('Network error during reservation: ' + e.message);
                 confirmBtn.disabled = false;
-                confirmBtn.innerHTML = '<span>⚡</span> Confirm Booking';
+                updateCalculatedPrice();
             }
         }
 
