@@ -76,6 +76,9 @@ public class CameraAndOpticsGear extends EventAndCreatorAsset {
         String logs = String.join(",", serviceLogs);
         String extra = String.format("sensorMp=%.1f;is4k=%b;mount=%s;protection=%s;kitCount=%d;days=%d",
                 sensorResolutionMp, is4kOr8kVideo, mountType, protectionTier, accessoryKitCount, rentalDays);
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            extra += ";img=" + imageUrl.replace(";", "_").replace("|", "_");
+        }
         return String.join("|",
                 id, title, category, "CameraAndOpticsGear", ownerId, renterId,
                 currentState.getStateName(), String.format("%.2f", baseDailyRate),

@@ -56,6 +56,9 @@ public class PowerToolEquipment extends UtilityAndMobilityAsset {
         String logs = String.join(",", serviceLogs);
         String extra = String.format("power=%s;safety=%s;cordless=%b;bits=%d;days=%d",
                 powerOrEngineSpec, safetyCertification, cordlessBatteryPowered, accessoryBitsIncluded, rentalDays);
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            extra += ";img=" + imageUrl.replace(";", "_").replace("|", "_");
+        }
         return String.join("|",
                 id, title, category, "PowerToolEquipment", ownerId, renterId,
                 currentState.getStateName(), String.format("%.2f", baseDailyRate),

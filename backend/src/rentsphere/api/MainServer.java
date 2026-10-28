@@ -755,6 +755,10 @@ public class MainServer {
             );
         }
 
+        if (b.containsKey("imageUrl") && !b.get("imageUrl").isBlank()) {
+            newAsset.setImageUrl(b.get("imageUrl").trim());
+        }
+
         // Validate Row H Ground Slot Invariant
         if (!lockerGrid.validateGroundSlotPlacement(newAsset, bay)) {
             sendJsonResponse(exchange, 400, "{\"success\":false,\"message\":\"Vehicles and heavy event gear must be assigned to Row H Ground Slots (H1-H8). Specified bay: " + bay + "\"}");
@@ -1790,6 +1794,8 @@ public class MainServer {
         if (filename.endsWith(".json")) return "application/json; charset=UTF-8";
         if (filename.endsWith(".svg")) return "image/svg+xml";
         if (filename.endsWith(".png")) return "image/png";
+        if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "image/jpeg";
+        if (filename.endsWith(".webp")) return "image/webp";
         if (filename.endsWith(".ico")) return "image/x-icon";
         return "text/plain; charset=UTF-8";
     }
@@ -1856,6 +1862,7 @@ public class MainServer {
         sb.append("\"rentalDays\":").append(a.getRentalDays()).append(",");
         sb.append(String.format(Locale.US, "\"totalTariff\":%.2f,", a.calculateDailyRentalTariff(a.getRentalDays())));
         sb.append("\"lockerCoordinate\":\"").append(a.getLockerCoordinate()).append("\",");
+        sb.append("\"imageUrl\":\"").append(escapeJson(a.getImageUrl())).append("\",");
 
         if (a instanceof CategorizedRentalAsset) {
             CategorizedRentalAsset cat = (CategorizedRentalAsset) a;

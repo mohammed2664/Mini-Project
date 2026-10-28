@@ -272,6 +272,7 @@ public class FlatFilePersistenceEngine {
                                          double baseRate, double collateral, String lockerBay, 
                                          Map<String, String> extra) {
         String protection = extra.getOrDefault("protection", "Standard Shield");
+        RentableAsset created = null;
 
         switch (leafClass) {
             case "CameraAndOpticsGear":
@@ -279,26 +280,29 @@ public class FlatFilePersistenceEngine {
                 boolean is4k = Boolean.parseBoolean(extra.getOrDefault("is4k", "true"));
                 String mount = extra.getOrDefault("mount", "Sony E-Mount");
                 int kitCount = parseInt(extra.get("kitCount"), 3);
-                return new CameraAndOpticsGear(id, title, ownerId, baseRate, collateral, lockerBay,
+                created = new CameraAndOpticsGear(id, title, ownerId, baseRate, collateral, lockerBay,
                         1.20, protection, "Studio & Outdoor Weather-Sealed", "Dual NP-FZ100 Batteries", kitCount,
                         sensorMp, is4k, mount);
+                break;
 
             case "EventAudioAndLighting":
                 int soundDb = parseInt(extra.get("soundDb"), 104);
                 int mics = parseInt(extra.get("mics"), 2);
                 boolean rgb = Boolean.parseBoolean(extra.getOrDefault("rgb", "true"));
                 int audioKit = parseInt(extra.get("kitCount"), 4);
-                return new EventAudioAndLighting(id, title, ownerId, baseRate, collateral, lockerBay,
+                created = new EventAudioAndLighting(id, title, ownerId, baseRate, collateral, lockerBay,
                         1.25, protection, "High-Output Event Grade", "240W RMS AC/Battery", audioKit,
                         soundDb, mics, rgb);
+                break;
 
             case "PowerToolEquipment":
                 String power = extra.getOrDefault("power", "600W Impact Motor");
                 String safety = extra.getOrDefault("safety", "ISI Certified 220V");
                 boolean cordless = Boolean.parseBoolean(extra.getOrDefault("cordless", "false"));
                 int bits = parseInt(extra.get("bits"), 50);
-                return new PowerToolEquipment(id, title, ownerId, baseRate, collateral, lockerBay,
+                created = new PowerToolEquipment(id, title, ownerId, baseRate, collateral, lockerBay,
                         1.15, protection, power, safety, cordless, bits);
+                break;
 
             case "EventAndMobilityVehicle":
                 int seats = parseInt(extra.get("seats"), 5);
@@ -306,12 +310,18 @@ public class FlatFilePersistenceEngine {
                 boolean auto = Boolean.parseBoolean(extra.getOrDefault("auto", "true"));
                 String engine = extra.getOrDefault("power", "1.2L DualJet VVT");
                 String cert = extra.getOrDefault("safety", "ARAI Certified 5-Star");
-                return new EventAndMobilityVehicle(id, title, ownerId, baseRate, collateral, lockerBay,
+                created = new EventAndMobilityVehicle(id, title, ownerId, baseRate, collateral, lockerBay,
                         1.30, protection, engine, cert, seats, fuel, auto);
+                break;
 
             default:
                 return null;
         }
+
+        if (created != null && extra.containsKey("img") && !extra.get("img").isBlank()) {
+            created.setImageUrl(extra.get("img"));
+        }
+        return created;
     }
 
     private void applyState(RentableAsset asset, String stateStr) {

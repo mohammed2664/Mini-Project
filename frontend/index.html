@@ -1340,6 +1340,25 @@
                     <input type="text" class="form-control" id="onboardTitle" placeholder="e.g. Sony FX3 Cinema Camera Body">
                 </div>
 
+                <div class="form-group">
+                    <label for="onboardImageUrl">Equipment Photo / Image URL:</label>
+                    <input type="text" class="form-control" id="onboardImageUrl" placeholder="Paste image URL (https://...) or click a preset below">
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+                        <button type="button" class="btn-preset-img" data-url="images/maruti-fronx.jpg" data-cat="EventAndMobilityVehicle" data-title="Maruti Suzuki Fronx Self-Drive" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--slate-200); background:var(--slate-50); cursor:pointer;">🚗 Fronx Car</button>
+                        <button type="button" class="btn-preset-img" data-url="images/ather-scooter.jpg" data-cat="EventAndMobilityVehicle" data-title="Ather 450X EV Scooter" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--slate-200); background:var(--slate-50); cursor:pointer;">🛵 Ather EV</button>
+                        <button type="button" class="btn-preset-img" data-url="images/sony-a7iv.jpg" data-cat="CameraAndOpticsGear" data-title="Sony Alpha A7 IV Mirrorless" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--slate-200); background:var(--slate-50); cursor:pointer;">📷 Sony A7 IV</button>
+                        <button type="button" class="btn-preset-img" data-url="images/creator-rig.jpg" data-cat="CameraAndOpticsGear" data-title="Creator Cinema Rig & Lens Kit" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--slate-200); background:var(--slate-50); cursor:pointer;">🎬 Cinema Rig</button>
+                        <button type="button" class="btn-preset-img" data-url="images/bosch-drill.jpg" data-cat="PowerToolEquipment" data-title="Bosch GSB Impact Drill 600W" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--slate-200); background:var(--slate-50); cursor:pointer;">🛠️ Bosch Drill</button>
+                        <button type="button" class="btn-preset-img" data-url="images/karcher-washer.jpg" data-cat="PowerToolEquipment" data-title="Karcher High-Pressure Washer 1400W" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--slate-200); background:var(--slate-50); cursor:pointer;">💦 Karcher Washer</button>
+                        <button type="button" class="btn-preset-img" data-url="images/jbl-partybox.jpg" data-cat="EventAudioAndLighting" data-title="JBL PartyBox 310 Speaker" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--slate-200); background:var(--slate-50); cursor:pointer;">🔊 JBL Speaker</button>
+                        <button type="button" class="btn-preset-img" data-url="images/pioneer-dj.jpg" data-cat="EventAudioAndLighting" data-title="Pioneer DDJ-FLX4 DJ Controller" style="font-size:11px; padding:4px 8px; border-radius:6px; border:1px solid var(--slate-200); background:var(--slate-50); cursor:pointer;">🎛️ Pioneer DJ</button>
+                    </div>
+                    <div id="onboardImgPreviewWrap" style="margin-top:8px; display:none; align-items:center; gap:10px; padding:8px 12px; background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-sm);">
+                        <img id="onboardImgPreview" src="" alt="Listing preview" style="width:50px; height:40px; object-fit:cover; border-radius:4px;">
+                        <span id="onboardImgPreviewText" style="font-size:11px; color:var(--slate-600);">Photo selected for listing</span>
+                    </div>
+                </div>
+
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                     <div class="form-group">
                         <label for="onboardRate">Daily Rent (₹ INR):</label>

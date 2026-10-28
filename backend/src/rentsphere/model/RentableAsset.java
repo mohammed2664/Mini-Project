@@ -22,6 +22,7 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
     protected LeaseState currentState;     // GoF State Context
     protected List<String> serviceLogs;     // Mutable maintenance & dispatch history
     protected int rentalDays = 1;          // Active reservation duration in days
+    protected String imageUrl = "";        // Direct photo URL or local asset path
 
     public RentableAsset(String id, String title, String ownerId, double baseDailyRate, 
                          double securityCollateral, String lockerCoordinate) {
@@ -44,6 +45,15 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
 
     public void setRentalDays(int rentalDays) {
         this.rentalDays = Math.max(1, rentalDays);
+        touch();
+    }
+
+    public String getImageUrl() {
+        return imageUrl != null ? imageUrl : "";
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl != null ? imageUrl.trim() : "";
         touch();
     }
 
@@ -165,6 +175,7 @@ public abstract class RentableAsset extends AbstractDomainEntity implements Clon
         try {
             RentableAsset cloned = (RentableAsset) super.clone();
             cloned.serviceLogs = new ArrayList<>(this.serviceLogs);
+            cloned.imageUrl = this.imageUrl;
             return cloned;
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Deep clone failed", e);

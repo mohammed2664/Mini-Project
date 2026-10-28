@@ -104,6 +104,10 @@ async function executeLogout() {
     }
     state.activeUser = null;
     state.authToken = null;
+    try {
+        localStorage.removeItem('rentsphere_user');
+        localStorage.removeItem('rentsphere_token');
+    } catch (e) {}
     const select = document.getElementById('activeUserSelect');
     if (select) {
         let guestOpt = Array.from(select.options).find(o => o.value === '');
@@ -241,6 +245,44 @@ function initEventListeners() {
 
     // Form Submissions
     document.getElementById('confirmOnboardBtn')?.addEventListener('click', submitOnboardAsset);
+
+    // Image Preset & Live Preview Handlers for Listing Onboard Modal
+    document.querySelectorAll('.btn-preset-img').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const url = btn.getAttribute('data-url');
+            const cat = btn.getAttribute('data-cat');
+            const title = btn.getAttribute('data-title');
+            const imgInput = document.getElementById('onboardImageUrl');
+            const titleInput = document.getElementById('onboardTitle');
+            const catSelect = document.getElementById('onboardLeafClass');
+            const previewWrap = document.getElementById('onboardImgPreviewWrap');
+            const previewImg = document.getElementById('onboardImgPreview');
+
+            if (imgInput && url) imgInput.value = url;
+            if (catSelect && cat) catSelect.value = cat;
+            if (titleInput && title && (!titleInput.value || titleInput.value.trim().length === 0)) {
+                titleInput.value = title;
+            }
+            if (previewWrap && previewImg && url) {
+                previewImg.src = url;
+                previewWrap.style.display = 'flex';
+            }
+        });
+    });
+
+    document.getElementById('onboardImageUrl')?.addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        const previewWrap = document.getElementById('onboardImgPreviewWrap');
+        const previewImg = document.getElementById('onboardImgPreview');
+        if (previewWrap && previewImg) {
+            if (val) {
+                previewImg.src = val;
+                previewWrap.style.display = 'flex';
+            } else {
+                previewWrap.style.display = 'none';
+            }
+        }
+    });
     document.getElementById('confirmReserveBtn')?.addEventListener('click', submitReserveAsset);
     document.getElementById('rentalDaysInput')?.addEventListener('input', updateReserveEstimates);
     document.getElementById('authorizeSandboxPaymentBtn')?.addEventListener('click', authorizeSandboxPayment);
@@ -1026,6 +1068,27 @@ function renderCatalog() {
     });
 }
 
+function getAssetRealPhoto(a) {
+    if (a.imageUrl && a.imageUrl.trim().length > 0) return a.imageUrl.trim();
+    const photoMap = {
+        'AST-101': 'images/sony-a7iv.jpg',
+        'AST-102': 'images/epson-projector.jpg',
+        'AST-103': 'images/jbl-partybox.jpg',
+        'AST-104': 'images/pioneer-dj.jpg',
+        'AST-105': 'images/bosch-drill.jpg',
+        'AST-106': 'images/karcher-washer.jpg',
+        'AST-107': 'images/maruti-fronx.jpg',
+        'AST-108': 'images/ather-scooter.jpg',
+        'AST-109': 'images/creator-rig.jpg',
+        'AST-110': 'images/stage-lighting.jpg'
+    };
+    if (photoMap[a.id]) return photoMap[a.id];
+    if (a.leafClass === 'EventAudioAndLighting') return 'images/jbl-partybox.jpg';
+    if (a.leafClass === 'PowerToolEquipment') return 'images/bosch-drill.jpg';
+    if (a.leafClass === 'EventAndMobilityVehicle') return 'images/maruti-fronx.jpg';
+    return 'images/sony-a7iv.jpg';
+}
+
 function renderAssetCard(a) {
     const isAvail = a.state === 'AVAILABLE';
     const stateBadgeClass = getStateBadgeClass(a.state);
@@ -1034,33 +1097,18 @@ function renderAssetCard(a) {
     // Visual Banner Theme by Category
     let bannerCatClass = 'cat-cameras';
     let bannerIcon = '📷';
-    let bannerPhoto = 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1000&q=80';
     if (a.leafClass === 'EventAudioAndLighting') {
         bannerCatClass = 'cat-audio';
         bannerIcon = '🔊';
-        bannerPhoto = 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1000&q=80';
     } else if (a.leafClass === 'PowerToolEquipment') {
         bannerCatClass = 'cat-tools';
         bannerIcon = '🛠️';
-        bannerPhoto = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1000&q=80';
     } else if (a.leafClass === 'EventAndMobilityVehicle') {
         bannerCatClass = 'cat-vehicles';
         bannerIcon = '🚗';
-        bannerPhoto = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1000&q=80';
     }
 
-    if (a.id === 'AST-106') {
-        bannerPhoto = 'https://images.pexels.com/photos/4876669/pexels-photo-4876669.jpeg?auto=compress&dpr=1&h=750&w=1260';
-    } else if (a.id === 'AST-102') {
-        bannerPhoto = 'https://images.pexels.com/photos/18306899/pexels-photo-18306899/free-photo-of-whiteboard-in-meeting-room.jpeg?auto=compress&dpr=1&h=750&w=1260';
-    }
-
-    // Use product-appropriate photos for the two mobility listings.
-    if (a.id === 'AST-107') {
-        bannerPhoto = 'https://images.unsplash.com/photo-1649468351961-82480be17fb7?auto=format&fit=crop&w=1000&q=80';
-    } else if (a.id === 'AST-108') {
-        bannerPhoto = 'https://images.unsplash.com/photo-1610267037736-abf3096c88fb?auto=format&fit=crop&w=1000&q=80';
-    }
+    const bannerPhoto = getAssetRealPhoto(a);
 
     // Host identity & verified KYC status strictly from real backend data (state.users)
     const owner = state.users.find(u => u.userId === a.ownerId);
@@ -1076,13 +1124,15 @@ function renderAssetCard(a) {
 
     return `
         <article class="asset-card" aria-labelledby="asset-title-${escapeHtml(a.id)}">
-            <div class="asset-banner ${bannerCatClass}" role="img" aria-label="${escapeHtml(a.title)} category visual">
-                <img class="asset-photo" src="${bannerPhoto}" alt="" loading="lazy" onload="this.parentElement.classList.add('has-photo')" onerror="this.remove()">
-                <div class="asset-banner-icon" aria-hidden="true">${bannerIcon}</div>
-                <span class="asset-state-tag ${stateBadgeClass}" aria-label="Availability Status: ${formatStateName(a.state)}">
-                    ${formatStateName(a.state)}
-                </span>
-            </div>
+            <a href="product.html?id=${encodeURIComponent(a.id)}" target="_blank" style="display:block; text-decoration:none; color:inherit;" title="Open ${escapeHtml(a.title)} in new tab">
+                <div class="asset-banner ${bannerCatClass}" role="img" aria-label="${escapeHtml(a.title)} category visual">
+                    <img class="asset-photo" src="${bannerPhoto}" alt="${escapeHtml(a.title)}" loading="lazy" onload="this.parentElement.classList.add('has-photo')" onerror="this.remove()">
+                    <div class="asset-banner-icon" aria-hidden="true">${bannerIcon}</div>
+                    <span class="asset-state-tag ${stateBadgeClass}" aria-label="Availability Status: ${formatStateName(a.state)}">
+                        ${formatStateName(a.state)}
+                    </span>
+                </div>
+            </a>
 
             <div class="asset-card-content">
                 <div>
@@ -1106,7 +1156,9 @@ function renderAssetCard(a) {
                     </div>
 
                     <h3 class="asset-title" id="asset-title-${escapeHtml(a.id)}" style="margin-top:10px;">
-                        ${escapeHtml(a.title)}
+                        <a href="product.html?id=${encodeURIComponent(a.id)}" target="_blank" style="color:inherit; text-decoration:none;" class="asset-title-link">
+                            ${escapeHtml(a.title)}
+                        </a>
                     </h3>
 
                     ${specPills.length > 0 ? `
@@ -1126,13 +1178,16 @@ function renderAssetCard(a) {
                         </div>
                     </div>
 
-                    <div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <a href="product.html?id=${encodeURIComponent(a.id)}" target="_blank" class="asset-view-detail-btn" title="Open product card in new tab">
+                            <span>Details</span> <span aria-hidden="true">↗</span>
+                        </a>
                         ${isAvail ? `
                             <button class="btn-primary reserve-card-btn" data-id="${a.id}" aria-label="Rent ${escapeHtml(a.title)} for ${formatInr(a.calculatedTariff)} per day" style="padding:9px 18px; border-radius:var(--radius-pill); font-size:12px; font-weight:700;">
-                                Rent this item
+                                Rent item
                             </button>
                         ` : `
-                            <button class="btn-secondary" disabled aria-disabled="true" aria-label="${escapeHtml(a.title)} is currently ${formatStateName(a.state)}" style="padding:9px 18px; border-radius:var(--radius-pill); font-size:12px; font-weight:600; cursor:not-allowed;">
+                            <button class="btn-secondary" disabled aria-disabled="true" aria-label="${escapeHtml(a.title)} is currently ${formatStateName(a.state)}" style="padding:9px 14px; border-radius:var(--radius-pill); font-size:12px; font-weight:600; cursor:not-allowed;">
                                 <span aria-hidden="true">🔒</span> ${formatStateName(a.state)}
                             </button>
                         `}
@@ -3099,6 +3154,10 @@ async function executeLogin(emailOrUser, password) {
         if (data.success) {
             state.authToken = data.token;
             state.activeUser = data.user.userId;
+            try {
+                localStorage.setItem('rentsphere_user', data.user.userId);
+                localStorage.setItem('rentsphere_token', data.token);
+            } catch (e) {}
 
             // Update Persona select dropdown
             const select = document.getElementById('activeUserSelect');
@@ -3348,6 +3407,7 @@ async function submitOnboardAsset() {
     const baseDailyRate = document.getElementById('onboardRate')?.value;
     const securityCollateral = document.getElementById('onboardCollateral')?.value;
     const lockerBay = document.getElementById('onboardBay')?.value.toUpperCase().trim();
+    const imageUrl = document.getElementById('onboardImageUrl')?.value?.trim() || '';
 
     if (!title) {
         showToast('Please enter equipment title.', 'warning');
@@ -3375,7 +3435,8 @@ async function submitOnboardAsset() {
                 ownerId: state.activeUser,
                 baseDailyRate,
                 securityCollateral,
-                lockerBay
+                lockerBay,
+                imageUrl
             })
         });
         const data = await res.json();

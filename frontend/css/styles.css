@@ -3771,3 +3771,47 @@ body {
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* ==========================================================================
+   Product Detail Links, Tabs & Preset Selectors
+   ========================================================================== */
+.asset-view-detail-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--slate-700);
+    background: var(--slate-100);
+    border: 1px solid var(--slate-300);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    line-height: 1;
+}
+.asset-view-detail-btn:hover {
+    background: #0F172A;
+    color: #FFFFFF;
+    border-color: #0F172A;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.asset-title-link {
+    transition: color var(--transition-fast);
+}
+.asset-title-link:hover {
+    color: var(--brand-teal);
+    text-decoration: underline;
+}
+
+.btn-preset-img {
+    transition: all var(--transition-fast);
+}
+.btn-preset-img:hover {
+    background: var(--slate-200) !important;
+    border-color: var(--slate-400) !important;
+    transform: translateY(-1px);
+}
+
