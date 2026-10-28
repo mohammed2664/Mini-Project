@@ -4,378 +4,213 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RentSphere · Equipment Details & Direct Booking</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=ux-refresh-2">
     <style>
-        /* Dedicated Dark Product Showcase Page (High-End Automotive & Creator Theme) */
-        :root {
-            --pd-bg: #0B0E14;
-            --pd-card: #141822;
-            --pd-card-hover: #1A202D;
-            --pd-border: #232B3B;
-            --pd-border-focus: #F59E0B;
-            --pd-text-main: #F1F5F9;
-            --pd-text-muted: #94A3B8;
-            --pd-accent: #E5A93C;
-            --pd-accent-hover: #F59E0B;
-            --pd-green: #22C55E;
-            --pd-green-dark: #15803D;
-            --pd-whatsapp: #25D366;
-            --pd-badge-bg: rgba(229, 169, 60, 0.12);
-            --pd-badge-border: rgba(229, 169, 60, 0.35);
-        }
-
-        body.product-page-body {
-            background-color: var(--pd-bg);
-            color: var(--pd-text-main);
-            font-family: var(--font-body);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Top Header Bar */
-        .pd-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 32px;
-            background: rgba(11, 14, 20, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--pd-border);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .pd-header-back {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--pd-text-muted);
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 600;
-            padding: 8px 16px;
-            border-radius: var(--radius-pill);
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--pd-border);
-            transition: all 0.2s ease;
-        }
-        .pd-header-back:hover {
-            color: #FFFFFF;
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--pd-text-muted);
-            transform: translateX(-2px);
-        }
-        .pd-brand-center {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: #FFFFFF;
-        }
-        .pd-brand-logo {
-            width: 34px;
-            height: 34px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #F59E0B, #D97706);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
-        }
-        .pd-brand-text {
-            font-family: var(--font-heading);
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-        }
-        .pd-brand-sub {
-            font-size: 12px;
-            color: var(--pd-accent);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-left: 4px;
-        }
-        .pd-header-actions {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .pd-user-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 14px;
-            border-radius: var(--radius-pill);
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid var(--pd-border);
-            font-size: 12px;
-            color: var(--pd-text-main);
-        }
-        .pd-user-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--pd-green);
-            box-shadow: 0 0 8px var(--pd-green);
-        }
-
-        /* Main Container */
-        .pd-main {
-            max-width: 1280px;
-            width: 100%;
+        /* Product Showcase Page - Theme Matching Warm Horizon Design System */
+        .pd-page-container {
+            max-width: 1240px;
             margin: 0 auto;
-            padding: 32px 24px 64px 24px;
-            flex: 1;
+            padding: 24px 20px 64px 20px;
         }
 
-        /* Breadcrumb Navigation */
-        .pd-breadcrumbs {
+        /* Breadcrumbs */
+        .pd-breadcrumb-bar {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--pd-text-muted);
+            font-size: 13px;
+            color: var(--slate-500);
             margin-bottom: 20px;
         }
-        .pd-breadcrumbs a {
-            color: var(--pd-text-muted);
+        .pd-breadcrumb-bar a {
+            color: var(--slate-600);
             text-decoration: none;
-            transition: color 0.2s;
+            font-weight: 500;
+            transition: color var(--transition-fast);
         }
-        .pd-breadcrumbs a:hover {
-            color: var(--pd-accent);
+        .pd-breadcrumb-bar a:hover {
+            color: var(--brand-teal);
         }
         .pd-breadcrumb-sep {
-            color: #475569;
+            color: var(--slate-300);
         }
-        .pd-breadcrumb-current {
-            color: var(--pd-accent);
+        .pd-breadcrumb-active {
+            color: var(--slate-900);
+            font-weight: 600;
         }
 
-        /* Product Layout Grid: Showcase on Left, Booking Console on Right */
-        .pd-grid {
+        /* 2-Column Responsive Layout */
+        .pd-main-grid {
             display: grid;
             grid-template-columns: 1fr 420px;
-            gap: 36px;
+            gap: 32px;
             align-items: start;
         }
         @media (max-width: 1024px) {
-            .pd-grid {
+            .pd-main-grid {
                 grid-template-columns: 1fr;
             }
         }
 
-        /* Left Column: Showcase & Details */
+        /* Left Showcase Column */
         .pd-showcase-column {
             display: flex;
             flex-direction: column;
-            gap: 28px;
+            gap: 24px;
         }
 
-        /* Top Meta Row */
-        .pd-top-badges {
+        /* Header Row on Left */
+        .pd-title-area {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .pd-pill-row {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
         }
-        .pd-status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: var(--radius-pill);
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-        .pd-status-available {
-            background: rgba(34, 197, 94, 0.15);
-            color: #4ADE80;
-            border: 1px solid rgba(34, 197, 94, 0.4);
-        }
-        .pd-status-reserved {
-            background: rgba(245, 158, 11, 0.15);
-            color: #FBBF24;
-            border: 1px solid rgba(245, 158, 11, 0.4);
-        }
-        .pd-status-quarantine {
-            background: rgba(239, 68, 68, 0.15);
-            color: #F87171;
-            border: 1px solid rgba(239, 68, 68, 0.4);
-        }
-        .pd-status-active {
-            background: rgba(59, 130, 246, 0.15);
-            color: #60A5FA;
-            border: 1px solid rgba(59, 130, 246, 0.4);
-        }
-        .pd-model-pill {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--pd-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 6px 14px;
-            border-radius: var(--radius-pill);
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--pd-border);
-        }
-        .pd-hub-pill {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--pd-accent);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 6px 14px;
-            border-radius: var(--radius-pill);
-            background: var(--pd-badge-bg);
-            border: 1px solid var(--pd-badge-border);
-        }
-
-        /* Giant Main Title */
-        .pd-main-title {
+        .pd-title-heading {
             font-family: var(--font-heading);
-            font-size: 42px;
+            font-size: 30px;
             font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: -0.5px;
-            color: #FFFFFF;
+            color: var(--slate-900);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
             margin: 0;
-            line-height: 1.15;
         }
 
-        /* Hero Image Showcase Card */
-        .pd-photo-card {
-            background: #11141D;
-            border: 1px solid var(--pd-border);
-            border-radius: 20px;
-            padding: 32px;
+        /* Product Hero Showcase Card */
+        .pd-hero-card {
+            background: #FFFFFF;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            padding: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            box-shadow: var(--card-shadow);
             position: relative;
-            box-shadow: 0 12px 36px -8px rgba(0, 0, 0, 0.6);
-        }
-        .pd-photo-img {
-            max-width: 100%;
+            min-height: 340px;
             max-height: 440px;
+            overflow: hidden;
+        }
+        .pd-hero-img {
+            max-width: 100%;
+            max-height: 380px;
             width: auto;
             height: auto;
             object-fit: contain;
-            border-radius: 12px;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: var(--radius-sm);
+            transition: transform var(--transition-normal);
         }
-        .pd-photo-card:hover .pd-photo-img {
-            transform: scale(1.03);
+        .pd-hero-card:hover .pd-hero-img {
+            transform: scale(1.02);
         }
 
-        /* 4-Feature Badges Grid (Identical to User Reference Screenshot) */
-        .pd-specs-grid {
+        /* 4 Feature Badges Grid */
+        .pd-specs-quad {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
+            gap: 14px;
         }
         @media (max-width: 768px) {
-            .pd-specs-grid {
+            .pd-specs-quad {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-        .pd-spec-box {
-            background: var(--pd-card);
-            border: 1px solid var(--pd-border);
-            border-radius: 14px;
+        .pd-spec-card {
+            background: #FFFFFF;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-md);
             padding: 16px 14px;
             display: flex;
             flex-direction: column;
             gap: 6px;
-            transition: border-color 0.2s, background 0.2s;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+            transition: transform var(--transition-fast), border-color var(--transition-fast);
         }
-        .pd-spec-box:hover {
-            border-color: #3B465C;
-            background: var(--pd-card-hover);
+        .pd-spec-card:hover {
+            border-color: var(--brand-teal);
+            transform: translateY(-2px);
         }
-        .pd-spec-icon {
-            font-size: 20px;
-            color: var(--pd-accent);
-            line-height: 1;
+        .pd-spec-icon-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: var(--brand-teal-light);
+            color: var(--brand-teal-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
         }
-        .pd-spec-value {
+        .pd-spec-val {
+            font-family: var(--font-heading);
             font-size: 15px;
             font-weight: 700;
-            color: #FFFFFF;
-            text-transform: capitalize;
+            color: var(--slate-900);
+            margin-top: 4px;
         }
-        .pd-spec-label {
+        .pd-spec-lbl {
             font-size: 11px;
             font-weight: 600;
-            color: var(--pd-text-muted);
+            color: var(--slate-500);
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.05em;
         }
 
-        /* "About this vehicle / gear" Card */
-        .pd-about-card {
-            background: var(--pd-card);
-            border: 1px solid var(--pd-border);
-            border-radius: 16px;
-            padding: 28px;
+        /* About Section Card */
+        .pd-content-card {
+            background: #FFFFFF;
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            padding: 24px 28px;
+            box-shadow: var(--card-shadow);
         }
-        .pd-section-title {
+        .pd-content-card h2 {
             font-family: var(--font-heading);
-            font-size: 13px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-            color: var(--pd-accent);
-            margin: 0 0 16px 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--slate-900);
+            margin: 0 0 12px 0;
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        .pd-about-desc {
+        .pd-desc-p {
             font-size: 14px;
-            color: #CBD5E1;
-            line-height: 1.7;
+            line-height: 1.65;
+            color: var(--slate-600);
             margin: 0 0 20px 0;
         }
-        .pd-checklist-grid {
+        .pd-check-list {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px 24px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            padding-top: 20px;
+            gap: 12px 20px;
+            padding-top: 18px;
+            border-top: 1px solid var(--slate-100);
         }
-        @media (max-width: 600px) {
-            .pd-checklist-grid {
+        @media (max-width: 640px) {
+            .pd-check-list {
                 grid-template-columns: 1fr;
             }
         }
-        .pd-check-item {
+        .pd-check-row {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 12px;
-            font-weight: 700;
-            color: #E2E8F0;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-700);
         }
-        .pd-check-icon {
+        .pd-check-dot {
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: rgba(34, 197, 94, 0.15);
-            color: var(--pd-green);
+            background: var(--emerald-light);
+            color: var(--emerald-dark);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -383,408 +218,376 @@
             flex-shrink: 0;
         }
 
-        /* QA & Maintenance History */
-        .pd-service-logs {
+        /* QA & Custody Box */
+        .pd-qa-box {
             margin-top: 20px;
             padding: 14px 18px;
-            border-radius: 10px;
-            background: rgba(0, 0, 0, 0.25);
-            border: 1px dashed var(--pd-border);
+            background: var(--slate-50);
+            border: 1px dashed var(--slate-200);
+            border-radius: var(--radius-sm);
             font-size: 12px;
-            color: var(--pd-text-muted);
+            color: var(--slate-600);
         }
-        .pd-log-entry {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 4px 0;
+        .pd-qa-box strong {
+            color: var(--slate-800);
         }
 
-        /* Right Column: Sticky Booking Card */
-        .pd-booking-card {
-            background: var(--pd-card);
-            border: 1px solid var(--pd-border);
-            border-radius: 20px;
-            padding: 28px;
+        /* Right Column: Sticky Booking Console */
+        .pd-booking-panel {
+            background: #FFFFFF;
+            border: 1.5px solid var(--slate-200);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--card-hover-shadow);
             position: sticky;
-            top: 90px;
-            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.5);
-        }
-        .pd-booking-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 24px;
-            padding-bottom: 18px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .pd-booking-heading {
-            font-family: var(--font-heading);
-            font-size: 20px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            color: #FFFFFF;
-            margin: 0;
-            text-transform: uppercase;
-        }
-        .pd-booking-price-wrap {
-            text-align: right;
-        }
-        .pd-booking-rate {
-            font-family: var(--font-heading);
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--pd-accent);
-            line-height: 1;
-        }
-        .pd-booking-unit {
-            font-size: 11px;
-            font-weight: 700;
-            color: var(--pd-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            margin-top: 4px;
-        }
-
-        /* Booking Form Fields */
-        .pd-form-section {
+            top: 24px;
             display: flex;
             flex-direction: column;
             gap: 18px;
         }
-        .pd-form-group {
+        .pd-booking-title-bar {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--slate-100);
+        }
+        .pd-booking-title {
+            font-family: var(--font-heading);
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--slate-900);
+            margin: 0;
+        }
+        .pd-booking-price-tag {
+            text-align: right;
+        }
+        .pd-booking-tariff {
+            font-family: var(--font-heading);
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--brand-teal-dark);
+            line-height: 1;
+        }
+        .pd-booking-deposit {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--warm-amber-dark);
+            margin-top: 4px;
+        }
+
+        /* Date Pickers Form */
+        .pd-dates-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .pd-input-wrap {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .pd-input-wrap label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--slate-600);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .pd-date-field {
+            padding: 8px 12px;
+            border: 1.5px solid var(--slate-200);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-family: var(--font-body);
+            color: var(--slate-800);
+            background: #FFFFFF;
+            outline: none;
+            transition: border-color var(--transition-fast);
+        }
+        .pd-date-field:focus {
+            border-color: var(--brand-teal);
+            box-shadow: 0 0 0 3px var(--brand-teal-glow);
+        }
+
+        /* Hub Bay Box */
+        .pd-bay-banner {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+        .pd-bay-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        /* Segmented Options */
+        .pd-segmented-group {
             display: flex;
             flex-direction: column;
             gap: 6px;
         }
-        .pd-field-label {
+        .pd-seg-label {
             font-size: 11px;
             font-weight: 700;
+            color: var(--slate-600);
             text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--pd-text-muted);
+            letter-spacing: 0.04em;
         }
-        .pd-datetime-grid {
+        .pd-seg-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 8px;
         }
-        .pd-input-dark {
-            background: #0E121A;
-            border: 1px solid var(--pd-border);
-            border-radius: 10px;
-            color: #FFFFFF;
-            font-size: 13px;
-            font-family: var(--font-body);
-            padding: 10px 14px;
-            outline: none;
-            width: 100%;
-            box-sizing: border-box;
-            transition: border-color 0.2s;
+        .pd-seg-btn {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--slate-700);
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition-fast);
         }
-        .pd-input-dark:focus {
-            border-color: var(--pd-border-focus);
-            box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+        .pd-seg-btn.is-active {
+            background: var(--brand-teal-light);
+            border-color: var(--brand-teal);
+            color: var(--brand-teal-dark);
         }
 
-        /* Pickup Location Box */
-        .pd-pickup-box {
-            background: #0E121A;
-            border: 1px solid var(--pd-border);
-            border-radius: 10px;
+        /* Price Breakdown Table */
+        .pd-calc-table {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-sm);
             padding: 12px 14px;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            color: #E2E8F0;
-        }
-        .pd-pickup-pin {
-            color: var(--pd-accent);
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        /* Option Chip Buttons (Deposit & Payment Toggles) */
-        .pd-toggle-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        .pd-toggle-btn {
-            background: #0E121A;
-            border: 1px solid var(--pd-border);
-            border-radius: 8px;
-            color: var(--pd-text-muted);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            padding: 10px 8px;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
-        }
-        .pd-toggle-btn.is-selected {
-            background: rgba(229, 169, 60, 0.12);
-            border-color: var(--pd-accent);
-            color: #FFFFFF;
-        }
-
-        /* Financial Breakdown Drawer */
-        .pd-finance-summary {
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 14px;
-            font-size: 12px;
-            display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
+            font-size: 12px;
         }
-        .pd-finance-row {
+        .pd-calc-row {
             display: flex;
             justify-content: space-between;
-            color: var(--pd-text-muted);
+            color: var(--slate-600);
         }
-        .pd-finance-total {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .pd-calc-total {
+            border-top: 1px solid var(--slate-200);
             padding-top: 8px;
+            font-size: 14px;
             font-weight: 800;
-            font-size: 13px;
-            color: #FFFFFF;
+            color: var(--slate-900);
         }
 
         /* Terms Checkbox */
-        .pd-terms-check {
+        .pd-terms-row {
             display: flex;
             align-items: flex-start;
-            gap: 10px;
+            gap: 8px;
             font-size: 11px;
-            color: var(--pd-text-muted);
+            color: var(--slate-600);
+            line-height: 1.4;
             cursor: pointer;
-            user-select: none;
-            margin-top: 4px;
         }
-        .pd-terms-check input[type="checkbox"] {
+        .pd-terms-row input {
             margin-top: 2px;
-            accent-color: var(--pd-accent);
-            cursor: pointer;
+            accent-color: var(--brand-teal);
         }
 
         /* Action Buttons */
-        .pd-btn-whatsapp {
-            background: var(--pd-whatsapp);
+        .pd-btn-whatsapp-theme {
+            background: #25D366;
             color: #FFFFFF;
             border: none;
-            border-radius: 12px;
-            padding: 14px 20px;
+            border-radius: var(--radius-pill);
+            padding: 11px 18px;
             font-size: 13px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            cursor: pointer;
+            font-weight: 700;
+            text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            text-decoration: none;
-            transition: all 0.2s;
-            box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(37, 211, 102, 0.25);
+            transition: all var(--transition-fast);
         }
-        .pd-btn-whatsapp:hover {
+        .pd-btn-whatsapp-theme:hover {
             background: #20BD5A;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(37, 211, 102, 0.35);
         }
-        .pd-btn-confirm {
-            background: var(--pd-accent);
-            color: #0B0E14;
+        .pd-btn-reserve-theme {
+            background: var(--brand-teal);
+            color: #FFFFFF;
             border: none;
-            border-radius: 12px;
-            padding: 15px 20px;
+            border-radius: var(--radius-pill);
+            padding: 13px 20px;
             font-size: 14px;
             font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: -0.01em;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            transition: all 0.2s;
-            box-shadow: 0 4px 16px rgba(229, 169, 60, 0.35);
+            gap: 8px;
+            box-shadow: 0 6px 14px rgba(13, 148, 136, 0.25);
+            transition: all var(--transition-fast);
         }
-        .pd-btn-confirm:hover:not(:disabled) {
-            background: var(--pd-accent-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 24px rgba(229, 169, 60, 0.5);
+        .pd-btn-reserve-theme:hover:not(:disabled) {
+            background: var(--brand-teal-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(13, 148, 136, 0.35);
         }
-        .pd-btn-confirm:disabled {
-            opacity: 0.6;
+        .pd-btn-reserve-theme:disabled {
+            background: var(--slate-300);
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
         }
 
-        /* Success & OTP Modal Overlay */
-        .pd-success-banner {
-            background: rgba(34, 197, 94, 0.12);
-            border: 1px solid rgba(34, 197, 94, 0.4);
-            border-radius: 12px;
-            padding: 18px;
+        /* Success OTP Card */
+        .pd-otp-success-card {
+            background: var(--emerald-light);
+            border: 1px solid var(--emerald);
+            border-radius: var(--radius-md);
+            padding: 16px;
             display: none;
             flex-direction: column;
-            gap: 10px;
-            margin-top: 14px;
+            gap: 8px;
         }
-        .pd-otp-box {
+        .pd-otp-code-box {
             font-family: monospace;
-            font-size: 26px;
-            letter-spacing: 6px;
+            font-size: 24px;
             font-weight: 800;
-            color: #4ADE80;
-            background: #0B0E14;
-            padding: 10px;
-            border-radius: 8px;
+            letter-spacing: 5px;
             text-align: center;
-            border: 1px solid rgba(74, 222, 128, 0.3);
+            background: #FFFFFF;
+            border: 1px dashed var(--emerald-dark);
+            border-radius: var(--radius-sm);
+            color: var(--emerald-dark);
+            padding: 8px;
         }
 
-        /* Footer Guarantee Pill */
-        .pd-guarantee-pill {
-            background: #0E121A;
-            border: 1px solid var(--pd-border);
-            border-radius: 12px;
-            padding: 14px 16px;
+        /* Safe Escrow Guarantee Pill */
+        .pd-safe-guarantee {
+            background: var(--slate-50);
+            border: 1px solid var(--slate-200);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
             display: flex;
             align-items: center;
-            gap: 12px;
-            margin-top: 16px;
-        }
-        .pd-guarantee-icon {
-            font-size: 20px;
-            color: var(--pd-accent);
-        }
-        .pd-guarantee-title {
+            gap: 10px;
             font-size: 11px;
-            font-weight: 800;
-            color: #FFFFFF;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-        }
-        .pd-guarantee-sub {
-            font-size: 11px;
-            color: var(--pd-text-muted);
-            margin-top: 2px;
-        }
-
-        /* Notification Toast */
-        .pd-toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            padding: 14px 22px;
-            background: #1E2430;
-            border: 1px solid var(--pd-border);
-            border-radius: 10px;
-            color: #FFFFFF;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            z-index: 999;
-            display: none;
-            animation: slideInToast 0.3s ease;
-        }
-        @keyframes slideInToast {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            color: var(--slate-600);
         }
     </style>
 </head>
-<body class="product-page-body">
+<body>
 
-    <!-- Top Navigation Header -->
-    <header class="pd-header">
-        <a href="index.html" class="pd-header-back" id="backToFleetBtn">
-            <span aria-hidden="true">&larr;</span> Back to Marketplace
-        </a>
-
-        <a href="index.html" class="pd-brand-center">
-            <div class="pd-brand-logo">🌐</div>
-            <div>
-                <span class="pd-brand-text">RentSphere</span>
-                <span class="pd-brand-sub">Gear & Fleet Hub</span>
-            </div>
-        </a>
-
-        <div class="pd-header-actions">
-            <a href="index.html" class="pd-header-back" style="font-size:12px;">
-                Dashboard
+    <!-- Header Navigation Bar (Identical to RentSphere Main System) -->
+    <header class="app-header">
+        <div class="header-top">
+            <a href="index.html" class="brand-wrapper" style="text-decoration:none;">
+                <div class="brand-logo">🌐</div>
+                <div>
+                    <h1 class="brand-title">RentSphere</h1>
+                    <p class="brand-subtitle">Peer-to-peer equipment rentals in Goa</p>
+                </div>
             </a>
-            <div class="pd-user-pill" id="pdUserPill">
-                <span class="pd-user-dot"></span>
-                <span id="pdUserName">Deepak Dev (Renter)</span>
+
+            <!-- Hub Location Pill -->
+            <div class="hub-location-pill" title="Current simulated pickup hub">
+                <span class="hub-pin">📍</span>
+                <span class="hub-label">Hub:</span>
+                <strong style="color:var(--slate-800); font-size:12px;">Goa University Hub</strong>
+            </div>
+
+            <!-- User Selector & Actions -->
+            <div class="user-selector-bar">
+                <a href="index.html" class="btn-secondary" style="padding:6px 14px; font-size:12px; text-decoration:none;">
+                    <span>&larr;</span> Back to Marketplace
+                </a>
+
+                <div class="active-user-badge">
+                    <span id="userRoleBadge" class="role-tag role-renter">RENTER</span>
+                    <span id="activeUserLabel" style="font-size:12px; color:var(--slate-700); font-weight:600;">Deepak Dev</span>
+                </div>
+
+                <div class="wallet-pill">
+                    <span>💳</span>
+                    <span>Escrow Balance: <strong>₹<span id="headerWalletBalance">25000.00</span></strong></span>
+                </div>
             </div>
         </div>
     </header>
 
     <!-- Main Container -->
-    <main class="pd-main">
+    <main class="pd-page-container">
 
         <!-- Breadcrumb Navigation -->
-        <nav class="pd-breadcrumbs" aria-label="Breadcrumbs">
-            <a href="index.html">Home</a>
+        <nav class="pd-breadcrumb-bar" aria-label="Breadcrumbs">
+            <a href="index.html">Marketplace</a>
             <span class="pd-breadcrumb-sep">/</span>
-            <a href="index.html" id="bcCategoryLink">Fleet & Gear</a>
+            <span id="bcCategoryName">Equipment</span>
             <span class="pd-breadcrumb-sep">/</span>
-            <span class="pd-breadcrumb-current" id="bcItemTitle">Equipment</span>
+            <span class="pd-breadcrumb-active" id="bcAssetTitle">Listing Details</span>
         </nav>
 
-        <!-- 2-Column Showcase & Booking Grid -->
-        <div class="pd-grid">
+        <!-- 2-Column Responsive Grid -->
+        <div class="pd-main-grid">
 
             <!-- Left Showcase Column -->
             <div class="pd-showcase-column">
 
-                <!-- Meta Badges -->
-                <div class="pd-top-badges">
-                    <span class="pd-status-pill pd-status-available" id="pdStatusBadge">Available Now</span>
-                    <span class="pd-model-pill" id="pdSubtitle">Category Model</span>
-                    <span class="pd-hub-pill" id="pdLockerBay">📍 Hub Bay H2</span>
+                <!-- Title & Meta Area -->
+                <div class="pd-title-area">
+                    <div class="pd-pill-row">
+                        <span class="asset-state-tag state-available" id="pdStateTag">Available Now</span>
+                        <span class="cat-pill-badge" id="pdCategoryPill">Cars & mobility</span>
+                        <span class="verified-host-tag" title="Identity verified host">
+                            <span aria-hidden="true">✓</span> Verified Host
+                        </span>
+                        <span class="spec-pill" id="pdLockerBayPill">📍 Hub Bay H2</span>
+                    </div>
+
+                    <h1 class="pd-title-heading" id="pdFullTitle">Equipment Model</h1>
                 </div>
 
-                <!-- Big Bold Headline -->
-                <h1 class="pd-main-title" id="pdMainTitle">Product Title</h1>
-
-                <!-- Product Hero Showcase Photo -->
-                <div class="pd-photo-card" id="pdPhotoCard">
-                    <img src="images/maruti-fronx.jpg" alt="Product Photo" class="pd-photo-img" id="pdHeroImg">
+                <!-- Hero Photo Box -->
+                <div class="pd-hero-card">
+                    <img src="images/maruti-fronx.jpg" alt="Equipment Photo" class="pd-hero-img" id="pdHeroImg">
                 </div>
 
-                <!-- 4 Feature Badges Grid (Identical to User Reference Screenshot) -->
-                <div class="pd-specs-grid" id="pdSpecsGrid">
+                <!-- 4 Feature Badges Grid (Clean Theme Aligned) -->
+                <div class="pd-specs-quad" id="pdSpecsQuad">
                     <!-- Populated dynamically via JS -->
                 </div>
 
                 <!-- "About This Equipment / Vehicle" Card -->
-                <article class="pd-about-card">
-                    <h2 class="pd-section-title" id="pdAboutHeading">About This Equipment</h2>
-                    <p class="pd-about-desc" id="pdAboutDesc">
+                <article class="pd-content-card">
+                    <h2 id="pdAboutHeading">
+                        <span>📋</span> About This Equipment
+                    </h2>
+                    <p class="pd-desc-p" id="pdAboutDesc">
                         Loading detailed specifications and rental terms...
                     </p>
 
-                    <!-- Features Checklist -->
-                    <div class="pd-checklist-grid" id="pdChecklistGrid">
+                    <!-- Feature Checklist -->
+                    <div class="pd-check-list" id="pdChecklistGrid">
                         <!-- Populated dynamically via JS -->
                     </div>
 
                     <!-- Verified Hub QA & Maintenance Log -->
-                    <div class="pd-service-logs" id="pdLogsContainer">
-                        <div style="font-weight:700; color:#E2E8F0; margin-bottom:6px;">
-                            🛡️ Hub Custody & QA Verification:
-                        </div>
-                        <div id="pdLogsList">
+                    <div class="pd-qa-box">
+                        <strong>🛡️ Goa University Hub QA Custody & Inspection:</strong>
+                        <div id="pdLogsList" style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
                             <!-- Populated dynamically via JS -->
                         </div>
                     </div>
@@ -793,123 +596,118 @@
             </div>
 
             <!-- Right Column: Dedicated Booking Console -->
-            <aside class="pd-booking-card" aria-label="Booking Console">
-                <div class="pd-booking-header">
+            <aside class="pd-booking-panel" aria-label="Booking Console">
+                <div class="pd-booking-title-bar">
                     <div>
-                        <h2 class="pd-booking-heading">Booking</h2>
-                        <div style="font-size:11px; color:var(--pd-text-muted); margin-top:2px;">Software Escrow Bailment</div>
+                        <h2 class="pd-booking-title">Rental Booking</h2>
+                        <div style="font-size:11px; color:var(--slate-500); margin-top:2px;">Software Escrow Bailment</div>
                     </div>
-                    <div class="pd-booking-price-wrap">
-                        <div class="pd-booking-rate" id="pdDailyRateDisplay">&#8377;0</div>
-                        <div class="pd-booking-unit">Rent per day</div>
+                    <div class="pd-booking-price-tag">
+                        <div class="pd-booking-tariff" id="pdDailyRateDisplay">&#8377;0.00</div>
+                        <div class="pd-booking-deposit" id="pdDepositNoteDisplay">&#8377;0 refundable deposit</div>
                     </div>
                 </div>
 
-                <div class="pd-form-section">
-                    <!-- Date Inputs -->
-                    <div class="pd-datetime-grid">
-                        <div class="pd-form-group">
-                            <label class="pd-field-label" for="pickupDateTime">Pickup Date</label>
-                            <input type="date" class="pd-input-dark" id="pickupDateTime">
-                        </div>
-                        <div class="pd-form-group">
-                            <label class="pd-field-label" for="dropoffDateTime">Dropoff Date</label>
-                            <input type="date" class="pd-input-dark" id="dropoffDateTime">
-                        </div>
+                <!-- Date Pickers -->
+                <div class="pd-dates-row">
+                    <div class="pd-input-wrap">
+                        <label for="pickupDateInput">Pickup Date</label>
+                        <input type="date" class="pd-date-field" id="pickupDateInput">
                     </div>
-
-                    <!-- Pickup Information -->
-                    <div class="pd-form-group">
-                        <label class="pd-field-label">Pickup Information</label>
-                        <div class="pd-pickup-box">
-                            <span class="pd-pickup-pin">&#128205;</span>
-                            <div>
-                                <strong style="color:#FFF;" id="pdPickupBayText">RentSphere Hub Bay H2</strong>
-                                <div style="font-size:11px; color:var(--pd-text-muted);">Goa University Campus, Taleigao Plateau, Goa</div>
-                            </div>
-                        </div>
+                    <div class="pd-input-wrap">
+                        <label for="dropoffDateInput">Return Date</label>
+                        <input type="date" class="pd-date-field" id="dropoffDateInput">
                     </div>
+                </div>
 
-                    <!-- Security Deposit Option -->
-                    <div class="pd-form-group">
-                        <label class="pd-field-label">Security Collateral Mode</label>
-                        <div class="pd-toggle-row">
-                            <button type="button" class="pd-toggle-btn is-selected" id="btnDepositEscrow">Software Escrow</button>
-                            <button type="button" class="pd-toggle-btn" id="btnDepositUpi">UPI Guarantee</button>
-                        </div>
+                <!-- Pickup Hub Information -->
+                <div class="pd-bay-banner">
+                    <span class="pd-bay-icon">📍</span>
+                    <div>
+                        <strong style="color:var(--slate-800);" id="pdPickupBayText">RentSphere Hub Bay H2</strong>
+                        <div style="font-size:11px; color:var(--slate-500);">Goa University Campus, Taleigao Plateau, Goa</div>
                     </div>
+                </div>
 
-                    <!-- Payment Method Option -->
-                    <div class="pd-form-group">
-                        <label class="pd-field-label">Payment Method</label>
-                        <div class="pd-toggle-row">
-                            <button type="button" class="pd-toggle-btn is-selected" id="btnPayCash">Escrow Wallet</button>
-                            <button type="button" class="pd-toggle-btn" id="btnPayUpi">UPI / NetBanking</button>
-                        </div>
+                <!-- Collateral Option -->
+                <div class="pd-segmented-group">
+                    <span class="pd-seg-label">Security Deposit Mode</span>
+                    <div class="pd-seg-buttons">
+                        <button type="button" class="pd-seg-btn is-active" id="btnDepositEscrow">Software Escrow</button>
+                        <button type="button" class="pd-seg-btn" id="btnDepositUpi">UPI Guarantee</button>
                     </div>
+                </div>
 
-                    <!-- Financial Breakdown Summary -->
-                    <div class="pd-finance-summary">
-                        <div class="pd-finance-row">
-                            <span>Rental Duration:</span>
-                            <strong style="color:#FFF;" id="pdSummaryDays">1 day</strong>
-                        </div>
-                        <div class="pd-finance-row">
-                            <span>Daily Tariff (<span id="pdSummaryDaysCount">1</span> x <span id="pdSummaryRate">&#8377;0</span>):</span>
-                            <span id="pdSummaryTariffTotal">&#8377;0.00</span>
-                        </div>
-                        <div class="pd-finance-row">
-                            <span>Refundable Collateral (Escrow):</span>
-                            <span id="pdSummaryDeposit" style="color:var(--pd-accent);">&#8377;0.00</span>
-                        </div>
-                        <div class="pd-finance-row pd-finance-total">
-                            <span>Total Escrow Commitment:</span>
-                            <span id="pdSummaryGrandTotal" style="color:var(--pd-accent); font-size:15px;">&#8377;0.00</span>
-                        </div>
+                <!-- Payment Method -->
+                <div class="pd-segmented-group">
+                    <span class="pd-seg-label">Payment Method</span>
+                    <div class="pd-seg-buttons">
+                        <button type="button" class="pd-seg-btn is-active" id="btnPayWallet">Escrow Wallet</button>
+                        <button type="button" class="pd-seg-btn" id="btnPayUpi">UPI / NetBanking</button>
                     </div>
+                </div>
 
-                    <!-- Terms & Conditions Checkbox -->
-                    <label class="pd-terms-check">
-                        <input type="checkbox" id="acceptTermsCheck" checked>
-                        <span>I accept standard Bailment Agreement terms and mandatory post-return quarantine inspection.</span>
-                    </label>
-
-                    <!-- WhatsApp Booking Button -->
-                    <a href="#" target="_blank" class="pd-btn-whatsapp" id="btnWhatsAppBooking">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.588-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.311.045-.698.059-1.146-.086-.297-.097-.68-.225-1.168-.436-2.038-.883-3.376-2.951-3.479-3.088-.102-.137-.824-1.096-.824-2.091 0-.994.52-1.482.705-1.688.185-.205.405-.257.54-.257.135 0 .27.001.389.007.126.006.294-.047.46.353.172.417.587 1.433.639 1.537.052.105.086.228.017.367-.069.139-.103.226-.205.348-.103.121-.217.271-.31.365-.103.104-.211.218-.09.426.12.208.535.882 1.147 1.427.789.702 1.455.918 1.663 1.022.207.104.329.088.452-.053.123-.142.527-.614.667-.824.14-.21.28-.175.471-.104.191.071 1.212.571 1.421.675.209.105.348.157.399.245.052.088.052.51-.092.915z"/>
-                        </svg>
-                        Book Through WhatsApp
-                    </a>
-
-                    <!-- Direct Reserve Button -->
-                    <button type="button" class="pd-btn-confirm" id="btnConfirmBooking">
-                        <span>⚡</span> Confirm Booking
-                    </button>
-
-                    <!-- Success OTP Code Banner -->
-                    <div class="pd-success-banner" id="pdSuccessBanner">
-                        <div style="font-weight:800; color:#4ADE80; font-size:13px; text-transform:uppercase;">
-                            🎉 Booking Confirmed (Escrow Held)
-                        </div>
-                        <div style="font-size:12px; color:#E2E8F0;">
-                            Your pickup code is ready. Use this at Smart Hub Bay <strong id="pdSuccessBay" style="color:#FFF;"></strong>:
-                        </div>
-                        <div class="pd-otp-box" id="pdSuccessOtp">------</div>
-                        <div style="display:flex; gap:8px; margin-top:6px;">
-                            <a href="index.html" class="pd-header-back" style="flex:1; justify-content:center; text-align:center;">
-                                Open Hub Locker
-                            </a>
-                        </div>
+                <!-- Live Price Calculation Breakdown -->
+                <div class="pd-calc-table">
+                    <div class="pd-calc-row">
+                        <span>Duration:</span>
+                        <strong id="pdCalcDays">1 day</strong>
                     </div>
+                    <div class="pd-calc-row">
+                        <span>Tariff (<span id="pdCalcDaysCount">1</span> x <span id="pdCalcRate">&#8377;0</span>):</span>
+                        <span id="pdCalcTariffTotal">&#8377;0.00</span>
+                    </div>
+                    <div class="pd-calc-row">
+                        <span>Refundable Deposit (Held in Escrow):</span>
+                        <span id="pdCalcDepositTotal" style="color:var(--warm-amber-dark); font-weight:600;">&#8377;0.00</span>
+                    </div>
+                    <div class="pd-calc-row pd-calc-total">
+                        <span>Total Escrow Commitment:</span>
+                        <span id="pdCalcGrandTotal" style="color:var(--brand-teal-dark); font-size:16px;">&#8377;0.00</span>
+                    </div>
+                </div>
 
-                    <!-- Guaranteed Safety Pill -->
-                    <div class="pd-guarantee-pill">
-                        <span class="pd-guarantee-icon">&#128737;</span>
-                        <div>
-                            <div class="pd-guarantee-title">Secure Booking</div>
-                            <div class="pd-guarantee-sub">Your rental is escrow-protected, inspected & sanitized.</div>
-                        </div>
+                <!-- Bailment Terms Checkbox -->
+                <label class="pd-terms-row">
+                    <input type="checkbox" id="acceptBailmentCheck" checked>
+                    <span>I agree to standard Bailment Agreement terms and mandatory post-return quarantine inspection.</span>
+                </label>
+
+                <!-- Action: WhatsApp Booking -->
+                <a href="#" target="_blank" class="pd-btn-whatsapp-theme" id="btnWhatsAppBooking">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.588-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.311.045-.698.059-1.146-.086-.297-.097-.68-.225-1.168-.436-2.038-.883-3.376-2.951-3.479-3.088-.102-.137-.824-1.096-.824-2.091 0-.994.52-1.482.705-1.688.185-.205.405-.257.54-.257.135 0 .27.001.389.007.126.006.294-.047.46.353.172.417.587 1.433.639 1.537.052.105.086.228.017.367-.069.139-.103.226-.205.348-.103.121-.217.271-.31.365-.103.104-.211.218-.09.426.12.208.535.882 1.147 1.427.789.702 1.455.918 1.663 1.022.207.104.329.088.452-.053.123-.142.527-.614.667-.824.14-.21.28-.175.471-.104.191.071 1.212.571 1.421.675.209.105.348.157.399.245.052.088.052.51-.092.915z"/>
+                    </svg>
+                    Book Through WhatsApp
+                </a>
+
+                <!-- Action: Direct Reserve -->
+                <button type="button" class="pd-btn-reserve-theme" id="btnConfirmReserve">
+                    <span>⚡</span> Confirm Booking
+                </button>
+
+                <!-- Success OTP Code Reveal -->
+                <div class="pd-otp-success-card" id="pdOtpSuccessCard">
+                    <div style="font-weight:700; color:var(--emerald-dark); font-size:13px;">
+                        🎉 Booking Confirmed! Escrow Locked.
+                    </div>
+                    <div style="font-size:12px; color:var(--slate-700);">
+                        Your 6-digit locker pickup OTP code for Bay <strong id="pdOtpBay"></strong>:
+                    </div>
+                    <div class="pd-otp-code-box" id="pdOtpCode">------</div>
+                    <div style="display:flex; gap:8px; margin-top:4px;">
+                        <a href="index.html" class="btn-secondary" style="flex:1; justify-content:center; text-align:center; padding:8px 12px; font-size:12px;">
+                            View in Pickup Hub
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Safety Guarantee Note -->
+                <div class="pd-safe-guarantee">
+                    <span style="font-size:16px;">🛡️</span>
+                    <div>
+                        <strong style="color:var(--slate-800);">Escrow Protected Bailment</strong>
+                        <div>Inspected, tested & sanitized at Goa University Hub.</div>
                     </div>
                 </div>
             </aside>
@@ -918,29 +716,66 @@
 
     </main>
 
-    <!-- Toast Notification -->
-    <div class="pd-toast" id="pdToast"></div>
+    <!-- Application Footer (Matches RentSphere Theme) -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:20px;">🌐</span>
+                    <strong style="font-family:var(--font-heading); font-size:16px;">RentSphere</strong>
+                </div>
+                <p style="font-size:12px; color:var(--slate-500); margin-top:4px;">
+                    Borrow useful gear nearby, pick it up at a local hub, and return it when you’re done.<br>
+                    Goa University, Taleigao Plateau, Goa.
+                </p>
+                <div style="font-size:11px; color:var(--slate-400); margin-top:6px;">
+                    Prices shown in Indian rupees (₹).
+                </div>
+            </div>
 
+            <div class="footer-col">
+                <h4>Legal & Policies</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html">Terms of Service</a></li>
+                    <li><a href="index.html">Privacy Policy (DPDP Act 2023)</a></li>
+                    <li><a href="index.html">Standard Rental Bailment</a></li>
+                    <li><a href="index.html">Arbitration Framework</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Safety & Compliance</h4>
+                <ul class="footer-links">
+                    <li><a href="index.html">Wear & Tear Standards</a></li>
+                    <li><a href="index.html">Grievance Redressal (IT Rules 2021)</a></li>
+                    <li><a href="index.html">Zero-Dep Commercial Cover</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Pickup & returns</h4>
+                <div style="font-size:11px; color:var(--slate-500); line-height:1.6;">
+                    Your pickup code appears after reservation. When you return the gear, its condition is checked and your deposit is settled.
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>© 2026 RentSphere · Equipment rentals in Goa</span>
+            <span>Student project demonstration</span>
+        </div>
+    </footer>
+
+    <!-- JavaScript Controller -->
     <script>
-        // Dedicated Product View & Direct Booking Controller
         const API_BASE = window.location.origin ? (window.location.origin + '/api') : 'http://localhost:8080/api';
         
         let currentAsset = null;
         let selectedDepositMode = 'ESCROW';
         let selectedPaymentMode = 'WALLET';
 
-        // Load active user session from localStorage or default to Deepak Dev (Renter)
+        // Load active user session from localStorage
         let activeUserId = localStorage.getItem('rentsphere_user') || 'renter_deepak';
         let authToken = localStorage.getItem('rentsphere_token') || null;
-
-        function showToast(msg, isSuccess = true) {
-            const toast = document.getElementById('pdToast');
-            if (!toast) return;
-            toast.textContent = msg;
-            toast.style.borderColor = isSuccess ? '#22C55E' : '#EF4444';
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 4000);
-        }
 
         function formatInr(val) {
             const n = Number(val) || 0;
@@ -976,8 +811,8 @@
             const returnDay = new Date(today);
             returnDay.setDate(returnDay.getDate() + 3);
 
-            const pickupInput = document.getElementById('pickupDateTime');
-            const dropoffInput = document.getElementById('dropoffDateTime');
+            const pickupInput = document.getElementById('pickupDateInput');
+            const dropoffInput = document.getElementById('dropoffDateInput');
             if (pickupInput && dropoffInput) {
                 pickupInput.value = tomorrow.toISOString().split('T')[0];
                 dropoffInput.value = returnDay.toISOString().split('T')[0];
@@ -992,7 +827,7 @@
             setupToggleButtons();
 
             // Wire up Confirm Booking
-            document.getElementById('btnConfirmBooking')?.addEventListener('click', handleConfirmBooking);
+            document.getElementById('btnConfirmReserve')?.addEventListener('click', handleConfirmBooking);
 
             // Fetch Assets
             try {
@@ -1005,96 +840,88 @@
                 updateCalculatedPrice();
             } catch (e) {
                 console.error(e);
-                showToast('Error loading product details: ' + e.message, false);
             }
         }
 
         function renderProductDetails(a) {
             if (!a) return;
 
-            // Page Title
-            document.title = `${a.title} · RentSphere Rental`;
+            const cleanTitle = (a.title || '').replace(/\\u0026/g, '&');
+            document.title = `${cleanTitle} · RentSphere Rental`;
 
             // Breadcrumbs
-            const cleanTitle = (a.title || '').replace(/\\u0026/g, '&');
-            const bcTitle = document.getElementById('bcItemTitle');
+            const bcTitle = document.getElementById('bcAssetTitle');
             if (bcTitle) bcTitle.textContent = cleanTitle;
-            const bcCat = document.getElementById('bcCategoryLink');
+            const bcCat = document.getElementById('bcCategoryName');
             if (bcCat) bcCat.textContent = formatCategoryName(a.leafClass);
 
             // Badges
-            const statusBadge = document.getElementById('pdStatusBadge');
-            if (statusBadge) {
-                statusBadge.textContent = a.state === 'AVAILABLE' ? 'Available Now' : a.state.replace('_', ' ');
-                statusBadge.className = 'pd-status-pill ' + (a.state === 'AVAILABLE' ? 'pd-status-available' : 'pd-status-reserved');
+            const stateTag = document.getElementById('pdStateTag');
+            if (stateTag) {
+                const isAvail = a.state === 'AVAILABLE';
+                stateTag.textContent = isAvail ? 'Available Now' : a.state.replace('_', ' ');
+                stateTag.className = 'asset-state-tag ' + (isAvail ? 'state-available' : 'state-reserved');
             }
 
-            const subtitle = document.getElementById('pdSubtitle');
-            if (subtitle) {
-                subtitle.textContent = `${formatCategoryName(a.leafClass)} · Model ${a.id}`;
-            }
+            const catPill = document.getElementById('pdCategoryPill');
+            if (catPill) catPill.textContent = formatCategoryName(a.leafClass);
 
-            const lockerBay = document.getElementById('pdLockerBay');
-            if (lockerBay) {
-                lockerBay.textContent = `📍 Hub Bay ${a.lockerCoordinate || 'A1'}`;
-            }
+            const lockerBayPill = document.getElementById('pdLockerBayPill');
+            if (lockerBayPill) lockerBayPill.textContent = `📍 Hub Bay ${a.lockerCoordinate || 'A1'}`;
 
             const pickupBayText = document.getElementById('pdPickupBayText');
-            if (pickupBayText) {
-                pickupBayText.textContent = `RentSphere Hub Bay ${a.lockerCoordinate || 'A1'}`;
-            }
+            if (pickupBayText) pickupBayText.textContent = `RentSphere Hub Bay ${a.lockerCoordinate || 'A1'}`;
 
-            // Big Main Title
-            const mainTitle = document.getElementById('pdMainTitle');
-            if (mainTitle) {
-                // Shorten title for dramatic automotive / hero title effect
-                const shortTitle = cleanTitle.split('(')[0].trim();
-                mainTitle.textContent = shortTitle;
-            }
+            // Main Title
+            const mainTitle = document.getElementById('pdFullTitle');
+            if (mainTitle) mainTitle.textContent = cleanTitle;
 
             // Photo
             const heroImg = document.getElementById('pdHeroImg');
             if (heroImg) {
                 heroImg.src = getAssetPhoto(a);
-                heroImg.alt = a.title;
+                heroImg.alt = cleanTitle;
             }
 
             // Rates
             const rateDisplay = document.getElementById('pdDailyRateDisplay');
-            if (rateDisplay) rateDisplay.textContent = formatInr(a.baseDailyRate || a.calculatedTariff);
+            if (rateDisplay) rateDisplay.textContent = formatInr(a.baseDailyRate || a.calculatedTariff) + ' /day';
 
-            // Dynamic 4-Spec Grid (Tailored to asset category)
-            renderSpecsGrid(a);
+            const depositDisplay = document.getElementById('pdDepositNoteDisplay');
+            if (depositDisplay) depositDisplay.textContent = `↩ ${formatInr(a.securityCollateral || a.requiredCollateral)} refundable deposit`;
 
-            // About text and checklist
+            // Dynamic 4-Spec Quad
+            renderSpecsQuad(a);
+
+            // About section and features checklist
             renderAboutSection(a);
 
             // Verified QA & Maintenance logs
             const logsList = document.getElementById('pdLogsList');
             if (logsList && a.serviceLogs && a.serviceLogs.length > 0) {
                 logsList.innerHTML = a.serviceLogs.slice(-3).map(log => `
-                    <div class="pd-log-entry">
-                        <span style="color:#22C55E;">✓</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="color:var(--emerald-dark); font-weight:700;">✓</span>
                         <span>${escapeHtml(log)}</span>
                     </div>
                 `).join('');
             } else if (logsList) {
-                logsList.innerHTML = '<div class="pd-log-entry"><span style="color:#22C55E;">✓</span> QA verified and sanitized at Goa University Rental Hub</div>';
+                logsList.innerHTML = '<div style="display:flex; align-items:center; gap:6px;"><span style="color:var(--emerald-dark); font-weight:700;">✓</span> QA verified and sanitized at Goa University Rental Hub</div>';
             }
         }
 
-        function renderSpecsGrid(a) {
-            const grid = document.getElementById('pdSpecsGrid');
-            if (!grid) return;
+        function renderSpecsQuad(a) {
+            const quad = document.getElementById('pdSpecsQuad');
+            if (!quad) return;
 
             let specs = [];
 
             if (a.leafClass === 'EventAndMobilityVehicle') {
                 specs = [
-                    { icon: '👤', value: '5 Seats', label: 'CAPACITY' },
-                    { icon: '⚙️', value: 'Automatic', label: 'TRANSMISSION' },
-                    { icon: '⛽', value: 'Petrol', label: 'FUEL' },
-                    { icon: '🛡️', value: 'Insured', label: 'SAFETY' }
+                    { icon: '👤', value: '5 Seats', label: 'Capacity' },
+                    { icon: '⚙️', value: 'Automatic', label: 'Transmission' },
+                    { icon: '⛽', value: 'Petrol', label: 'Fuel Type' },
+                    { icon: '🛡️', value: 'Insured', label: 'Safety Coverage' }
                 ];
                 if (a.id === 'AST-108') {
                     specs[0].value = '2 Seats';
@@ -1104,32 +931,32 @@
                 }
             } else if (a.leafClass === 'CameraAndOpticsGear') {
                 specs = [
-                    { icon: '📷', value: (a.sensorResolutionMp || 33.0) + ' MP', label: 'RESOLUTION' },
-                    { icon: '🎬', value: '4K 60fps', label: 'RECORDING' },
-                    { icon: '🔍', value: 'Sony E-Mount', label: 'LENS SYSTEM' },
-                    { icon: '🛡️', value: 'Comprehensive', label: 'COVERAGE' }
+                    { icon: '📷', value: (a.sensorResolutionMp || 33.0) + ' MP', label: 'Resolution' },
+                    { icon: '🎬', value: '4K 60fps', label: 'Recording' },
+                    { icon: '🔍', value: 'Sony E-Mount', label: 'Lens Mount' },
+                    { icon: '🛡️', value: 'Comprehensive', label: 'Protection Tier' }
                 ];
             } else if (a.leafClass === 'EventAudioAndLighting') {
                 specs = [
-                    { icon: '🔊', value: '104 dB', label: 'PEAK SOUND' },
-                    { icon: '🎤', value: '2 Wireless', label: 'MICROPHONES' },
-                    { icon: '🌈', value: 'RGB + DMX', label: 'LIGHTING' },
-                    { icon: '🛡️', value: 'Event Pro', label: 'SHIELD' }
+                    { icon: '🔊', value: '104 dB', label: 'Sound Output' },
+                    { icon: '🎤', value: '2 Wireless', label: 'Microphones' },
+                    { icon: '🌈', value: 'RGB + DMX', label: 'Light Sync' },
+                    { icon: '🛡️', value: 'Event Pro', label: 'Equipment Shield' }
                 ];
             } else {
                 specs = [
-                    { icon: '⚡', value: '1400W 110-Bar', label: 'MOTOR POWER' },
-                    { icon: '🛡️', value: 'IPX5 Rated', label: 'WATERPROOF' },
-                    { icon: '🔌', value: 'Corded 220V', label: 'POWER TYPE' },
-                    { icon: '🧰', value: '4 Nozzles', label: 'ATTACHMENTS' }
+                    { icon: '⚡', value: '1400W 110-Bar', label: 'Power Output' },
+                    { icon: '🛡️', value: 'IPX5 Rated', label: 'Waterproof Spec' },
+                    { icon: '🔌', value: 'Corded 220V', label: 'Power Source' },
+                    { icon: '🧰', value: '4 Nozzles', label: 'Kit Attachments' }
                 ];
             }
 
-            grid.innerHTML = specs.map(s => `
-                <div class="pd-spec-box">
-                    <div class="pd-spec-icon">${s.icon}</div>
-                    <div class="pd-spec-value">${s.value}</div>
-                    <div class="pd-spec-label">${s.label}</div>
+            quad.innerHTML = specs.map(s => `
+                <div class="pd-spec-card">
+                    <div class="pd-spec-icon-badge">${s.icon}</div>
+                    <div class="pd-spec-val">${s.value}</div>
+                    <div class="pd-spec-lbl">${s.label}</div>
                 </div>
             `).join('');
         }
@@ -1145,32 +972,32 @@
             let items = [];
 
             if (a.leafClass === 'EventAndMobilityVehicle') {
-                heading.textContent = 'About This Vehicle';
+                heading.innerHTML = '<span>🚗</span> About This Vehicle';
                 if (a.id === 'AST-107') {
-                    aboutText = 'The Maruti Suzuki Fronx Automatic is a modern crossover engineered for smooth Goan coastal highways, wedding ceremonies, airport transfers, and university team travels. Equipped with comprehensive zero-dep commercial coverage, electronic stability control, and wireless Apple CarPlay/Android Auto.';
-                    items = ['5 SEATS', 'AUTOMATIC TRANSMISSION', 'PETROL DUALJET', '350 KM/DAY INCLUDED', 'FASTAG RECHARGED ₹1000', 'ARAI 5-STAR SAFETY'];
+                    aboutText = 'The Maruti Suzuki Fronx Automatic is a stylish, comfortable crossover suitable for city travel, weekend beach trips, wedding guest transfers, and outstation journeys across Goa. Features zero-dep commercial insurance, wireless Apple CarPlay, and hill-hold assist.';
+                    items = ['5 Seats Capacity', 'Automatic Transmission', 'Petrol DualJet Engine', '350 km/day Allowance', 'Fastag Recharged (₹1,000)', 'ARAI 5-Star Safety'];
                 } else {
                     aboutText = 'The Ather 450X Electric Scooter provides agile, high-torque campus commuting and coastal exploration across Taleigao, Panaji, and Dona Paula with zero emissions and instant warp mode acceleration.';
-                    items = ['2 SEATS', 'WARP & ECO MODES', 'ELECTRIC 3.7KWH', '105 KM RANGE', 'TOUCHSCREEN DASHBOARD', 'HELMET INCLUDED'];
+                    items = ['2 Seats Capacity', 'Warp & Eco Driving Modes', '3.7 kWh Lithium Pack', '105 km True Range', '7" Touchscreen Navigation', 'Sanitized Helmet Included'];
                 }
             } else if (a.leafClass === 'CameraAndOpticsGear') {
-                heading.textContent = 'About This Gear';
-                aboutText = `${a.title} is calibrated for professional cinematographers, wedding documentarians, and campus creators requiring pristine resolution, high dynamic range, and dual-card recording integrity.`;
-                items = ['DUAL SDXC 128GB CARDS', '4K 60FPS 10-BIT', 'DUAL BATTERIES + CHARGER', 'WEATHER-SEALED BODY', 'SONY G-LENS OPTICS', 'HARD RIGGING CAGE'];
+                heading.innerHTML = '<span>📷</span> About This Camera Kit';
+                aboutText = `${a.title} is calibrated for wedding documentarians, campus content creators, and independent filmmakers requiring high dynamic range, fast autofocus, and dual-card safety redundancy.`;
+                items = ['Dual SDXC 128GB Cards Included', '4K 60fps 10-Bit Recording', 'Dual NP-FZ100 Batteries + Charger', 'Weather-Sealed Body', 'Standard Zoom Optics', 'Hard Transport Case'];
             } else if (a.leafClass === 'EventAudioAndLighting') {
-                heading.textContent = 'About This Sound System';
-                aboutText = `${a.title} delivers deep bass and crystal-clear acoustic dispersion for beach weddings, college fests, corporate presentations, and open-air gatherings.`;
-                items = ['104 DB PEAK OUTPUT', '2 WIRELESS DUAL-CHANNEL MICS', 'BLUETOOTH 5.1 & XLR', 'BEAT-SYNC RGB LIGHTS', 'BATTERY + MAINS AC', 'PRO FLIGHT CASE'];
+                heading.innerHTML = '<span>🔊</span> About This Audio System';
+                aboutText = `${a.title} delivers clean acoustic punch and synchronized light effects for college fests, private ceremonies, corporate presentations, and open-air gatherings.`;
+                items = ['104 dB Peak Acoustic Output', '2 UHF Wireless Microphones', 'Bluetooth 5.1 & XLR Inputs', 'Beat-Synced Dynamic RGB Rings', 'AC Mains or Battery Operation', 'Heavy Duty Transport Wheels'];
             } else {
-                heading.textContent = 'About This Equipment';
-                aboutText = `${a.title} is commercial-grade hardware verified for heavy-duty household maintenance, vehicle washing, and DIY fabrication with industrial safety insulation.`;
-                items = ['1400W HIGH-TORQUE MOTOR', 'IPX5 WATER RESISTANT', 'FOAM CANNON ATTACHMENT', '10M PRESSURE HOSE', 'BRASS QUICK-COUPLER', 'ISI CERTIFIED 220V'];
+                heading.innerHTML = '<span>🛠️</span> About This Tool';
+                aboutText = `${a.title} is verified for household maintenance, vehicle pressure washing, and DIY fabrication with industrial safety insulation.`;
+                items = ['1400W High-Torque Motor', 'IPX5 Water Ingress Protection', 'Brass Quick-Coupler Fitting', '10m Steel-Braided Hose', 'Variable Jet & Foam Cannons', 'ISI Certified 220V Grounding'];
             }
 
             desc.textContent = aboutText;
             checklist.innerHTML = items.map(it => `
-                <div class="pd-check-item">
-                    <div class="pd-check-icon">✓</div>
+                <div class="pd-check-row">
+                    <div class="pd-check-dot">✓</div>
                     <span>${it}</span>
                 </div>
             `).join('');
@@ -1179,8 +1006,8 @@
         function updateCalculatedPrice() {
             if (!currentAsset) return;
 
-            const pickupVal = document.getElementById('pickupDateTime')?.value;
-            const dropoffVal = document.getElementById('dropoffDateTime')?.value;
+            const pickupVal = document.getElementById('pickupDateInput')?.value;
+            const dropoffVal = document.getElementById('dropoffDateInput')?.value;
 
             let days = 1;
             if (pickupVal && dropoffVal) {
@@ -1196,24 +1023,24 @@
             const totalRent = dailyRate * days;
             const grandTotal = totalRent + deposit;
 
-            document.getElementById('pdSummaryDays').textContent = `${days} day${days > 1 ? 's' : ''}`;
-            document.getElementById('pdSummaryDaysCount').textContent = days;
-            document.getElementById('pdSummaryRate').textContent = formatInr(dailyRate);
-            document.getElementById('pdSummaryTariffTotal').textContent = formatInr(totalRent);
-            document.getElementById('pdSummaryDeposit').textContent = formatInr(deposit);
-            document.getElementById('pdSummaryGrandTotal').textContent = formatInr(grandTotal);
+            document.getElementById('pdCalcDays').textContent = `${days} day${days > 1 ? 's' : ''}`;
+            document.getElementById('pdCalcDaysCount').textContent = days;
+            document.getElementById('pdCalcRate').textContent = formatInr(dailyRate);
+            document.getElementById('pdCalcTariffTotal').textContent = formatInr(totalRent);
+            document.getElementById('pdCalcDepositTotal').textContent = formatInr(deposit);
+            document.getElementById('pdCalcGrandTotal').textContent = formatInr(grandTotal);
 
-            // Update WhatsApp pre-filled link
+            // Update WhatsApp Link
             const waBtn = document.getElementById('btnWhatsAppBooking');
             if (waBtn) {
                 const text = encodeURIComponent(
-                    `Hello RentSphere! I want to book ${currentAsset.title} (ID: ${currentAsset.id}) from ${pickupVal} to ${dropoffVal} (${days} days). Estimated tariff: ${formatInr(totalRent)} + Escrow deposit: ${formatInr(deposit)} = Total: ${formatInr(grandTotal)}.`
+                    `Hello RentSphere! I would like to reserve ${currentAsset.title} (ID: ${currentAsset.id}) from ${pickupVal} to ${dropoffVal} (${days} days). Estimated tariff: ${formatInr(totalRent)} + Escrow deposit: ${formatInr(deposit)} = Total: ${formatInr(grandTotal)}.`
                 );
                 waBtn.href = `https://wa.me/919876543210?text=${text}`;
             }
 
             // Disable button if not available
-            const confirmBtn = document.getElementById('btnConfirmBooking');
+            const confirmBtn = document.getElementById('btnConfirmReserve');
             if (confirmBtn) {
                 if (currentAsset.state !== 'AVAILABLE') {
                     confirmBtn.disabled = true;
@@ -1229,26 +1056,26 @@
             const btnDepositEscrow = document.getElementById('btnDepositEscrow');
             const btnDepositUpi = document.getElementById('btnDepositUpi');
             btnDepositEscrow?.addEventListener('click', () => {
-                btnDepositEscrow.classList.add('is-selected');
-                btnDepositUpi.classList.remove('is-selected');
+                btnDepositEscrow.classList.add('is-active');
+                btnDepositUpi.classList.remove('is-active');
                 selectedDepositMode = 'ESCROW';
             });
             btnDepositUpi?.addEventListener('click', () => {
-                btnDepositUpi.classList.add('is-selected');
-                btnDepositEscrow.classList.remove('is-selected');
+                btnDepositUpi.classList.add('is-active');
+                btnDepositEscrow.classList.remove('is-active');
                 selectedDepositMode = 'UPI';
             });
 
-            const btnPayCash = document.getElementById('btnPayCash');
+            const btnPayWallet = document.getElementById('btnPayWallet');
             const btnPayUpi = document.getElementById('btnPayUpi');
-            btnPayCash?.addEventListener('click', () => {
-                btnPayCash.classList.add('is-selected');
-                btnPayUpi.classList.remove('is-selected');
+            btnPayWallet?.addEventListener('click', () => {
+                btnPayWallet.classList.add('is-active');
+                btnPayUpi.classList.remove('is-active');
                 selectedPaymentMode = 'WALLET';
             });
             btnPayUpi?.addEventListener('click', () => {
-                btnPayUpi.classList.add('is-selected');
-                btnPayCash.classList.remove('is-selected');
+                btnPayUpi.classList.add('is-active');
+                btnPayWallet.classList.remove('is-active');
                 selectedPaymentMode = 'UPI';
             });
         }
@@ -1256,28 +1083,27 @@
         async function handleConfirmBooking() {
             if (!currentAsset) return;
 
-            const check = document.getElementById('acceptTermsCheck');
+            const check = document.getElementById('acceptBailmentCheck');
             if (!check.checked) {
-                showToast('Please accept the Bailment Terms to proceed.', false);
+                alert('Please accept the Bailment Agreement terms to proceed.');
                 return;
             }
 
-            const pickupVal = document.getElementById('pickupDateTime')?.value;
-            const dropoffVal = document.getElementById('dropoffDateTime')?.value;
+            const pickupVal = document.getElementById('pickupDateInput')?.value;
+            const dropoffVal = document.getElementById('dropoffDateInput')?.value;
             let days = 1;
             if (pickupVal && dropoffVal) {
                 const diff = (new Date(dropoffVal)) - (new Date(pickupVal));
                 days = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
             }
 
-            const confirmBtn = document.getElementById('btnConfirmBooking');
+            const confirmBtn = document.getElementById('btnConfirmReserve');
             if (confirmBtn) {
                 confirmBtn.disabled = true;
                 confirmBtn.innerHTML = '<span>⏳</span> Locking Escrow & Allocating Bay...';
             }
 
             try {
-                // Ensure auth token is passed
                 const headers = { 'Content-Type': 'application/json' };
                 if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
@@ -1294,44 +1120,43 @@
 
                 const data = await res.json();
                 if (data.success) {
-                    showToast('🎉 Booking confirmed! Escrow locked in Hub.', true);
                     currentAsset.state = 'RESERVED_ESCROW';
 
                     // Update UI State Badge
-                    const statusBadge = document.getElementById('pdStatusBadge');
-                    if (statusBadge) {
-                        statusBadge.textContent = 'Reserved (Escrow Locked)';
-                        statusBadge.className = 'pd-status-pill pd-status-reserved';
+                    const stateTag = document.getElementById('pdStateTag');
+                    if (stateTag) {
+                        stateTag.textContent = 'Reserved (Escrow Locked)';
+                        stateTag.className = 'asset-state-tag state-reserved';
                     }
 
                     // Reveal OTP Code
-                    const banner = document.getElementById('pdSuccessBanner');
-                    const otpDisplay = document.getElementById('pdSuccessOtp');
-                    const bayDisplay = document.getElementById('pdSuccessBay');
-                    if (banner && otpDisplay && bayDisplay) {
-                        banner.style.display = 'flex';
+                    const card = document.getElementById('pdOtpSuccessCard');
+                    const otpDisplay = document.getElementById('pdOtpCode');
+                    const bayDisplay = document.getElementById('pdOtpBay');
+                    if (card && otpDisplay && bayDisplay) {
+                        card.style.display = 'flex';
                         otpDisplay.textContent = data.otpCode || '582914';
                         bayDisplay.textContent = currentAsset.lockerCoordinate || 'H2';
                     }
 
                     confirmBtn.textContent = '🔒 Gear Reserved';
                 } else {
-                    showToast('Booking failed: ' + (data.message || data.error), false);
+                    alert('Booking failed: ' + (data.message || data.error));
                     confirmBtn.disabled = false;
                     confirmBtn.innerHTML = '<span>⚡</span> Confirm Booking';
                 }
             } catch (e) {
                 console.error(e);
-                showToast('Network error during reservation: ' + e.message, false);
+                alert('Network error during reservation: ' + e.message);
                 confirmBtn.disabled = false;
                 confirmBtn.innerHTML = '<span>⚡</span> Confirm Booking';
             }
         }
 
         function formatCategoryName(c) {
-            if (c === 'EventAndMobilityVehicle') return 'Cars & Mobility';
-            if (c === 'CameraAndOpticsGear') return 'Cameras & Optics';
-            if (c === 'EventAudioAndLighting') return 'Audio & Lighting';
+            if (c === 'EventAndMobilityVehicle') return 'Cars & mobility';
+            if (c === 'CameraAndOpticsGear') return 'Cameras & optics';
+            if (c === 'EventAudioAndLighting') return 'Audio & lighting';
             if (c === 'PowerToolEquipment') return 'Tools & DIY';
             return 'Equipment';
         }
@@ -1343,7 +1168,6 @@
             }[m]));
         }
 
-        // Initialize when DOM is ready
         window.addEventListener('DOMContentLoaded', initProductPage);
     </script>
 </body>
