@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RentSphere: Peer-to-Peer Rental & Smart Pickup Hub (Goa, India)</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title>RentSphere: Equipment Rental Project</title>
+    <link rel="stylesheet" href="css/styles.css?v=ux-refresh-2">
 </head>
 <body>
 
@@ -15,12 +15,12 @@
                 <div class="brand-logo">🌐</div>
                 <div>
                     <h1 class="brand-title">RentSphere</h1>
-                    <p class="brand-subtitle">Peer-to-Peer Rental & 8x8 Smart Pickup Hub • Goa Community Pilot (₹ INR)</p>
+                    <p class="brand-subtitle">Peer-to-peer equipment rentals in Goa</p>
                 </div>
             </div>
 
             <!-- Hub Location Switcher Pill (Google Stitch Alignment) -->
-            <div class="hub-location-pill" title="Active Smart Locker Micro-Grid Location">
+            <div class="hub-location-pill" title="Current simulated pickup hub">
                 <span class="hub-pin">📍</span>
                 <span class="hub-label">Hub:</span>
                 <select id="hubLocationSelect" class="hub-select" aria-label="Select Smart Locker Hub Location">
@@ -33,12 +33,12 @@
 
             <div class="user-selector-bar">
                 <!-- Academic Viva Mode Badge (Google Stitch Variant 3) -->
-                <div class="academic-badge" title="MCA Object-Oriented Technology Viva Lab Evaluation Mode">
-                    <span>🎓</span> Viva Lab v3.4
+                <div class="academic-badge" title="MCA Object-Oriented Technology laboratory project" style="display:none;">
+                    <span>🎓</span> OOT Lab Project
                 </div>
 
                 <!-- Notifications Bell -->
-                <div class="notif-wrapper">
+                <div class="notif-wrapper" style="display:none;">
                     <button class="icon-btn" id="notifBellBtn" title="In-App Notifications">
                         <span>🔔</span>
                         <span class="notif-badge" id="notifBadge" style="display:none;">0</span>
@@ -69,7 +69,7 @@
 
                 <div class="active-user-badge">
                     <span id="userRoleBadge" class="role-tag role-renter">RENTER</span>
-                    <label for="activeUserSelect" style="font-size:11px; color:var(--slate-500); font-weight:600;">Active Persona:</label>
+                    <span id="activeUserLabel" style="font-size:12px; color:var(--slate-700); font-weight:600;">Guest</span>
                     <select id="activeUserSelect" class="filter-select" style="padding:4px 8px; font-size:12px;">
                         <option value="renter_deepak" selected>Deepak Dev (Renter)</option>
                         <option value="renter_nikhil">Nikhil Bhaiju (Renter)</option>
@@ -90,19 +90,22 @@
         <!-- 5 Cohesive Product Navigation Tabs -->
         <nav class="nav-bar">
             <button class="nav-pill active" data-view="marketplaceView">
-                <span>🛒</span> Explore Marketplace
+                <span>🛒</span> Marketplace
             </button>
-            <button class="nav-pill" data-view="hubView">
-                <span>🗄️</span> Smart Pickup Hub & Parking (A1–H8)
+            <button class="nav-pill" id="navMyRentalsTab" data-view="myRentalsView">
+                <span>🧾</span> My rentals
             </button>
-            <button class="nav-pill" data-view="escrowView">
-                <span>🛡️</span> Escrow Wallet & Returns
+            <button class="nav-pill" id="navHubTab" data-view="hubView" style="display:none;">
+                <span>🗄️</span> Pickup hub
             </button>
-            <button class="nav-pill" id="navHostTab" data-view="hostView">
-                <span>⚡</span> Host Studio & System Diagnostics
+            <button class="nav-pill" id="navReturnsTab" data-view="escrowView" style="display:none;">
+                <span>🛡️</span> Returns & inspections
             </button>
-            <button class="nav-pill" id="navAdminTab" data-view="adminSupportView">
-                <span>⚖️</span> Admin & Grievance Hub
+            <button class="nav-pill" id="navHostTab" data-view="hostView" style="display:none;">
+                <span>⚡</span> Host Tools & Diagnostics
+            </button>
+            <button class="nav-pill" id="navAdminTab" data-view="adminSupportView" style="display:none;">
+                <span>⚖️</span> Admin & Support
             </button>
         </nav>
     </header>
@@ -204,47 +207,55 @@
             <!-- Public Visitor Hero & How-It-Works Banner -->
             <div class="hero-banner" id="visitorHeroBanner">
                 <div class="hero-content">
-                    <div class="hero-badge">🌴 GOA UNIVERSITY CAMPUS & LOCAL PILOT (INR ₹)</div>
-                    <h2 class="hero-title">Rent High-End Gear Near You with Smart Contactless Pickup</h2>
+                    <div class="hero-badge">GOA • LOCAL RENTALS</div>
+                    <h2 class="hero-title">Rent the gear you need, nearby.</h2>
                     <p class="hero-subtitle">
-                        Peer-to-peer equipment rentals with 100% transparent pricing, refundable deposits held in escrow, 
-                        and automated 24/7 pickup at our 8x8 Smart Locker Hub.
+                        Choose an item, collect it from a local hub, and return it when you’re done.
                     </p>
-                    <div class="hero-features-row">
-                        <div class="hero-feat-item"><span>🔒</span> 4-Gate Fail-Fast Escrow</div>
-                        <div class="hero-feat-item"><span>📱</span> 6-Digit OTP Contactless Lockers</div>
-                        <div class="hero-feat-item"><span>🛡️</span> Mandatory Inspection Quarantine</div>
-                        <div class="hero-feat-item"><span>⚖️</span> Fair Dispute Arbitration</div>
-                    </div>
-                </div>
-                <div class="hero-actions">
-                    <button class="btn-primary" id="heroExploreBtn"><span>🔍</span> Browse Gear</button>
-                    <button class="btn-secondary" id="heroBecomeHostBtn"><span>➕</span> Become a Host</button>
-                    <button class="btn-secondary" id="heroLearnPoliciesBtn"><span>📜</span> Read Policies</button>
                 </div>
             </div>
+
+            <section class="rental-steps" aria-label="How renting works">
+                <div class="rental-steps-heading">How renting works <span>Clear prices. Local pickup. Refundable deposit.</span></div>
+                <ol>
+                    <li><span>1</span><div><strong>Choose your gear</strong><small>Compare daily prices</small></div></li>
+                    <li><span>2</span><div><strong>Reserve your days</strong><small>Review the full total</small></div></li>
+                    <li><span>3</span><div><strong>Pick it up</strong><small>Use your hub pickup code</small></div></li>
+                    <li><span>4</span><div><strong>Return it</strong><small>Deposit back after inspection</small></div></li>
+                </ol>
+            </section>
+
+            <section class="host-invite" aria-label="List equipment as a host">
+                <div>
+                    <h3>Have gear to share?</h3>
+                    <p>List it for local renters and manage bookings in your host space.</p>
+                </div>
+                <button class="btn-secondary" id="becomeHostBtn">List your gear</button>
+            </section>
 
             <!-- Filter Pills for Categories -->
             <div class="category-pills-bar">
                 <button class="cat-pill active" data-category="ALL">All Items</button>
-                <button class="cat-pill" data-category="CAMERAS">📷 Cameras & Optics</button>
-                <button class="cat-pill" data-category="AUDIO_LIGHTING">🔊 Event Audio & Lighting</button>
-                <button class="cat-pill" data-category="POWER_TOOLS">🛠️ Power Tools & DIY</button>
-                <button class="cat-pill" data-category="MOBILITY_VEHICLES">🚗 Wedding Cars & Mobility</button>
+                <button class="cat-pill" data-category="CAMERAS">Cameras & projectors</button>
+                <button class="cat-pill" data-category="AUDIO_LIGHTING">Audio & lighting</button>
+                <button class="cat-pill" data-category="POWER_TOOLS">Tools & DIY</button>
+                <button class="cat-pill" data-category="MOBILITY_VEHICLES">Cars & mobility</button>
             </div>
 
-            <!-- Renter's Authenticated Active Rentals & Locker Pickups -->
-            <div id="renterActiveBookingsContainer" style="display:none; margin: 18px 0 22px 0;"></div>
+            <div class="listing-heading">
+                <h3>Available gear</h3>
+                <span id="catalogCount" aria-live="polite">Browse local listings</span>
+            </div>
 
             <div class="catalog-toolbar">
                 <div class="search-filter-group">
                     <div class="search-box">
-                        <span class="search-icon">🔍</span>
-                        <input type="text" id="searchInput" placeholder="Search gear by name, model, or hub bay...">
+                    <span class="search-icon" aria-hidden="true">⌕</span>
+                        <input type="text" id="searchInput" placeholder="Search cameras, speakers, tools..." aria-label="Search equipment">
                     </div>
                     <select id="stateFilter" class="filter-select">
-                        <option value="ALL">All Availability States</option>
-                        <option value="AVAILABLE">Available Now</option>
+                        <option value="AVAILABLE" selected>Available to rent</option>
+                        <option value="ALL">All listing statuses</option>
                         <option value="RESERVED_ESCROW">Reserved (Escrow Locked)</option>
                         <option value="ACTIVE_LEASE">Out on Rent</option>
                         <option value="INSPECTION_QUARANTINE">In Post-Return Inspection</option>
@@ -252,7 +263,7 @@
                     </select>
                 </div>
                 <button class="btn-primary" id="openListEquipmentBtn">
-                    <span>➕</span> List Equipment
+                    List equipment
                 </button>
             </div>
 
@@ -260,6 +271,15 @@
             <div class="assets-grid" id="assetsGrid">
                 <!-- Rendered dynamically by app.js in ₹ INR -->
             </div>
+        </section>
+
+        <section id="myRentalsView" class="view-section">
+            <div class="page-heading">
+                <p class="page-eyebrow">YOUR ACCOUNT</p>
+                <h2>My rentals</h2>
+                <p>See your booking, pickup details and return status in one place.</p>
+            </div>
+            <div id="renterActiveBookingsContainer" style="display:none; margin: 18px 0 22px 0;"></div>
         </section>
 
         <!-- ==================================================================
@@ -341,7 +361,7 @@
                         Virtual DHT22 & load cell telemetry • Refreshes every 8s
                     </div>
 
-                    <div style="margin-bottom:16px;">
+                <div style="margin-bottom:16px;">
                         <label style="font-size:11px; color:var(--slate-500); font-weight:700; text-transform:uppercase;">Assigned Equipment</label>
                         <div id="inspectorAssetTitle" style="font-weight:700; font-size:14px; margin-top:2px;">Sony Alpha A7 IV Mirrorless Camera</div>
                         <div id="inspectorAssetId" style="font-size:11px; font-family:monospace; color:var(--slate-400);">AST-101 • CameraAndOpticsGear</div>
@@ -351,11 +371,11 @@
                     <div class="otp-box" id="inspectorOtpBox">
                         <div style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--warm-amber-dark);" id="inspectorOtpTitle">6-Digit Pickup OTP Passcode</div>
                         <div class="otp-val" id="inspectorOtp">348192</div>
-                        <div style="font-size:10px; color:var(--slate-500); margin-top:4px;" id="inspectorOtpNotice">Protected by 3-attempt brute-force lockout (CWE-307)</div>
+                        <div style="font-size:10px; color:var(--slate-500); margin-top:4px;" id="inspectorOtpNotice">Protected by a three-attempt lockout</div>
                     </div>
 
                     <div id="inspectorLockoutAlert" style="display:none; margin-bottom:16px; padding:10px 12px; background:var(--crimson-light); border:1px solid rgba(239,68,68,0.3); border-radius:var(--radius-sm); font-size:11px; color:var(--crimson); font-weight:600;">
-                        ⚠️ Brute-force lockout active. Bay locked for 15 minutes (CWE-307 Defense).
+                        ⚠️ Too many incorrect attempts. This bay is locked for 15 minutes.
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:10px;">
@@ -439,7 +459,7 @@
                     </div>
                     <button class="btn-secondary" id="refreshWalBtn">🔄 Refresh Audit Ledger</button>
                 </div>
-                <div class="wal-table-wrapper">
+                <div class="wal-table-wrapper" tabindex="0" role="region" aria-label="Escrow & Audit Write-Ahead Log">
                     <table class="data-table">
                         <thead>
                             <tr>
@@ -673,7 +693,7 @@
                             <p style="font-size:10px; color:var(--slate-500); margin-top:2px;">Independent log memory:</p>
                             <div style="margin-top:8px; font-size:11px;">
                                 <div>Logs Ref: <span class="mem-address" id="deepLogsId" style="color:var(--emerald-dark);">0x7EDA2DBB</span></div>
-                                <div style="font-size:10px; font-weight:700; color:var(--emerald-dark); margin-top:4px;">✅ 100% ISOLATED HISTORY</div>
+                                    <div style="font-size:10px; font-weight:700; color:var(--emerald-dark); margin-top:4px;">✅ Separate copy history</div>
                             </div>
                         </div>
                     </div>
@@ -700,7 +720,7 @@
                     <div style="margin-top:20px; text-align:left; background:var(--slate-50); padding:14px; border-radius:var(--radius-md); border:1px solid var(--slate-200);">
                         <h4 style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--slate-500);">Deep-Cloned What-If Scenario Recommendation:</h4>
                         <p id="trustPolicyText" style="font-size:12px; font-weight:600; color:var(--slate-800); margin-top:4px;">
-                            Maintaining 100% on-time returns and zero damage disputes qualifies this account for Zero-Deposit Instant Rentals across Goa.
+                            A consistent return and inspection history can qualify an account for lower deposits.
                         </p>
                     </div>
 
@@ -913,7 +933,7 @@
                         <h3><span>👥</span> Registered User Accounts & RBAC Status</h3>
                         <button class="btn-secondary" id="refreshUsersBtn" style="padding:4px 8px; font-size:11px;">🔄 Refresh Users</button>
                     </div>
-                    <div class="user-table-wrapper" style="max-height:260px; overflow-y:auto; margin-top:8px;">
+                    <div class="user-table-wrapper" tabindex="0" role="region" aria-label="Registered User Accounts" style="max-height:260px; overflow-x:auto; overflow-y:auto; margin-top:8px;">
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -988,77 +1008,80 @@
          ====================================================================== -->
 
     <!-- Modal 1: Rent & Reserve Equipment (with Payment Sandbox Choice) -->
-    <div class="modal-overlay" id="reserveModal">
+    <div class="modal-overlay" id="reserveModal" role="dialog" aria-modal="true" aria-labelledby="reserveModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title">Rent & Reserve Equipment</h3>
-                <button class="modal-close-btn" id="closeReserveModal">&times;</button>
+                <h3 class="modal-title" id="reserveModalTitle">Reserve this item</h3>
+                <button class="modal-close-btn" id="closeReserveModal" aria-label="Close Rent and Reserve dialog">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="reserveAssetId">
                 <div style="margin-bottom:16px;">
                     <div id="modalAssetTitle" style="font-weight:700; font-size:16px;">Sony Alpha A7 IV Mirrorless Camera</div>
-                    <div id="modalAssetBay" style="font-size:12px; color:var(--slate-500);">Target Bay: A2</div>
+                    <div id="modalAssetBay" style="font-size:12px; color:var(--slate-500);">Pickup details appear after your reservation.</div>
                 </div>
 
                 <div class="form-group">
-                    <label>Rental Duration (Days):</label>
+                    <label for="rentalDaysInput">How many days do you need it?</label>
                     <input type="number" class="form-control" id="rentalDaysInput" min="1" max="30" value="2">
                 </div>
 
                 <div style="background:var(--slate-50); padding:14px; border-radius:var(--radius-md); margin-bottom:16px; border:1px solid var(--slate-200);">
                     <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
-                        <span>Rental Tariff:</span>
+                        <span>Rental price:</span>
                         <strong id="modalTariffEstimate">₹2,400.00</strong>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
-                        <span>Refundable Security Deposit:</span>
+                        <span>Refundable deposit:</span>
                         <strong id="modalCollateralEstimate">₹5,000.00</strong>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:800; border-top:1px dashed var(--slate-300); padding-top:6px; color:var(--brand-teal-dark);">
-                        <span>Total Escrow Required:</span>
+                        <span>Total to reserve:</span>
                         <span id="modalTotalEscrow">₹7,400.00</span>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label style="font-size:12px; font-weight:700;">Payment & Authorization Method:</label>
+                <div class="form-group" id="reservePaymentMethods">
+                    <label style="font-size:12px; font-weight:700;">Payment method:</label>
                     <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
                         <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer;">
                             <input type="radio" name="paymentOption" value="wallet" checked style="margin-top:3px;">
                             <div>
-                                <strong>Direct Escrow Wallet Lock</strong> (Pre-funded Account Balance)
-                                <div style="font-size:11px; color:var(--slate-500);">Locks rental tariff + collateral directly from your verified escrow wallet.</div>
+                                <strong>Demo wallet</strong>
+                                <div style="font-size:11px; color:var(--slate-500);">The rental price and refundable deposit are taken from your demo balance.</div>
                             </div>
                         </label>
                         <label style="display:flex; align-items:flex-start; gap:8px; font-size:13px; cursor:pointer; margin-top:4px;">
                             <input type="radio" name="paymentOption" value="gateway" style="margin-top:3px;">
                             <div>
-                                <strong>Indian Payment Gateway Simulation</strong> (Razorpay/UPI Sandbox Ledger)
-                                <div style="font-size:11px; color:var(--slate-500);">Simulates gateway HMAC signature. (Requires verified wallet balance to lock escrow).</div>
+                                <strong>UPI / card (demo)</strong>
+                                <div style="font-size:11px; color:var(--slate-500);">Try the payment flow without a real charge.</div>
                             </div>
                         </label>
                     </div>
                 </div>
 
                 <div style="font-size:11px; color:var(--slate-500); margin-bottom:16px;">
-                    ⚡ <strong>4-Gate Fail-Fast Verification Pipeline</strong> executes upon confirmation:
-                    Gate 1 (Identity & Anti-Self-Rental) &rarr; Gate 2 (State Machine) &rarr; Gate 3 (Escrow Solvency in ₹) &rarr; Gate 4 (Hub Spatial Invariant).
+                    At reservation, the rental fee and refundable deposit are collected. After you return the item, it is inspected and the deposit is settled.
+                </div>
+
+                <div id="reserveAuthHint" style="display:none; font-size:12px; color:var(--slate-600); margin-bottom:12px;">
+                    You can review the price now. Sign in or create an account when you’re ready to reserve.
                 </div>
 
                 <button class="btn-primary" id="confirmReserveBtn" style="width:100%; justify-content:center;">
-                    <span>🛡️</span> Lock Escrow & Confirm Booking
+                    <span id="confirmReserveIcon">✓</span> <span id="confirmReserveLabel">Confirm rental</span>
                 </button>
             </div>
         </div>
     </div>
 
     <!-- Modal 2: Indian Payment Gateway Sandbox (Simulating Razorpay/Cashfree flow) -->
-    <div class="modal-overlay" id="paymentSandboxModal">
+    <div class="modal-overlay" id="paymentSandboxModal" role="dialog" aria-modal="true" aria-labelledby="paymentSandboxModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title">Indian Gateway Sandbox (₹ INR)</h3>
-                <button class="modal-close-btn" id="closePaymentSandboxModal">&times;</button>
+                <h3 class="modal-title" id="paymentSandboxModalTitle">Indian Gateway Sandbox (₹ INR)</h3>
+                <button class="modal-close-btn" id="closePaymentSandboxModal" aria-label="Close Payment Sandbox dialog">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="payment-badge-row">
@@ -1086,7 +1109,7 @@
                 </div>
 
                 <div class="form-group" style="margin-top:16px;">
-                    <label>Simulated Indian Payment Instrument:</label>
+                    <label for="sandboxMethodSelect">Simulated Indian Payment Instrument:</label>
                     <select class="form-control" id="sandboxMethodSelect">
                         <option value="upi_gpay">UPI - Google Pay (deepak@okhdfcbank)</option>
                         <option value="upi_phonepe">UPI - PhonePe (deepak@ybl)</option>
@@ -1107,11 +1130,11 @@
     </div>
 
     <!-- Modal 3: Renter Damage Dispute Filing -->
-    <div class="modal-overlay" id="disputeModal">
+    <div class="modal-overlay" id="disputeModal" role="dialog" aria-modal="true" aria-labelledby="disputeModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title">Contest Damage Deduction / File Dispute</h3>
-                <button class="modal-close-btn" id="closeDisputeModal">&times;</button>
+                <h3 class="modal-title" id="disputeModalTitle">Contest Damage Deduction / File Dispute</h3>
+                <button class="modal-close-btn" id="closeDisputeModal" aria-label="Close Dispute Filing dialog">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="disputeAssetId">
@@ -1121,12 +1144,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Reason for Contesting Host's Claim:</label>
+                    <label for="disputeReasonInput">Reason for Contesting Host's Claim:</label>
                     <textarea class="form-control" id="disputeReasonInput" rows="2" placeholder="e.g. Scratches were pre-existing before pickup; normal wear-and-tear."></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label>Supporting Evidence & Return Photo Notes:</label>
+                    <label for="disputeEvidenceInput">Supporting Evidence & Return Photo Notes:</label>
                     <textarea class="form-control" id="disputeEvidenceInput" rows="2" placeholder="e.g. Return check-in photo timestamped 16:30 shows spotless front element."></textarea>
                 </div>
 
@@ -1142,11 +1165,11 @@
     </div>
 
     <!-- Modal 4: Legal & Regulatory Policy Center (20 Documents) -->
-    <div class="modal-overlay" id="policyModal">
+    <div class="modal-overlay" id="policyModal" role="dialog" aria-modal="true" aria-labelledby="policyModalTitle">
         <div class="modal-card" style="max-width:760px;">
             <div class="modal-header">
-                <h3 class="modal-title">📜 RentSphere Legal & Policy Center (20 Indian Policies)</h3>
-                <button class="modal-close-btn" id="closePolicyModal">&times;</button>
+                <h3 class="modal-title" id="policyModalTitle">📜 RentSphere Legal & Policy Center (20 Indian Policies)</h3>
+                <button class="modal-close-btn" id="closePolicyModal" aria-label="Close Policy Center dialog">&times;</button>
             </div>
             <div class="modal-body">
                 <p style="font-size:12px; color:var(--slate-500); margin-bottom:12px;">
@@ -1154,6 +1177,7 @@
                 </p>
 
                 <div class="policy-filter-bar">
+                    <label for="policySearchInput" class="visually-hidden" style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0,0,0,0);">Filter policies</label>
                     <input type="text" class="form-control" id="policySearchInput" placeholder="Filter policies (e.g. Privacy, Cancellation, Dispute, IP)..." style="font-size:12px;">
                 </div>
 
@@ -1175,11 +1199,11 @@
     </div>
 
     <!-- Modal 5: Submit Customer Grievance / Support Ticket (IT Rules 2021) -->
-    <div class="modal-overlay" id="supportModal">
+    <div class="modal-overlay" id="supportModal" role="dialog" aria-modal="true" aria-labelledby="supportModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title">Customer Support & Grievance Redressal</h3>
-                <button class="modal-close-btn" id="closeSupportModal">&times;</button>
+                <h3 class="modal-title" id="supportModalTitle">Customer Support & Grievance Redressal</h3>
+                <button class="modal-close-btn" id="closeSupportModal" aria-label="Close Customer Support dialog">&times;</button>
             </div>
             <div class="modal-body">
                 <p style="font-size:11px; color:var(--slate-500); margin-bottom:12px;">
@@ -1187,7 +1211,7 @@
                 </p>
 
                 <div class="form-group">
-                    <label>Grievance Category:</label>
+                    <label for="ticketCategory">Grievance Category:</label>
                     <select class="form-control" id="ticketCategory">
                         <option value="BOOKING">Booking & State Machine Issue</option>
                         <option value="PAYMENT">Escrow / Payment / Deposit Inquiry</option>
@@ -1198,12 +1222,12 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Subject / Summary:</label>
+                    <label for="ticketSubject">Subject / Summary:</label>
                     <input type="text" class="form-control" id="ticketSubject" placeholder="e.g. Locker Bay B2 solenoid didn't pop open">
                 </div>
 
                 <div class="form-group">
-                    <label>Detailed Explanation:</label>
+                    <label for="ticketDescription">Detailed Explanation:</label>
                     <textarea class="form-control" id="ticketDescription" rows="3" placeholder="Provide booking ID, bay number, and details..."></textarea>
                 </div>
 
@@ -1215,14 +1239,14 @@
     </div>
 
     <!-- Modal 6: User Authentication & Registration (PBKDF2) -->
-    <div class="modal-overlay" id="authModal">
+    <div class="modal-overlay" id="authModal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title">RentSphere Account Access</h3>
-                <button class="modal-close-btn" id="closeAuthModal">&times;</button>
+                <h3 class="modal-title" id="authModalTitle">RentSphere Account Access</h3>
+                <button class="modal-close-btn" id="closeAuthModal" aria-label="Close Account Access dialog">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="auth-tabs" style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--slate-200); padding-bottom:8px;">
+                <div class="auth-tabs" style="display:flex; gap:8px; margin-bottom:14px; border-bottom:1px solid var(--slate-200); padding-bottom:8px; flex-wrap:wrap;">
                     <button class="cat-pill active" id="tabAuthLogin">Sign In</button>
                     <button class="cat-pill" id="tabAuthRegister">Register New User</button>
                     <button class="cat-pill" id="tabAuthQuick">Demo Switcher (Viva Defense Only)</button>
@@ -1294,15 +1318,15 @@
     </div>
 
     <!-- Modal 7: List New Equipment -->
-    <div class="modal-overlay" id="onboardModal">
+    <div class="modal-overlay" id="onboardModal" role="dialog" aria-modal="true" aria-labelledby="onboardModalTitle">
         <div class="modal-card">
             <div class="modal-header">
-                <h3 class="modal-title">+ List Equipment in RentSphere Hub</h3>
-                <button class="modal-close-btn" id="closeOnboardModal">&times;</button>
+                <h3 class="modal-title" id="onboardModalTitle">+ List Equipment in RentSphere Hub</h3>
+                <button class="modal-close-btn" id="closeOnboardModal" aria-label="Close List Equipment dialog">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Equipment Category:</label>
+                    <label for="onboardLeafClass">Equipment Category:</label>
                     <select class="form-control" id="onboardLeafClass">
                         <option value="CameraAndOpticsGear">Cameras & Optics Gear (DSLR, Mirrorless, Lenses, Projectors)</option>
                         <option value="EventAudioAndLighting">Event Audio & Lighting (Speakers, PA Systems, DJ Controllers)</option>
@@ -1312,23 +1336,23 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Equipment Title / Model:</label>
+                    <label for="onboardTitle">Equipment Title / Model:</label>
                     <input type="text" class="form-control" id="onboardTitle" placeholder="e.g. Sony FX3 Cinema Camera Body">
                 </div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                     <div class="form-group">
-                        <label>Daily Rent (₹ INR):</label>
+                        <label for="onboardRate">Daily Rent (₹ INR):</label>
                         <input type="number" class="form-control" id="onboardRate" value="1200">
                     </div>
                     <div class="form-group">
-                        <label>Refundable Deposit (₹ INR):</label>
+                        <label for="onboardCollateral">Refundable Deposit (₹ INR):</label>
                         <input type="number" class="form-control" id="onboardCollateral" value="5000">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Hub Bay / Parking Slot (A1–H8):</label>
+                    <label for="onboardBay">Hub Bay / Parking Slot (A1–H8):</label>
                     <input type="text" class="form-control" id="onboardBay" value="B2" style="text-transform:uppercase;">
                     <div style="font-size:11px; color:var(--warm-amber-dark); margin-top:4px;">
                         ⚠️ Spatial Invariant: Wedding Cars & Mobility Vehicles MUST be assigned to Row H Ground Slots (H1–H8).
@@ -1351,11 +1375,11 @@
                     <strong style="font-family:var(--font-heading); font-size:16px;">RentSphere</strong>
                 </div>
                 <p style="font-size:12px; color:var(--slate-500); margin-top:4px;">
-                    Decentralized Peer-to-Peer Equipment Rentals & 8x8 Micro-Storage Engine.<br>
-                    Goa University Campus, Taleigao Plateau, Goa 403206, India.
+                    Borrow useful gear nearby, pick it up at a local hub, and return it when you’re done.<br>
+                    Goa University, Taleigao Plateau, Goa.
                 </p>
                 <div style="font-size:11px; color:var(--slate-400); margin-top:6px;">
-                    Pure Java SE Architecture (Zero External JAR Dependencies) • Native Currency: Indian Rupees (₹ INR)
+                    Prices shown in Indian rupees (₹).
                 </div>
             </div>
 
@@ -1382,25 +1406,21 @@
             </div>
 
             <div class="footer-col">
-                <h4>Academic Invariants</h4>
+                <h4>Pickup & returns</h4>
                 <div style="font-size:11px; color:var(--slate-500); line-height:1.6;">
-                    • 5-Tier Domain Model Hierarchy<br>
-                    • 4-Stage GoF State Pattern<br>
-                    • Prototype Deep vs. Shallow Cloning<br>
-                    • 4-Gate Fail-Fast Verification Pipeline<br>
-                    • 8x8 Spatial Ground Slot Rule (Row H)
+                    Your pickup code appears after reservation. When you return the gear, its condition is checked and your deposit is settled.
                 </div>
             </div>
         </div>
         <div class="footer-bottom">
-            <span>© 2026 RentSphere P2P Hub. Built for MCA Object-Oriented Technology Lab Viva Defense.</span>
-            <span>All 20 Indian Legal & Regulatory Policies Accessible Above.</span>
+            <span>© 2026 RentSphere · Equipment rentals in Goa</span>
+            <span>Student project demonstration</span>
         </div>
     </footer>
 
     <!-- Toast Notification Container -->
-    <div class="toast-container" id="toastContainer"></div>
+    <div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="true"></div>
 
-    <script src="js/app.js?v=checkpoint7_1"></script>
+    <script src="js/app.js?v=ux-refresh-2"></script>
 </body>
 </html>

@@ -21,6 +21,7 @@ const state = {
     notifications: [],
     selectedBayId: 'A2',
     currentReserveAsset: null,
+    resumeReservationAfterAuth: false,
     pendingPaymentOrder: null,
     authToken: null
 };
@@ -119,26 +120,39 @@ async function executeLogout() {
 
 function initNavigation() {
     const navPills = document.querySelectorAll('.nav-pill');
+    const routeNames = {
+        marketplaceView: 'marketplace',
+        myRentalsView: 'my-rentals',
+        hubView: 'pickup',
+        escrowView: 'returns',
+        hostView: 'host',
+        adminSupportView: 'admin'
+    };
+    const activateView = (viewId, updateUrl = false) => {
+        const pill = document.querySelector(`.nav-pill[data-view="${viewId}"]`);
+        const targetView = document.getElementById(viewId);
+        if (!pill || !targetView || pill.style.display === 'none') return;
+        navPills.forEach(p => p.classList.toggle('active', p === pill));
+        document.querySelectorAll('.view-section').forEach(sec => sec.classList.toggle('active', sec === targetView));
+        if (updateUrl && routeNames[viewId]) history.pushState({ viewId }, '', `#${routeNames[viewId]}`);
+        if (viewId === 'myRentalsView') renderRenterActiveBookings();
+        if (viewId === 'hubView') renderLockerGrid();
+        if (viewId === 'escrowView') renderQuarantineDeck();
+        if (viewId === 'hostView') renderHostStudio();
+        if (viewId === 'adminSupportView') renderAdminSupportView();
+    };
+
     navPills.forEach(pill => {
         pill.addEventListener('click', () => {
-            navPills.forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-
             const viewId = pill.getAttribute('data-view');
-            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-            const targetView = document.getElementById(viewId);
-            if (targetView) targetView.classList.add('active');
-
-            if (viewId === 'hubView') renderLockerGrid();
-            if (viewId === 'escrowView') renderQuarantineDeck();
-            if (viewId === 'hostView') {
-                renderHostStudio();
-            }
-            if (viewId === 'adminSupportView') {
-                renderAdminSupportView();
-            }
+            activateView(viewId, true);
         });
     });
+
+    const routeViews = Object.fromEntries(Object.entries(routeNames).map(([view, route]) => [route, view]));
+    const viewFromUrl = () => routeViews[location.hash.slice(1)] || 'marketplaceView';
+    window.addEventListener('popstate', () => activateView(viewFromUrl()));
+    if (location.hash) activateView(viewFromUrl());
 }
 
 function initCategoryPills() {
@@ -176,8 +190,11 @@ function initUserSelector() {
             showToast('🔐 Administrator authentication required. Please enter credentials.', 'warning');
             return;
         }
-        state.activeUser = val;
-        await executeLogin(state.activeUser, 'RentSphere@2026');
+        const previousUser = state.activeUser;
+        await executeLogin(val, 'RentSphere@2026');
+        if (!state.activeUser || state.activeUser === previousUser) {
+            select.value = previousUser || '';
+        }
         updateUserUI();
         fetchNotifications();
     });
@@ -196,16 +213,20 @@ function initEventListeners() {
     document.getElementById('closeDisputeModal')?.addEventListener('click', () => closeModal('disputeModal'));
     document.getElementById('closePolicyModal')?.addEventListener('click', () => closeModal('policyModal'));
     document.getElementById('closeSupportModal')?.addEventListener('click', () => closeModal('supportModal'));
-    document.getElementById('closeAuthModal')?.addEventListener('click', () => closeModal('authModal'));
+    document.getElementById('closeAuthModal')?.addEventListener('click', () => {
+        state.resumeReservationAfterAuth = false;
+        closeModal('authModal');
+    });
 
     // Top CTA & Policy triggers
     document.getElementById('openPolicyCenterBtn')?.addEventListener('click', openPolicyCenter);
-    document.getElementById('heroLearnPoliciesBtn')?.addEventListener('click', openPolicyCenter);
-    document.getElementById('heroExploreBtn')?.addEventListener('click', () => {
-        document.getElementById('assetsGrid')?.scrollIntoView({ behavior: 'smooth' });
-    });
-    document.getElementById('heroBecomeHostBtn')?.addEventListener('click', () => openModal('onboardModal'));
     document.getElementById('openAuthModalBtn')?.addEventListener('click', () => openModal('authModal'));
+    document.getElementById('becomeHostBtn')?.addEventListener('click', () => {
+        openModal('authModal');
+        document.getElementById('tabAuthRegister')?.click();
+        const roleSelect = document.getElementById('regRole');
+        if (roleSelect) roleSelect.value = 'HOST';
+    });
     document.getElementById('signOutBtn')?.addEventListener('click', executeLogout);
     document.getElementById('openSupportTicketBtn')?.addEventListener('click', () => openModal('supportModal'));
 
@@ -415,28 +436,46 @@ function updateUserUI() {
     const badge = document.getElementById('userRoleBadge');
     const walletSpan = document.getElementById('headerWalletBalance');
     const authBtn = document.getElementById('authButtonLabel');
+    const activeUserLabel = document.getElementById('activeUserLabel');
+    const walletPill = document.querySelector('.wallet-pill');
     const navHostTab = document.getElementById('navHostTab');
     const navAdminTab = document.getElementById('navAdminTab');
+    const navMyRentalsTab = document.getElementById('navMyRentalsTab');
+    const navHubTab = document.getElementById('navHubTab');
+    const navReturnsTab = document.getElementById('navReturnsTab');
     const listEquipBtn = document.getElementById('openListEquipmentBtn');
+    const stateFilter = document.getElementById('stateFilter');
 
     if (!state.activeUser) {
         if (badge) {
             badge.textContent = 'GUEST';
             badge.className = 'role-tag';
         }
+        if (activeUserLabel) activeUserLabel.textContent = 'Browse as guest';
         if (walletSpan) walletSpan.textContent = '0.00';
+        if (walletPill) walletPill.style.display = 'none';
         if (authBtn) authBtn.textContent = 'Sign In / Register';
         if (signOutBtn) signOutBtn.style.display = 'none';
         if (navHostTab) navHostTab.style.display = 'none';
         if (navAdminTab) navAdminTab.style.display = 'none';
+        if (navMyRentalsTab) navMyRentalsTab.style.display = 'inline-flex';
+        if (navHubTab) navHubTab.style.display = 'none';
+        if (navReturnsTab) navReturnsTab.style.display = 'none';
         if (listEquipBtn) listEquipBtn.style.display = 'none';
+        if (stateFilter) {
+            stateFilter.value = 'AVAILABLE';
+            stateFilter.style.display = 'none';
+        }
+        if (document.querySelector('.nav-pill.active')?.style.display === 'none') {
+            document.querySelector('.nav-pill[data-view="marketplaceView"]')?.click();
+        }
         renderRenterActiveBookings();
         return;
     }
 
     const user = state.users.find(u => u.userId === state.activeUser);
-    const role = user ? user.role : 'RENTER';
-    const userName = user ? user.userName : state.activeUser;
+    const role = user ? user.role : 'GUEST';
+    const userName = user ? (user.fullName || user.userName || state.activeUser) : 'Account';
     const balance = user ? Number(user.walletBalance) : 0;
 
     if (walletSpan) {
@@ -445,18 +484,28 @@ function updateUserUI() {
             maximumFractionDigits: 2
         });
     }
+    if (walletPill) walletPill.style.display = 'flex';
     if (badge) {
         badge.textContent = role;
         badge.className = 'role-tag role-' + role.toLowerCase();
     }
+    if (activeUserLabel) activeUserLabel.textContent = userName;
     if (authBtn) {
         authBtn.textContent = userName.split(' ')[0] + ' (' + role + ')';
     }
     if (signOutBtn) {
         signOutBtn.style.display = 'inline-flex';
     }
+    const isRenter = role === 'RENTER';
+    if (stateFilter) {
+        stateFilter.style.display = isRenter ? 'none' : 'inline-flex';
+        if (!isRenter && stateFilter.value === 'AVAILABLE') stateFilter.value = 'ALL';
+    }
+    if (navMyRentalsTab) navMyRentalsTab.style.display = isRenter ? 'inline-flex' : 'none';
+    if (navHubTab) navHubTab.style.display = 'inline-flex';
+    if (navReturnsTab) navReturnsTab.style.display = role === 'HOST' || role === 'ADMIN' || role === 'INSPECTOR' ? 'inline-flex' : 'none';
 
-    // Role-based navigation and action visibility (Requirement 2)
+    // Keep each account focused on the sections it can use.
     const isAdminUser = role === 'ADMIN' || role === 'INSPECTOR';
     if (isAdminUser) {
         if (navHostTab) navHostTab.style.display = 'inline-flex';
@@ -464,15 +513,20 @@ function updateUserUI() {
         if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
     } else if (role === 'HOST') {
         if (navHostTab) navHostTab.style.display = 'inline-flex';
-        if (navAdminTab) navAdminTab.style.display = 'inline-flex';
+        if (navAdminTab) navAdminTab.style.display = 'none';
         if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
     } else { // RENTER
-        if (navHostTab) navHostTab.style.display = 'inline-flex';
-        if (navAdminTab) navAdminTab.style.display = 'inline-flex';
-        if (listEquipBtn) listEquipBtn.style.display = 'inline-flex';
+        if (navHostTab) navHostTab.style.display = 'none';
+        if (navAdminTab) navAdminTab.style.display = 'none';
+        if (listEquipBtn) listEquipBtn.style.display = 'none';
+    }
+
+    if (document.querySelector('.nav-pill.active')?.style.display === 'none') {
+        document.querySelector('.nav-pill[data-view="marketplaceView"]')?.click();
     }
 
     renderRenterActiveBookings();
+    renderCatalog();
     renderHostStudio();
     updateInspectorDetails();
 }
@@ -573,37 +627,25 @@ function renderRenterActiveBookings() {
 
     const container = document.getElementById('renterActiveBookingsContainer');
     if (!container) return;
+    const activeAccount = state.users.find(u => u.userId === state.activeUser);
 
-    // Handle Unauthenticated / Guest State with a clear, honest state
+    // Keep account-only actions inside the dedicated rentals page.
     if (!state.activeUser) {
         container.style.display = 'block';
         container.innerHTML = `
-            <div class="tactile-quick-dock">
-                <div class="dock-header">
-                    <h3 class="dock-title">
-                        <span>⚡</span> Active Rental Quick-Dock • 8×8 Smart Hub
-                    </h3>
-                    <span class="dock-stage-badge" style="background:var(--slate-100); color:var(--slate-600); border:1px solid var(--slate-300);">
-                        Guest Mode
-                    </span>
-                </div>
-                <div class="dock-guest-card">
-                    <div class="dock-guest-icon">🔐</div>
-                    <div class="dock-guest-content">
-                        <h4>Sign In to View Active Pickups & Locker OTPs</h4>
-                        <p>Compartment access OTPs and simulated unlock triggers are cryptographically authorized only for the reserving renter (CWE-200).</p>
-                    </div>
-                    <div>
-                        <button class="btn-primary" id="dockGuestSignInBtn" style="padding:8px 16px; font-weight:700;">
-                            <span>🔑</span> Sign In as Renter (Deepak Dev)
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.getElementById('dockGuestSignInBtn')?.addEventListener('click', async () => {
-            await executeLogin('renter_deepak', 'RentSphere@2026');
+            <div class="rentals-empty-state">
+                <div class="rentals-empty-icon">🧾</div>
+                <h3>Sign in to see your rentals</h3>
+                <p>Your bookings, pickup code and return updates will appear here.</p>
+                <button class="btn-primary" id="myRentalsSignInBtn">Sign in</button>
+            </div>`;
+        document.getElementById('myRentalsSignInBtn')?.addEventListener('click', () => {
+            document.getElementById('openAuthModalBtn')?.click();
         });
+        return;
+    }
+    if (!activeAccount || activeAccount.role !== 'RENTER') {
+        container.style.display = 'none';
         return;
     }
 
@@ -617,31 +659,14 @@ function renderRenterActiveBookings() {
     if (myRentals.length === 0) {
         container.style.display = 'block';
         container.innerHTML = `
-            <div class="tactile-quick-dock">
-                <div class="dock-header">
-                    <h3 class="dock-title">
-                        <span>⚡</span> Active Rental Quick-Dock (${escapeHtml(state.activeUser)})
-                    </h3>
-                    <span class="dock-stage-badge" style="background:var(--slate-100); color:var(--slate-600); border:1px solid var(--slate-300);">
-                        Stage 1: Ready to Rent
-                    </span>
-                </div>
-                <div class="dock-empty-card">
-                    <div class="dock-empty-icon">📦</div>
-                    <div class="dock-empty-content">
-                        <h4>No Active Equipment Pickups or Leases</h4>
-                        <p>You have no equipment currently reserved or out on lease. Browse the equipment catalog below, select gear, and book with 4-Gate Escrow protection.</p>
-                    </div>
-                    <div>
-                        <button class="btn-secondary" id="dockExploreBtn" style="padding:8px 16px; font-weight:700;">
-                            <span>🔍</span> Explore Equipment
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        document.getElementById('dockExploreBtn')?.addEventListener('click', () => {
-            document.getElementById('assetsGrid')?.scrollIntoView({ behavior: 'smooth' });
+            <div class="rentals-empty-state">
+                <div class="rentals-empty-icon">📦</div>
+                <h3>No rentals yet</h3>
+                <p>Find something useful in the marketplace and your booking will show up here.</p>
+                <button class="btn-primary" id="rentalsBrowseBtn">Browse equipment</button>
+            </div>`;
+        document.getElementById('rentalsBrowseBtn')?.addEventListener('click', () => {
+            document.querySelector('.nav-pill[data-view="marketplaceView"]')?.click();
         });
         return;
     }
@@ -705,7 +730,7 @@ function renderRenterActiveBookings() {
 
                                     ${isLockedOut ? `
                                         <div class="dock-alert-banner alert-danger">
-                                            <span>⛔</span> <strong>Bay Lockout (CWE-307):</strong> 3 failed attempts. Bay ${comp.bayId} locked for ${comp.lockoutRemainingSec || 900}s.
+                                            <span>⛔</span> <strong>Bay temporarily locked:</strong> too many incorrect attempts. Bay ${comp.bayId} is locked for ${comp.lockoutRemainingSec || 900}s.
                                         </div>
                                     ` : ''}
 
@@ -718,7 +743,7 @@ function renderRenterActiveBookings() {
                                     <div class="dock-pin-vault">
                                         <div class="dock-pin-header">
                                             <span>One-Time Locker Access PIN</span>
-                                            <span class="hardware-paired-badge">${hasAuthorizedOtp ? '● Authorized by Server' : '🔒 Protected (CWE-200)'}</span>
+                                            <span class="hardware-paired-badge">${hasAuthorizedOtp ? '● Authorized by Server' : '🔒 Access protected'}</span>
                                         </div>
                                         <div class="dock-pin-val" aria-label="One-Time Locker PIN: ${hasAuthorizedOtp ? comp.otpPin : 'Masked'}">${escapeHtml(formattedOtp)}</div>
                                         <div style="font-size:10px; color:rgba(255,255,255,0.7); text-align:center;">
@@ -765,12 +790,7 @@ function renderRenterActiveBookings() {
                                     <div style="font-size:11px; color:var(--slate-600); margin: 6px 0 10px 0; line-height:1.4;">
                                         Enforcing <strong>Mandatory Quarantine Invariant</strong>: Escrow deposit (${formatInr(a.requiredCollateral)}) remains securely held until host Faaris Khan approves return or logs damage contestation.
                                     </div>
-                                    <button class="btn-secondary direct-goto-escrow-btn" 
-                                            data-id="${a.id}"
-                                            aria-label="View return inspection in Escrow and Returns deck"
-                                            style="width:100%; justify-content:center; padding:8px 12px; font-size:12px; font-weight:700;">
-                                        <span>🛡️</span> View in Escrow & Returns Deck
-                                    </button>
+                                    <div class="dock-sim-notice">Your return is being checked. Your deposit will be settled after the inspection.</div>
                                 `}
 
                                 <div class="dock-feedback-banner" id="dock-feedback-${a.id}" style="display:none;" role="status" aria-live="polite"></div>
@@ -953,7 +973,7 @@ function renderCatalog() {
     if (!container) return;
 
     const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase();
-    const stateFilter = document.getElementById('stateFilter')?.value || 'ALL';
+    const stateFilter = document.getElementById('stateFilter')?.value || 'AVAILABLE';
 
     const filtered = state.assets.filter(a => {
         // Category filter
@@ -977,6 +997,12 @@ function renderCatalog() {
 
         return true;
     });
+
+    const countLabel = document.getElementById('catalogCount');
+    if (countLabel) {
+        const noun = stateFilter === 'AVAILABLE' ? 'available' : 'listings';
+        countLabel.textContent = `${filtered.length} ${noun}`;
+    }
 
     if (filtered.length === 0) {
         container.innerHTML = `
@@ -1003,25 +1029,41 @@ function renderCatalog() {
 function renderAssetCard(a) {
     const isAvail = a.state === 'AVAILABLE';
     const stateBadgeClass = getStateBadgeClass(a.state);
-    const categoryName = getCategoryDisplayName(a.leafClass);
+    const categoryName = a.id === 'AST-102' ? 'Projectors & screens' : getCategoryDisplayName(a.leafClass);
 
     // Visual Banner Theme by Category
     let bannerCatClass = 'cat-cameras';
     let bannerIcon = '📷';
+    let bannerPhoto = 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=1000&q=80';
     if (a.leafClass === 'EventAudioAndLighting') {
         bannerCatClass = 'cat-audio';
         bannerIcon = '🔊';
+        bannerPhoto = 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=1000&q=80';
     } else if (a.leafClass === 'PowerToolEquipment') {
         bannerCatClass = 'cat-tools';
         bannerIcon = '🛠️';
+        bannerPhoto = 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?auto=format&fit=crop&w=1000&q=80';
     } else if (a.leafClass === 'EventAndMobilityVehicle') {
         bannerCatClass = 'cat-vehicles';
         bannerIcon = '🚗';
+        bannerPhoto = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1000&q=80';
+    }
+
+    if (a.id === 'AST-106') {
+        bannerPhoto = 'https://images.pexels.com/photos/4876669/pexels-photo-4876669.jpeg?auto=compress&dpr=1&h=750&w=1260';
+    } else if (a.id === 'AST-102') {
+        bannerPhoto = 'https://images.pexels.com/photos/18306899/pexels-photo-18306899/free-photo-of-whiteboard-in-meeting-room.jpeg?auto=compress&dpr=1&h=750&w=1260';
+    }
+
+    // Use product-appropriate photos for the two mobility listings.
+    if (a.id === 'AST-107') {
+        bannerPhoto = 'https://images.unsplash.com/photo-1649468351961-82480be17fb7?auto=format&fit=crop&w=1000&q=80';
+    } else if (a.id === 'AST-108') {
+        bannerPhoto = 'https://images.unsplash.com/photo-1610267037736-abf3096c88fb?auto=format&fit=crop&w=1000&q=80';
     }
 
     // Host identity & verified KYC status strictly from real backend data (state.users)
     const owner = state.users.find(u => u.userId === a.ownerId);
-    const hostDisplayName = owner ? owner.userName : a.ownerId;
     const isVerifiedHost = Boolean(owner && owner.isKycVerified);
 
     // Real specification tags strictly from backend domain fields
@@ -1030,21 +1072,13 @@ function renderAssetCard(a) {
     if (a.wattageOrBatterySpec) specPills.push(`<span class="spec-pill">${escapeHtml(a.wattageOrBatterySpec)}</span>`);
     if (a.powerOrEngineSpec) specPills.push(`<span class="spec-pill">${escapeHtml(a.powerOrEngineSpec)}</span>`);
     if (a.safetyCertification) specPills.push(`<span class="spec-pill is-safety"><span aria-hidden="true">✓</span> ${escapeHtml(a.safetyCertification)}</span>`);
-    if (a.protectionTier) specPills.push(`<span class="spec-pill">${escapeHtml(a.protectionTier)}</span>`);
-    if (a.requiresGroundBay) specPills.push(`<span class="spec-pill" style="border-color:var(--warm-amber); color:var(--warm-amber-dark); font-weight:700;">Ground Slot (Row H)</span>`);
-    if (a.accessoryKitCount && a.accessoryKitCount > 0) specPills.push(`<span class="spec-pill">${a.accessoryKitCount} Kit Items</span>`);
-
-    const hasLockerCoordinate = Boolean(a.lockerCoordinate && a.lockerCoordinate.trim());
+    if (a.accessoryKitCount && a.accessoryKitCount > 0) specPills.push(`<span class="spec-pill">${a.accessoryKitCount} included items</span>`);
 
     return `
         <article class="asset-card" aria-labelledby="asset-title-${escapeHtml(a.id)}">
             <div class="asset-banner ${bannerCatClass}" role="img" aria-label="${escapeHtml(a.title)} category visual">
+                <img class="asset-photo" src="${bannerPhoto}" alt="" loading="lazy" onload="this.parentElement.classList.add('has-photo')" onerror="this.remove()">
                 <div class="asset-banner-icon" aria-hidden="true">${bannerIcon}</div>
-                ${hasLockerCoordinate ? `
-                    <div class="asset-bay-badge" title="Physical Storage Location in 8x8 Smart Hub: Bay ${escapeHtml(a.lockerCoordinate)}" aria-label="Smart Locker Bay ${escapeHtml(a.lockerCoordinate)}">
-                        <span aria-hidden="true">📍</span> Hub Bay ${escapeHtml(a.lockerCoordinate)}
-                    </div>
-                ` : ''}
                 <span class="asset-state-tag ${stateBadgeClass}" aria-label="Availability Status: ${formatStateName(a.state)}">
                     ${formatStateName(a.state)}
                 </span>
@@ -1054,20 +1088,19 @@ function renderAssetCard(a) {
                 <div>
                     <div class="asset-host-row">
                         <div style="display:flex; align-items:center; gap:6px;">
-                            <span class="asset-id-chip" title="Asset Reference ID">${escapeHtml(a.id)}</span>
                             <span class="cat-pill-badge" style="font-size:10px;">${categoryName}</span>
                         </div>
                         ${owner ? (isVerifiedHost ? `
-                            <span class="verified-host-tag" title="Identity & Bank Solvency Verified via 4-Gate Pipeline">
-                                <span aria-hidden="true">✓</span> Verified Host: ${escapeHtml(hostDisplayName)}
+                            <span class="verified-host-tag" title="Identity checked">
+                                <span aria-hidden="true">✓</span> Verified host
                             </span>
                         ` : `
                             <span class="unverified-host-tag" title="KYC Verification Pending">
-                                <span aria-hidden="true">⏳</span> Host: ${escapeHtml(hostDisplayName)}
+                                <span aria-hidden="true">⏳</span> Host profile
                             </span>
                         `) : (a.ownerId ? `
                             <span class="unverified-host-tag">
-                                Host: ${escapeHtml(a.ownerId)}
+                                Local host
                             </span>
                         ` : '')}
                     </div>
@@ -1088,15 +1121,15 @@ function renderAssetCard(a) {
                         <div class="tariff-display" aria-label="Daily Rental Fee: ${formatInr(a.calculatedTariff)} per day">
                             ${formatInr(a.calculatedTariff)} <span class="tariff-unit">/day</span>
                         </div>
-                        <div class="deposit-display" title="Held safely in EscrowVault until clean host inspection" aria-label="Refundable Escrow Deposit: ${formatInr(a.requiredCollateral)}">
-                            <span aria-hidden="true">🛡️</span> + ${formatInr(a.requiredCollateral)} Refundable Escrow
+                        <div class="deposit-display" title="Returned after the item is inspected" aria-label="Refundable deposit: ${formatInr(a.requiredCollateral)}">
+                            <span aria-hidden="true">↩</span> ${formatInr(a.requiredCollateral)} refundable deposit
                         </div>
                     </div>
 
                     <div>
                         ${isAvail ? `
-                            <button class="btn-primary reserve-card-btn" data-id="${a.id}" aria-label="Quick Reserve ${escapeHtml(a.title)} for ${formatInr(a.calculatedTariff)} per day" style="padding:9px 18px; border-radius:var(--radius-pill); font-size:12px; font-weight:700;">
-                                <span aria-hidden="true">⚡</span> Quick Reserve
+                            <button class="btn-primary reserve-card-btn" data-id="${a.id}" aria-label="Rent ${escapeHtml(a.title)} for ${formatInr(a.calculatedTariff)} per day" style="padding:9px 18px; border-radius:var(--radius-pill); font-size:12px; font-weight:700;">
+                                Rent this item
                             </button>
                         ` : `
                             <button class="btn-secondary" disabled aria-disabled="true" aria-label="${escapeHtml(a.title)} is currently ${formatStateName(a.state)}" style="padding:9px 18px; border-radius:var(--radius-pill); font-size:12px; font-weight:600; cursor:not-allowed;">
@@ -1129,11 +1162,11 @@ function formatStateName(st) {
 }
 
 function getCategoryDisplayName(leafClass) {
-    if (leafClass === 'CameraAndOpticsGear') return '📷 Cameras & Optics';
-    if (leafClass === 'EventAudioAndLighting') return '🔊 Audio & Lighting';
-    if (leafClass === 'PowerToolEquipment') return '🛠️ Power Tools';
-    if (leafClass === 'EventAndMobilityVehicle') return '🚗 Mobility & Vehicles';
-    return '📦 General Equipment';
+    if (leafClass === 'CameraAndOpticsGear') return 'Cameras & optics';
+    if (leafClass === 'EventAudioAndLighting') return 'Audio & lighting';
+    if (leafClass === 'PowerToolEquipment') return 'Tools & DIY';
+    if (leafClass === 'EventAndMobilityVehicle') return 'Cars & mobility';
+    return 'General equipment';
 }
 
 // ============================================================================
@@ -1388,7 +1421,7 @@ function updateInspectorDetails() {
         } else {
             otpVal.textContent = '••••••';
             if (otpTitle) otpTitle.textContent = '6-Digit Pickup OTP Passcode';
-            if (otpNotice) otpNotice.textContent = 'Masked for security (CWE-200). Authorized renters see PIN in Active Rentals.';
+            if (otpNotice) otpNotice.textContent = 'Masked for security. Authorized renters see the code in Active Rentals.';
         }
     }
 
@@ -1624,7 +1657,7 @@ function renderQuarantineDeck() {
                     <div style="font-size:11px; color:var(--slate-500); border-top:1px dashed var(--slate-300); padding-top:6px; margin-top:6px;">
                         ${isDisputed 
                             ? '⚖️ Arbitration active by Hub Administrator. Escrow funds frozen pending evidence review.' 
-                            : 'Host verifies physical condition before releasing deposit. Clean return releases full tariff to host and refunds 100% deposit to renter.'}
+                            : 'Host verifies physical condition before releasing the deposit. A clean return pays the full tariff to the host and refunds the deposit to the renter.'}
                     </div>
                 </div>
 
@@ -3025,6 +3058,7 @@ function initAuthModals() {
                 closeModal('authModal');
                 showToast(`✨ Account created for ${data.user.fullName}!`, 'success');
                 await fetchAllData();
+                resumeReservationAfterAuth();
             } else {
                 showToast('❌ ' + data.error, 'error');
             }
@@ -3080,6 +3114,7 @@ async function executeLogin(emailOrUser, password) {
             closeModal('authModal');
             showToast(`🔑 Signed in as ${data.user.fullName} (${data.user.role})`, 'success');
             await fetchAllData();
+            resumeReservationAfterAuth();
         } else {
             showToast('❌ ' + data.error, 'error');
         }
@@ -3092,23 +3127,35 @@ async function executeLogin(emailOrUser, password) {
 // RESERVATION & PAYMENT SANDBOX (₹ INR)
 // ============================================================================
 function openReserveModal(assetId) {
-    if (!state.activeUser) {
-        openModal('authModal');
-        showToast('Please sign in or select a demo persona to rent equipment.', 'warning');
-        return;
-    }
-
     const asset = state.assets.find(a => a.id === assetId);
     if (!asset) return;
 
+    const sameAsset = state.currentReserveAsset?.id === assetId;
     state.currentReserveAsset = asset;
     document.getElementById('reserveAssetId').value = asset.id;
     document.getElementById('modalAssetTitle').textContent = asset.title;
-    document.getElementById('modalAssetBay').textContent = 'Target Hub Bay / Slot: ' + asset.lockerCoordinate;
-    document.getElementById('rentalDaysInput').value = 2;
+    document.getElementById('modalAssetBay').textContent = 'Pickup details appear after your reservation.';
+    if (!sameAsset) document.getElementById('rentalDaysInput').value = 1;
+
+    const isGuest = !state.activeUser;
+    document.getElementById('reservePaymentMethods').style.display = isGuest ? 'none' : '';
+    document.getElementById('reserveAuthHint').style.display = isGuest ? 'block' : 'none';
+    document.getElementById('confirmReserveLabel').textContent = isGuest ? 'Sign in to reserve' : 'Confirm rental';
+    document.getElementById('confirmReserveIcon').textContent = isGuest ? '🔑' : '✓';
 
     updateReserveEstimates();
     openModal('reserveModal');
+}
+
+function resumeReservationAfterAuth() {
+    if (!state.resumeReservationAfterAuth || !state.currentReserveAsset) return;
+    state.resumeReservationAfterAuth = false;
+    const user = state.users.find(account => account.userId === state.activeUser);
+    if (user && user.role !== 'RENTER') {
+        showToast('Reservations need a renter account. Switch to a renter to continue.', 'warning');
+        return;
+    }
+    openReserveModal(state.currentReserveAsset.id);
 }
 
 function updateReserveEstimates() {
@@ -3125,6 +3172,18 @@ function updateReserveEstimates() {
 
 async function submitReserveAsset() {
     if (!state.currentReserveAsset) return;
+    if (!state.activeUser) {
+        state.resumeReservationAfterAuth = true;
+        closeModal('reserveModal');
+        openModal('authModal');
+        showToast('Sign in or create an account to reserve this item.', 'info');
+        return;
+    }
+    const account = state.users.find(user => user.userId === state.activeUser);
+    if (account && account.role !== 'RENTER') {
+        showToast('Reservations need a renter account. Switch to a renter to continue.', 'warning');
+        return;
+    }
     const assetId = state.currentReserveAsset.id;
     const days = parseInt(document.getElementById('rentalDaysInput')?.value) || 1;
     const payOption = document.querySelector('input[name="paymentOption"]:checked')?.value || 'wallet';
@@ -3342,15 +3401,68 @@ async function submitOnboardAsset() {
 // ============================================================================
 // UI HELPERS (MODALS, TOASTS, ESCAPING)
 // ============================================================================
+let lastFocusedElement = null;
+
 function openModal(id) {
     const el = document.getElementById(id);
-    if (el) el.classList.add('active');
+    if (!el) return;
+    lastFocusedElement = document.activeElement;
+    el.classList.add('active');
+    const focusables = el.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    if (focusables.length > 0) {
+        for (let item of focusables) {
+            if (item.offsetParent !== null) {
+                setTimeout(() => item.focus(), 50);
+                break;
+            }
+        }
+    }
 }
 
 function closeModal(id) {
     const el = document.getElementById(id);
-    if (el) el.classList.remove('active');
+    if (!el) return;
+    el.classList.remove('active');
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        try {
+            lastFocusedElement.focus();
+        } catch (e) {}
+    }
 }
+
+// Global modal keyboard navigation (Escape to close, Tab to cycle inside modal)
+document.addEventListener('keydown', (e) => {
+    const activeModal = document.querySelector('.modal-overlay.active');
+    if (!activeModal) return;
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        closeModal(activeModal.id);
+        return;
+    }
+
+    if (e.key === 'Tab') {
+        const focusables = Array.from(activeModal.querySelectorAll(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )).filter(node => node.offsetParent !== null);
+
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+            if (document.activeElement === first || !activeModal.contains(document.activeElement)) {
+                e.preventDefault();
+                last.focus();
+            }
+        } else {
+            if (document.activeElement === last || !activeModal.contains(document.activeElement)) {
+                e.preventDefault();
+                first.focus();
+            }
+        }
+    }
+});
 
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');

@@ -26,8 +26,10 @@ public class FailFastPipeline {
     }
 
     /**
-     * Executes all registered gates in sequential order.
-     * Short-circuits immediately upon the first gate failure.
+     * Checks a reservation request in gate order and stops at the first failure.
+     *
+     * @param ctx request details shared by the verification gates
+     * @return the first failed result, or a success result when every gate passes
      */
     public GateResult verify(PipelineContext ctx) {
         for (VerificationGate gate : gates) {

@@ -42,6 +42,13 @@ public class GenericRepository<T extends AbstractDomainEntity> {
         return storage.remove(id) != null;
     }
 
+    /**
+     * Returns entities accepted by the supplied lambda or all entities when no
+     * filter is supplied.
+     *
+     * @param predicate condition applied to each stored entity
+     * @return matching entities in a new list
+     */
     public List<T> findWhere(Predicate<T> predicate) {
         if (predicate == null) return findAll();
         return storage.values().stream()

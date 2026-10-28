@@ -1049,9 +1049,13 @@ public class RentSphereVerificationTest {
             // -------------------------------------------------------------
             Path escrowFile = testDataDir.resolve("escrow_vault.txt");
             Path walFile = testDataDir.resolve("audit_wal.txt");
+            int baseWalCount = Files.readAllLines(walFile).size();
 
             EscrowSnapshot priyaBeforeDisp = getEscrowSnapshot(escrowFile, "renter_priya");
             EscrowSnapshot ketanBeforeDisp = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            long walCountDispBefore = Files.readAllLines(walFile).stream().filter(l -> l.contains("DSP-CONCUR-DISP")).count();
+            assertTrue(walCountDispBefore == 0, "Dispute concurrency: 0 entries before dispute settlement (filtered baseline)");
 
             HttpRequest concurDisp1 = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/disputes/resolve"))
@@ -1096,6 +1100,8 @@ public class RentSphereVerificationTest {
 
             long walCountDisp = Files.readAllLines(walFile).stream().filter(l -> l.contains("DSP-CONCUR-DISP")).count();
             assertTrue(walCountDisp == 1, "Dispute concurrency: Exactly 1 immutable audit entry recorded in WAL for DSP-CONCUR-DISP");
+            assertTrue(Files.readAllLines(walFile).size() == baseWalCount + 1,
+                    "Dispute concurrency: WAL line count increased by exactly 1 entry (rejected competing request wrote 0 entries)");
 
             // -------------------------------------------------------------
             // PART 4: TRUE CONCURRENT CLEAN INSPECTION APPROVAL
@@ -1111,6 +1117,9 @@ public class RentSphereVerificationTest {
 
             EscrowSnapshot priyaBeforeApp = getEscrowSnapshot(escrowFile, "renter_priya");
             EscrowSnapshot ketanBeforeApp = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            long walCountAppBefore = Files.readAllLines(walFile).stream().filter(l -> l.contains("AST-CONCUR-APP") && l.contains("INSPECT_APPROVE")).count();
+            assertTrue(walCountAppBefore == 0, "Clean inspection concurrency: 0 entries before clean inspection settlement (filtered baseline)");
 
             HttpRequest concurApp1 = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/assets/inspect-approve"))
@@ -1149,12 +1158,17 @@ public class RentSphereVerificationTest {
 
             long walCountApp = Files.readAllLines(walFile).stream().filter(l -> l.contains("AST-CONCUR-APP") && l.contains("INSPECT_APPROVE")).count();
             assertTrue(walCountApp == 1, "Clean inspection concurrency: Exactly 1 immutable audit entry recorded in WAL for AST-CONCUR-APP");
+            assertTrue(Files.readAllLines(walFile).size() == baseWalCount + 2,
+                    "Clean inspection concurrency: WAL line count increased by exactly 1 entry (rejected competing request wrote 0 entries)");
 
             // -------------------------------------------------------------
             // PART 5: TRUE CONCURRENT DAMAGE SLASHING
             // -------------------------------------------------------------
             EscrowSnapshot deepakBeforeSlash = getEscrowSnapshot(escrowFile, "renter_deepak");
             EscrowSnapshot ketanBeforeSlash = getEscrowSnapshot(escrowFile, "host_ketan");
+
+            long walCountSlashBefore = Files.readAllLines(walFile).stream().filter(l -> l.contains("AST-CONCUR-SLASH") && l.contains("INSPECT_SLASH")).count();
+            assertTrue(walCountSlashBefore == 0, "Damage slashing concurrency: 0 entries before damage slashing settlement (filtered baseline)");
 
             HttpRequest concurSlash1 = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/assets/inspect-slash"))
@@ -1193,6 +1207,8 @@ public class RentSphereVerificationTest {
 
             long walCountSlash = Files.readAllLines(walFile).stream().filter(l -> l.contains("AST-CONCUR-SLASH") && l.contains("INSPECT_SLASH")).count();
             assertTrue(walCountSlash == 1, "Damage slashing concurrency: Exactly 1 immutable audit entry recorded in WAL for AST-CONCUR-SLASH");
+            assertTrue(Files.readAllLines(walFile).size() == baseWalCount + 3,
+                    "Damage slashing concurrency: WAL line count increased by exactly 1 entry (rejected competing request wrote 0 entries)");
 
             // -------------------------------------------------------------
             // PART 6: TRUE CONCURRENT GRIEVANCE TICKET RESOLUTION
@@ -1225,11 +1241,20 @@ public class RentSphereVerificationTest {
             assertTrue(ticketCount == 1, "Ticket persistence integrity: Exactly 1 authoritative ticket record preserved (no duplicate records)");
 
             // -------------------------------------------------------------
-            // PART 7: OVERALL AUDIT WAL INTEGRITY
+            // PART 7: OVERALL AUDIT WAL INTEGRITY & SETTLEMENT RECONCILIATION
             // -------------------------------------------------------------
             assertTrue(Files.exists(walFile), "Audit WAL file exists in isolated test environment");
             List<String> allWalLines = Files.readAllLines(walFile);
-            assertTrue(allWalLines.size() >= 3, "Audit WAL contains all authoritative transactions without truncation");
+            assertTrue(allWalLines.size() == baseWalCount + 3,
+                    "Audit WAL cumulative total: Exactly " + (baseWalCount + 3) + " entries (base: " + baseWalCount + " + 3 concurrent settlements)");
+
+            // Reconcile and identify each settlement by its unique reference
+            boolean hasDispRef = allWalLines.stream().anyMatch(l -> l.contains("DSP-CONCUR-DISP") && l.contains("DISPUTE_RESOLVE"));
+            boolean hasAppRef = allWalLines.stream().anyMatch(l -> l.contains("AST-CONCUR-APP") && l.contains("INSPECT_APPROVE"));
+            boolean hasSlashRef = allWalLines.stream().anyMatch(l -> l.contains("AST-CONCUR-SLASH") && l.contains("INSPECT_SLASH"));
+            assertTrue(hasDispRef, "Audit WAL contains unique settlement reference for dispute DSP-CONCUR-DISP");
+            assertTrue(hasAppRef, "Audit WAL contains unique settlement reference for clean inspection AST-CONCUR-APP");
+            assertTrue(hasSlashRef, "Audit WAL contains unique settlement reference for damage slashing AST-CONCUR-SLASH");
 
         } catch (Exception e) {
             throw new RuntimeException("Error executing Checkpoint 7.1 security & concurrency tests", e);

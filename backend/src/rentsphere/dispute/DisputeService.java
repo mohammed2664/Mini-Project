@@ -33,6 +33,15 @@ public class DisputeService {
         return dispute;
     }
 
+    /**
+     * Records an administrator's decision on an existing dispute.
+     *
+     * @param disputeId dispute being decided
+     * @param adminId administrator carrying out the decision
+     * @param decision resolution code, such as refund or slash
+     * @param adminNotes explanation retained with the arbitration record
+     * @return {@code true} when the dispute exists and was updated
+     */
     public synchronized boolean resolveDispute(String disputeId, String adminId, String decision, String adminNotes) {
         DisputeRecord d = disputes.get(disputeId);
         if (d == null) return false;

@@ -4,7 +4,7 @@
 
 [![Java](https://img.shields.io/badge/Java-SE%2021%2B-0D9488)](https://openjdk.org/)
 [![UI](https://img.shields.io/badge/Frontend-HTML%20%7C%20CSS%20%7C%20JavaScript-F59E0B)](#technology-stack)
-[![Latest reported tests](https://img.shields.io/badge/Tests-154%20passed-10B981)](#build-and-test)
+[![Latest reported tests](https://img.shields.io/badge/Tests-163%20passed-10B981)](#build-and-test)
 [![Project type](https://img.shields.io/badge/Project-MCA%20OOT%20Mini--Project-64748B)](#project-overview)
 
 RentSphere is an academic project built to demonstrate object-oriented design through a practical rental workflow. Renters can explore equipment and make reservations; hosts can manage listings and inspect returns; administrators can manage accounts, review disputes, handle support tickets, and inspect system diagnostics.
@@ -124,7 +124,7 @@ javac -d bin -encoding UTF-8 @sources.txt
 java -cp bin tests.RentSphereVerificationTest
 ```
 
-**Latest reported result:** 154 tests passed across 17 suites at Checkpoint 7.2. Re-run the suite on your current checkout to confirm the result for that version of the code.
+**Latest verified result:** 163 tests passed across 17 suites on the current checkout. The endpoint and concurrency checks use temporary local loopback servers and isolated test data directories.
 
 ### 4. Start the web application
 
@@ -132,7 +132,7 @@ java -cp bin tests.RentSphereVerificationTest
 java -cp bin rentsphere.api.MainServer 8080
 ```
 
-Then open [http://localhost:8080/](http://localhost:8080/) in your browser. Keep the server process running while using the application. Stop it with `Ctrl+C` when finished.
+Or double-click [`START_RENTSPHERE.bat`](START_RENTSPHERE.bat) to compile, start the server, and open the app. Use [http://localhost:8080/](http://localhost:8080/) while the server is running. **Do not open `frontend/index.html` directly**; the browser needs the Java server to load equipment, accounts, and bookings.
 
 ### 5. Optional JavaScript syntax check
 
@@ -169,6 +169,7 @@ Use these repository-relative links on GitHub (only files present in your checko
 - [`TEST_REPORT.md`](TEST_REPORT.md) — test-suite results and verification notes.
 - [`SECURITY_REVIEW.md`](SECURITY_REVIEW.md) — security findings and limitations.
 - [`TEAM_HANDOVER.md`](TEAM_HANDOVER.md) — team handover and demo notes.
+- [`docs/VIVA_PREPARATION.md`](docs/VIVA_PREPARATION.md) — short project-flow explanations and viva questions.
 
 If a link does not exist in your repository, remove it or update it to the actual path before publishing.
 

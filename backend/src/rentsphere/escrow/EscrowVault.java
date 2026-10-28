@@ -35,7 +35,15 @@ public class EscrowVault {
     }
 
     /**
-     * Locks rental tariff + security collateral into escrow on reservation.
+     * Locks the rental tariff and refundable collateral for a new reservation.
+     * The vault lock keeps the balance check and debit together.
+     *
+     * @param renterId account paying for the reservation
+     * @param ownerId account receiving the rental tariff
+     * @param assetId asset being reserved
+     * @param rentalTariff agreed rental charge
+     * @param securityCollateral refundable deposit
+     * @return {@code true} when the funds were locked successfully
      */
     public boolean lockEscrow(String renterId, String ownerId, String assetId, 
                               double rentalTariff, double securityCollateral) {

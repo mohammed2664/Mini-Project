@@ -32,8 +32,10 @@ public class PrototypeCloner {
     }
 
     /**
-     * Executes shallow and deep cloning on the target asset, appends a test log
-     * entry to both clones, and compares memory addresses to verify isolation.
+     * Compares shallow and deep copies by changing their mutable service logs.
+     *
+     * @param original asset used as the cloning source
+     * @return a small report showing which references were shared or isolated
      */
     public static CloneBenchmarkReport benchmarkCloning(RentableAsset original) {
         if (original == null) {
