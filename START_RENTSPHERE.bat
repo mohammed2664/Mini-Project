@@ -2,6 +2,10 @@
 setlocal
 cd /d "%~dp0"
 
+if exist "C:\Program Files\Java\jdk-25.0.3\bin\javac.exe" (
+    set "PATH=C:\Program Files\Java\jdk-25.0.3\bin;%PATH%"
+)
+
 if not exist sources.txt (
     echo Could not find sources.txt. Please open this file from the project folder.
     pause
@@ -9,6 +13,7 @@ if not exist sources.txt (
 )
 
 if not exist bin mkdir bin
+echo Compiling RentSphere Java source files...
 javac -d bin -encoding UTF-8 @sources.txt
 if errorlevel 1 (
     echo Java compilation failed. Check that JDK 21 or newer is installed.
@@ -16,6 +21,7 @@ if errorlevel 1 (
     exit /b 1
 )
 
+echo Starting RentSphere Server on http://localhost:8080/ ...
 start "RentSphere Java Server" /min java -cp bin rentsphere.api.MainServer 8080
 timeout /t 2 /nobreak >nul
 start "" "http://localhost:8080/"
