@@ -1,4 +1,5 @@
 # RentSphere In-App Notification Center Ledger
+NOTIF-b9c2ea5a|host_faaris|Inspection Required|Equipment Bosch GSB 600W Corded Impact Drill & 100-Piece Bit Kit has been checked into Bay A4. Complete inspection within 24 hours.|WARNING|false|1793215434842
 NOTIF-7c371d69|host_faaris|Inspection Required|Equipment Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been checked into Bay A2. Complete inspection within 24 hours.|WARNING|false|1793096912374
 NOTIF-e5498a54|host_faaris|Equipment Booked|Your asset Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been booked by renter_nikhil for 1 day(s).|INFO|false|1793096563502
 NOTIF-6390fa96|host_faaris|Inspection Required|Equipment Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been checked into Bay A2. Complete inspection within 24 hours.|WARNING|false|1793088193029

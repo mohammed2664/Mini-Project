@@ -40,3 +40,4 @@
 2026-10-28T12:42:35.880057100Z|WAL-67AEBAE6|AST-107|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_deepak|MANDATORY QUARANTINE: Item returned to Bay H2. Security deposit held pending inspection.
 2026-10-28T12:42:59.321248900Z|WAL-5A5C5851|AST-107|INSPECT_APPROVE|INSPECTION_QUARANTINE|AVAILABLE|host_ketan|Clean return approved. Slashed ₹0. Refunded ₹7200.00 deposit to renter_deepak. Paid ₹5060.00 to host (2 days).
 2026-10-28T12:43:04.997136200Z|WAL-FD0FE137|AST-108|INSPECT_SLASH|INSPECTION_QUARANTINE|AVAILABLE|host_ketan|Damage flagged (20.0%). Slashed ₹400.00 to host. Refunded ₹2000.00 net deposit to renter_priya.
+2026-10-28T19:23:54.839124400Z|WAL-B02D7145|AST-105|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_deepak|MANDATORY QUARANTINE: Item returned to Bay A4. Security deposit held pending inspection.
