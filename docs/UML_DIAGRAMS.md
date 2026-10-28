@@ -320,3 +320,208 @@ flowchart TD
     RejectHeavy --> EndFail([Allocation Terminated])
     RejectOccupied --> EndFail
 ```
+
+---
+
+## 6. Object Diagram
+
+This required UML diagram shows one realistic snapshot of objects during a rental. Unlike the class diagram, it shows actual sample instances and their links.
+
+```mermaid
+classDiagram
+    direction LR
+    class renter_deepak {
+      <<object>>
+      userId = "renter_deepak"
+      role = RENTER
+      walletBalance = ₹25,000
+    }
+    class host_faaris {
+      <<object>>
+      userId = "host_faaris"
+      role = HOST
+    }
+    class AST_101 {
+      <<object>>
+      name = "Sony Alpha A7 IV"
+      state = RESERVED_ESCROW
+      dailyRate = ₹1,380
+      deposit = ₹5,000
+    }
+    class booking_RS_101 {
+      <<object>>
+      rentalDays = 2
+      total = ₹7,760
+      status = RESERVED
+    }
+    class bay_A2 {
+      <<object>>
+      size = SMALL
+      occupied = true
+      device = ONLINE_READY
+    }
+    class escrow_deepak {
+      <<object>>
+      lockedEscrow = ₹7,760
+    }
+
+    renter_deepak --> booking_RS_101 : creates
+    booking_RS_101 --> AST_101 : reserves
+    AST_101 --> host_faaris : owned by
+    AST_101 --> bay_A2 : assigned to
+    renter_deepak --> escrow_deepak : owns
+    booking_RS_101 --> escrow_deepak : locks amount
+```
+
+---
+
+## 7. Brainstorming and Entity Relationship Diagram
+
+### 7.1 Initial brainstorming map
+
+```mermaid
+mindmap
+  root((RentSphere))
+    Users
+      Renter
+      Host
+      Administrator
+    Equipment
+      Camera
+      Audio gear
+      Tools
+      Vehicles
+    Rental flow
+      Browse
+      Reserve
+      Pickup OTP
+      Return
+      Inspection
+      Settlement
+    Smart hub
+      8x8 bays
+      Sensors
+      Locker allocation
+    Trust and safety
+      Login
+      Escrow
+      Audit log
+      Disputes
+```
+
+### 7.2 Corresponding ER model
+
+```mermaid
+erDiagram
+    USER ||--o{ ASSET : owns
+    USER ||--o{ RENTAL : creates
+    ASSET ||--o{ RENTAL : is_booked_in
+    RENTAL ||--|| PAYMENT : creates
+    USER ||--|| ESCROW_ACCOUNT : has
+    ASSET ||--o| LOCKER_BAY : assigned_to
+    RENTAL ||--o| DISPUTE : may_create
+    USER ||--o{ SUPPORT_TICKET : raises
+    USER ||--o{ POLICY_ACCEPTANCE : records
+
+    USER {
+      string userId PK
+      string email
+      string role
+      string accountStatus
+    }
+    ASSET {
+      string assetId PK
+      string ownerId FK
+      string category
+      decimal dailyRate
+      string state
+    }
+    RENTAL {
+      string bookingId PK
+      string renterId FK
+      string assetId FK
+      int rentalDays
+      string status
+    }
+    PAYMENT {
+      string orderId PK
+      string bookingId FK
+      decimal total
+      string status
+    }
+    ESCROW_ACCOUNT {
+      string userId PK
+      decimal balance
+      decimal lockedEscrow
+    }
+    LOCKER_BAY {
+      string bayId PK
+      string assetId FK
+      string deviceState
+    }
+```
+
+---
+
+## 8. System Architecture Diagram
+
+```mermaid
+flowchart LR
+    Browser[Browser: HTML, CSS, JavaScript] -->|REST / JSON| Server[MainServer.java
+Pure Java HTTP Server]
+    Server --> Auth[Authentication and RBAC]
+    Server --> Rental[Rental State and Validation Pipeline]
+    Server --> Escrow[Escrow and Payment Sandbox]
+    Server --> Hub[8×8 Smart Hub Simulation]
+    Server --> Support[Policies, Disputes and Support]
+
+    Rental --> Persist[FlatFilePersistenceEngine]
+    Escrow --> Persist
+    Hub --> Persist
+    Auth --> UserData[data/users_auth.txt]
+    Persist --> AssetData[data/assets_ledger.txt]
+    Persist --> LockerData[data/locker_grid_8x8.txt]
+    Persist --> VaultData[data/escrow_vault.txt]
+    Persist --> AuditData[data/audit_wal.txt]
+```
+
+---
+
+## 9. Component Diagram
+
+```mermaid
+flowchart TB
+    UI[Frontend UI] --> API[API Controller: MainServer]
+    API --> Auth[AuthService]
+    API --> State[LeaseState implementations]
+    API --> Pipeline[FailFastPipeline]
+    API --> Locker[SmartLockerGrid8x8]
+    API --> Payment[SandboxPaymentAdapter]
+    API --> Disputes[DisputeService]
+    API --> Support[SupportService and NotificationService]
+
+    State --> Model[RentableAsset model hierarchy]
+    Pipeline --> Model
+    Locker --> Device[SimulatedLockerDevice]
+    Payment --> Vault[EscrowVault]
+    Auth --> Data[(data/)]
+    Vault --> Data
+    Locker --> Data
+    Disputes --> Data
+    Support --> Data
+```
+
+---
+
+## 10. Local Deployment Diagram
+
+```mermaid
+flowchart LR
+    Student[Student laptop] --> Browser[Chrome or another browser]
+    Browser -->|http://localhost:8080| Java[Java SE Runtime]
+    Java --> Server[RentSphere MainServer]
+    Server --> Frontend[frontend/ static files]
+    Server --> Source[backend/src/ compiled classes]
+    Server --> Files[data/ flat-file ledgers]
+    Tests[tests/RentSphereVerificationTest.java] --> Java
+```
