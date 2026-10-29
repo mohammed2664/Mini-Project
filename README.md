@@ -1,4 +1,4 @@
-# RentSphere
+﻿# RentSphere
 
 **A Java-based peer-to-peer equipment rental marketplace with an 8×8 simulated smart pickup hub.**
 
@@ -10,6 +10,18 @@
 RentSphere is an academic project built to demonstrate object-oriented design through a practical rental workflow. Renters can explore equipment and make reservations; hosts can manage listings and inspect returns; administrators can manage accounts, review disputes, handle support tickets, and inspect system diagnostics.
 
 > **Prototype notice:** This is an academic demonstration, not a production rental or payment service. Locker hardware and sensor readings are simulated, payments use a sandbox, and escrow-style balances are maintained in an internal software ledger—not in a bank-held trust account.
+
+
+## ðŸŽ“ University Submission Structure
+
+| Directory | Description | Quick Link |
+|---|---|---|
+| **`code/`** | Pure Java SE 17+ backend, vanilla web frontend, automated tests, and flat files | [Browse Code](code/) |
+| **`report/`** | Comprehensive academic report, architectural defense, security and policy reviews | [Read Reports](report/) |
+| **`presentation/`** | Official PowerPoint deck (.pptx), conversational speaker notes, and viva Q&A guide | [View Presentation](presentation/) |
+| **`output/`** | High-resolution UI screenshots, 163/163 test run log, and system ledgers | [Inspect Outputs](output/) |
+| **`submission/`** | Formatted individual student submission text files ready for university portal upload | [View Submissions](submission/) |
+
 
 ## Project overview
 
@@ -190,3 +202,5 @@ If a link does not exist in your repository, remove it or update it to the actua
 ---
 
 *Built as an academic software prototype to demonstrate object-oriented design, workflow validation, simulated smart-locker operations, and ledger-based rental accounting.*
+
+

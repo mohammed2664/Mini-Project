@@ -1,0 +1,85 @@
+================================================================================
+GOA UNIVERSITY - DEPARTMENT OF COMPUTER SCIENCE & TECHNOLOGY
+MCA Object-Oriented Technology (OOT) Lab Mini-Project Submission (2026-2027)
+Evaluation: End-Semester Examination (10 Marks)
+================================================================================
+
+STUDENT DETAILS:
+--------------------------------------------------------------------------------
+Roll Number    : 2664
+Full Name      : Mohammed Faaris Khan
+Batch          : B2
+Programme  : Master of Computer Applications (MCA)
+Subject        : Object-Oriented Technology (OOT) Lab Mini-Project
+
+PROJECT DETAILS:
+--------------------------------------------------------------------------------
+Project Title  : RentSphere: Peer-to-Peer Asset Rental & 8x8 Smart Micro-Storage Management System
+Architecture   : Pure Java SE (JDK 17+/25) | Zero External JARs | Zero Database
+Currency       : Indian Rupees (INR)
+Test Suite     : 17 Test Suites, 163 Tests - 163/163 PASSED (100% Success)
+
+INDIVIDUAL CONTRIBUTION (Mohammed Faaris Khan - Roll 2664):
+--------------------------------------------------------------------------------
+Role           : Tech Lead & Core Engine Architect
+Subsystem      : Subsystem 1 - Core Behavioral Engine & Verification Pipeline
+Deliverables   :
+1. Implemented the 4-Gate Fail-Fast Verification Pipeline (Chain of Responsibility pattern)
+   enforcing KYC identity, asset availability, escrow liquidity, and physical locker capacity.
+2. Built the GoF State Pattern lifecycle engine (Available, Reserved, Leased, Quarantine)
+   with the Mandatory Post-Return Inspection Quarantine Invariant.
+3. Authored the Polyglot C++20 core engine mirror in polyglot/cpp/rentsphere_core.cpp.
+4. Integrated end-to-end REST API controllers, session management, and verification test harness.
+
+================================================================================
+OFFICIAL GITHUB REPOSITORY & SUBMISSION LINKS:
+================================================================================
+
+1. Main GitHub Repository:
+   https://github.com/mohammed2664/Mini-Project
+
+2. Code Directory (Backend, Frontend, Tests, Ledgers, Polyglot):
+   https://github.com/mohammed2664/Mini-Project/tree/main/code
+
+3. Report Directory (Mini-Project Report):
+   https://github.com/mohammed2664/Mini-Project/tree/main/report
+
+4. Presentation Directory (PowerPoint Slide):
+   https://github.com/mohammed2664/Mini-Project/tree/main/presentation
+
+5. Output Directory (UI Screenshots, 163/163 Test Execution Logs, System Ledgers):
+   https://github.com/mohammed2664/Mini-Project/tree/main/output
+
+--------------------------------------------------------------------------------
+DIRECT FILE LINKS:
+--------------------------------------------------------------------------------
+- PowerPoint Presentation (.pptx):
+  https://github.com/mohammed2664/Mini-Project/blob/main/presentation/RentSphere_Presentation.pptx
+
+- Mini-Project Report (.md):
+  https://github.com/mohammed2664/Mini-Project/blob/main/report/MINI_PROJECT_REPORT.md
+
+- Mini-Project Official Report (.docx):
+  https://github.com/mohammed2664/Mini-Project/blob/main/report/RentSphere_OOT_Report_FINAL_READY_TO_UPLOAD.docx
+
+- Automated Test Run Log (163/163 Tests Passed):
+  https://github.com/mohammed2664/Mini-Project/blob/main/output/test_results/verification_test_run_163_passed.txt
+
+- Platform Screenshots:
+  https://github.com/mohammed2664/Mini-Project/tree/main/output/screenshots
+
+================================================================================
+QUICK EXECUTION INSTRUCTIONS:
+================================================================================
+1. Clone the repository:
+   git clone https://github.com/mohammed2664/Mini-Project.git
+   cd Mini-Project
+
+2. Compile and run automated verification suite (163 tests):
+   javac -d bin -encoding UTF-8 @sources.txt
+   java -cp bin tests.RentSphereVerificationTest
+
+3. Start live server on port 8080 (or double click START_RENTSPHERE.bat):
+   java -cp bin rentsphere.api.MainServer 8080
+   Open web browser at: http://localhost:8080/
+================================================================================

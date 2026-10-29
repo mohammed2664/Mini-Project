@@ -34,9 +34,11 @@ Desktop.ini
 *.log
 logs/
 scratch/
+trash/
+recycle_bin/
 
 # Test output directories
 data/test_*/
 data/test/
-sources.txt
-recycle_bin/
+code/data/test_*/
+code/bin/

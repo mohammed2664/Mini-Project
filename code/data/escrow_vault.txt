@@ -1,0 +1,6 @@
+host_faaris|Mohammed Faaris Khan|HOST|45205.00|4235.00|22940.00|true
+renter_priya|Priya Sharma|RENTER|4100.00|15417.50|0.00|true
+host_ketan|Ketan Gurudas Naik|HOST|46355.00|0.00|22555.00|true
+renter_nikhil|Nikhil Bhaiju|RENTER|26205.00|2000.00|0.00|true
+renter_deepak|Deepak Dev|RENTER|15380.00|1500.00|0.00|true
+inspector_almeida|Prof. Almeida (Goa Univ Hub Admin)|INSPECTOR|75000.00|0.00|0.00|true

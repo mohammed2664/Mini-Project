@@ -1,0 +1,45 @@
+# RentSphere In-App Notification Center Ledger
+NOTIF-ea31e0c2|host_faaris|Booking Confirmed|Your reservation for rentbmw for wedding r is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793260269092
+NOTIF-b9c2ea5a|host_faaris|Inspection Required|Equipment Bosch GSB 600W Corded Impact Drill & 100-Piece Bit Kit has been checked into Bay A4. Complete inspection within 24 hours.|WARNING|false|1793215434842
+NOTIF-7c371d69|host_faaris|Inspection Required|Equipment Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been checked into Bay A2. Complete inspection within 24 hours.|WARNING|false|1793096912374
+NOTIF-e5498a54|host_faaris|Equipment Booked|Your asset Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been booked by renter_nikhil for 1 day(s).|INFO|false|1793096563502
+NOTIF-6390fa96|host_faaris|Inspection Required|Equipment Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been checked into Bay A2. Complete inspection within 24 hours.|WARNING|false|1793088193029
+NOTIF-da91ff40|host_faaris|Equipment Booked|Your asset Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit has been booked by renter_deepak for 2 day(s).|INFO|false|1793088023184
+NOTIF-187877b3|renter_priya|Damage Deduction Flagged|Host flagged 20.0% damage for Creator Camera & Lens Kit. ₹1000.00 deducted from deposit. You may file a dispute if contested.|WARNING|false|1793268621400
+NOTIF-86f8bfe3|renter_priya|Deposit Refunded|Clean inspection approved for Portable Event Audio & Lighting Kit. Full security deposit (₹5500.0) refunded.|SUCCESS|false|1793268380702
+NOTIF-3e0e05f2|renter_priya|Damage Deduction Flagged|Host flagged 20.0% damage for Ather 450X Electric Scooter (Campus & Local Commute). ₹400.00 deducted from deposit. You may file a dispute if contested.|WARNING|false|1793191384998
+NOTIF-3ec9b876|renter_priya|Equipment Collected|Hub Bay B1 unlocked. Active lease started for test.|INFO|false|1793096405652
+NOTIF-e5996bf8|renter_priya|Equipment Collected|Hub Bay B2 unlocked. Active lease started for test.|INFO|false|1793085275616
+NOTIF-2ff7ad8b|renter_priya|Booking Confirmed|Your reservation for test is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793040110431
+NOTIF-defbae18|renter_priya|Booking Confirmed|Your reservation for test is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793039883993
+NOTIF-3c215d2c|renter_deepak|Damage Deduction Flagged|Host flagged 20.0% damage for EDIFER SPEAKER FOR RENT. ₹200.00 deducted from deposit. You may file a dispute if contested.|WARNING|false|1793257183698
+NOTIF-addb0cc1|renter_deepak|Equipment Collected|Hub Bay A3 unlocked. Active lease started for EDIFER SPEAKER FOR RENT.|INFO|false|1793256914854
+NOTIF-38445df1|renter_deepak|Booking Confirmed|Your reservation for EDIFER SPEAKER FOR RENT is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793256871097
+NOTIF-dc55b080|renter_deepak|Deposit Refunded|Clean inspection approved for Bosch GSB 600W Corded Impact Drill & 100-Piece Bit Kit. Full security deposit (₹1200.0) refunded.|SUCCESS|false|1793253577031
+NOTIF-82b968ea|renter_deepak|Deposit Refunded|Clean inspection approved for Maruti Suzuki Fronx Automatic (Wedding & Event Self-Drive). Full security deposit (₹7200.0) refunded.|SUCCESS|false|1793191379324
+NOTIF-13bd801b|renter_deepak|Deposit Refunded|Clean inspection approved for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit. Full security deposit (₹6000.0) refunded.|SUCCESS|false|1793088300827
+NOTIF-d9738d8f|renter_deepak|Equipment Collected|Hub Bay A2 unlocked. Active lease started for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit.|INFO|false|1793088051877
+NOTIF-72195298|renter_deepak|Booking Confirmed|Your reservation for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793088023181
+NOTIF-50be2db8|renter_deepak|Equipment Collected|Hub Bay H2 unlocked. Active lease started for Maruti Suzuki Fronx Automatic (Wedding & Event Self-Drive).|INFO|false|1793086898665
+NOTIF-e0c69e4e|renter_deepak|Booking Confirmed|Your reservation for Maruti Suzuki Fronx Automatic (Wedding & Event Self-Drive) is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793086896107
+NOTIF-858f18dc|renter_deepak|Inspection Required|Equipment test has been checked into Bay B2. Complete inspection within 24 hours.|WARNING|false|1793085279336
+NOTIF-b3d5c229|renter_deepak|Equipment Booked|Your asset test has been booked by renter_priya for 2 day(s).|INFO|false|1793040110432
+NOTIF-c43cab55|renter_deepak|Equipment Booked|Your asset test has been booked by renter_priya for 2 day(s).|INFO|false|1793039884002
+NOTIF-525d66a0|host_ketan|Inspection Required|Equipment Portable Event Audio & Lighting Kit has been checked into Bay B1. Complete inspection within 24 hours.|WARNING|false|1793268345352
+NOTIF-799bf1fe|host_ketan|Equipment Booked|Your asset rentbmw for wedding r has been booked by host_faaris for 2 day(s).|INFO|false|1793260269104
+NOTIF-95e1592e|host_ketan|Inspection Required|Equipment EDIFER SPEAKER FOR RENT has been checked into Bay A3. Complete inspection within 24 hours.|WARNING|false|1793257094240
+NOTIF-2e3785df|host_ketan|Equipment Booked|Your asset EDIFER SPEAKER FOR RENT has been booked by renter_deepak for 2 day(s).|INFO|false|1793256871102
+NOTIF-ed2bc238|host_ketan|Inspection Required|Equipment Ather 450X Electric Scooter (Campus & Local Commute) has been checked into Bay H4. Complete inspection within 24 hours.|WARNING|false|1793252571591
+NOTIF-2e8000d2|host_ketan|Equipment Booked|Your asset Ather 450X Electric Scooter (Campus & Local Commute) has been booked by renter_nikhil for 2 day(s).|INFO|false|1793252449773
+NOTIF-496634e2|host_ketan|Inspection Required|Equipment Maruti Suzuki Fronx Automatic (Wedding & Event Self-Drive) has been checked into Bay H2. Complete inspection within 24 hours.|WARNING|false|1793191355888
+NOTIF-84705502|host_ketan|Inspection Required|Equipment Pioneer DDJ-FLX4 2-Channel DJ Controller & Studio Monitors has been checked into Bay D2. Complete inspection within 24 hours.|WARNING|false|1793096286370
+NOTIF-2cc72aaf|host_ketan|Equipment Booked|Your asset Maruti Suzuki Fronx Automatic (Wedding & Event Self-Drive) has been booked by renter_deepak for 2 day(s).|INFO|false|1793086896110
+NOTIF-b0095652|host_ketan|Dispute Notice|Renter has contested your damage assessment for JBL PartyBox 310 Portable Club Speaker + 2 Wireless Mics. RentSphere arbitration active.|WARNING|false|1793085312615
+NOTIF-dbc8db64|renter_nikhil|Deposit Refunded|Clean inspection approved for Ather 450X Electric Scooter (Campus & Local Commute). Full security deposit (₹2400.0) refunded.|SUCCESS|false|1793253464726
+NOTIF-d5cf9550|renter_nikhil|Equipment Collected|Hub Bay H4 unlocked. Active lease started for Ather 450X Electric Scooter (Campus & Local Commute).|INFO|false|1793252560551
+NOTIF-ac959eee|renter_nikhil|Booking Confirmed|Your reservation for Ather 450X Electric Scooter (Campus & Local Commute) is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793252449761
+NOTIF-be0ee318|renter_nikhil|Deposit Refunded|Clean inspection approved for Pioneer DDJ-FLX4 2-Channel DJ Controller & Studio Monitors. Full security deposit (₹3850.0) refunded.|SUCCESS|false|1793104829975
+NOTIF-088f4ab7|renter_nikhil|Deposit Refunded|Clean inspection approved for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit. Full security deposit (₹6000.0) refunded.|SUCCESS|false|1793097071386
+NOTIF-318b9c35|renter_nikhil|Equipment Collected|Hub Bay A2 unlocked. Active lease started for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit.|INFO|false|1793096799191
+NOTIF-8d086c74|renter_nikhil|Booking Confirmed|Your reservation for Sony Alpha A7 IV Mirrorless Camera + 28-70mm Kit is ready. Pickup OTP sent to your secure dashboard.|SUCCESS|false|1793096563499
+NOTIF-b49f6532|renter_nikhil|Equipment Collected|Hub Bay D2 unlocked. Active lease started for Pioneer DDJ-FLX4 2-Channel DJ Controller & Studio Monitors.|INFO|false|1793096270817

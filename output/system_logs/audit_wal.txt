@@ -1,0 +1,64 @@
+﻿2026-10-25T10:00:00.000Z|WAL-001|SYS-INIT|SYSTEM_BOOT|NONE|ONLINE|system|RentSphere flat-file storage engine initialized with 64 Hub Bays in INR (₹)
+2026-10-25T10:15:00.000Z|WAL-002|AST-101|ONBOARD_ASSET|NONE|AVAILABLE|host_faaris|Registered CameraAndOpticsGear 'Sony Alpha A7 IV Kit' in Bay A2 (Rate: ₹1,200/day, Deposit: ₹5,000)
+2026-10-25T10:20:00.000Z|WAL-003|AST-107|ONBOARD_ASSET|NONE|AVAILABLE|host_ketan|Registered EventAndMobilityVehicle 'Maruti Suzuki Fronx' in Ground Slot H2 (Row H Ground Invariant Verified)
+2026-10-25T10:30:00.000Z|WAL-004|AST-104|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_nikhil|4-Gate Fail-Fast Pipeline passed. Escrow locked ₹4,450.00. OTP 492108 generated for Bay D2
+2026-10-25T11:00:00.000Z|WAL-005|AST-105|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_deepak|OTP 339102 verified at Bay A4. Bosch Impact Drill retrieved. State transitioned to ACTIVE_LEASE
+2026-10-25T11:45:00.000Z|WAL-006|AST-108|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_priya|MANDATORY QUARANTINE: Ather 450X returned to Ground Slot H4. Security deposit ₹2,000 held pending condition check
+2026-10-25T11:17:36.368675Z|WAL-5581DFB8|AST-103|RESERVE|AVAILABLE|RESERVED_ESCROW|host_faaris|Escrow locked ₹4235.00. OTP 984038 generated for bay C3
+2026-10-25T11:18:21.534854300Z|WAL-62F5048D|AST-103|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|host_faaris|Unlocked via OTP 984038. Bay C3 vacated for active rental.
+2026-10-25T11:18:27.012279400Z|WAL-3BF56222|AST-103|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|host_faaris|MANDATORY QUARANTINE: Item returned to Bay C3. Security deposit held pending inspection.
+2026-10-26T18:37:05.824402800Z|WAL-9A686F5B|AST-109|ONBOARD_ASSET|NONE|AVAILABLE|host_faaris|Onboarded new CameraAndOpticsGear in Bay B2
+2026-10-26T18:37:48.756197800Z|WAL-DBA939C3|AST-109|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|host_faaris|Blocked at Gate 1 (KycIdentityGate): Anti-Self-Rental Invariant: Equipment host 'host_faaris' cannot rent their own registered gear.
+2026-10-26T18:38:03.993766800Z|WAL-ABF8B47F|AST-109|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_priya|Escrow locked ₹7760.00. OTP generated for bay B2
+2026-10-26T18:41:10.484606400Z|WAL-6EDEBE96|AST-110|ONBOARD_ASSET|NONE|AVAILABLE|host_ketan|Onboarded new EventAudioAndLighting in Bay B1
+2026-10-26T18:41:50.431095800Z|WAL-65ADE5B4|AST-110|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_priya|Escrow locked ₹8140.00. OTP generated for bay B1
+2026-10-27T07:14:35.614387Z|WAL-8943595F|AST-109|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_priya|Unlocked via OTP. Bay B2 vacated for active rental.
+2026-10-27T07:14:39.335927200Z|WAL-5A6D1801|AST-109|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_priya|MANDATORY QUARANTINE: Item returned to Bay B2. Security deposit held pending inspection.
+2026-10-27T07:15:12.614075400Z|WAL-7F434AA6|AST-103|DISPUTE_FILED|INSPECTION_QUARANTINE|DISPUTED|host_faaris|Formal dispute DSP-118 filed. Automatic deposit release frozen.
+2026-10-27T07:16:44.470207300Z|WAL-C59C5608|AST-107|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|USR-121|Blocked at Gate 1 (KycIdentityGate): KYC Verification Required: User 'USR-121' has not completed KYC compliance.
+2026-10-27T07:17:11.283680900Z|WAL-4CADCA4B|AST-107|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|USR-121|Blocked at Gate 1 (KycIdentityGate): KYC Verification Required: User 'USR-121' has not completed KYC compliance.
+2026-10-27T07:17:11.668656900Z|WAL-FB8A4B89|AST-107|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|USR-121|Blocked at Gate 1 (KycIdentityGate): KYC Verification Required: User 'USR-121' has not completed KYC compliance.
+2026-10-27T07:17:11.917598400Z|WAL-E1B7D227|AST-107|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|USR-121|Blocked at Gate 1 (KycIdentityGate): KYC Verification Required: User 'USR-121' has not completed KYC compliance.
+2026-10-27T07:17:12.106084200Z|WAL-5A7CB5F4|AST-107|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|USR-121|Blocked at Gate 1 (KycIdentityGate): KYC Verification Required: User 'USR-121' has not completed KYC compliance.
+2026-10-27T07:17:12.291133600Z|WAL-3AB01EF9|AST-107|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|USR-121|Blocked at Gate 1 (KycIdentityGate): KYC Verification Required: User 'USR-121' has not completed KYC compliance.
+2026-10-27T07:17:12.451651600Z|WAL-73A82130|AST-107|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|USR-121|Blocked at Gate 1 (KycIdentityGate): KYC Verification Required: User 'USR-121' has not completed KYC compliance.
+2026-10-27T07:41:36.106613Z|WAL-6636D67D|AST-107|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_deepak|Escrow locked ₹12260.00. OTP generated for bay H2
+2026-10-27T07:41:38.664828Z|WAL-8928D4BD|AST-107|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_deepak|Unlocked via OTP. Bay H2 vacated for active rental.
+2026-10-27T08:00:23.181171500Z|WAL-B1352BE2|AST-101|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_deepak|Escrow locked ₹8760.00. OTP generated for bay A2
+2026-10-27T08:00:51.877188600Z|WAL-31DC40C1|AST-101|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_deepak|Unlocked via OTP. Bay A2 vacated for active rental.
+2026-10-27T08:03:13.028771500Z|WAL-FB5EC337|AST-101|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_deepak|MANDATORY QUARANTINE: Item returned to Bay A2. Security deposit held pending inspection.
+2026-10-27T08:05:00.825428700Z|WAL-5A65A477|AST-101|INSPECT_APPROVE|INSPECTION_QUARANTINE|AVAILABLE|host_faaris|Clean return approved. Slashed ₹0. Refunded ₹6000.00 deposit to renter_deepak. Paid ₹2760.00 to host (2 days).
+2026-10-27T10:17:08.440679Z|WAL-ADC06BF4|AST-104|PICKUP_ATTEMPT_FAILED|RESERVED_ESCROW|RESERVED_ESCROW|renter_nikhil|Invalid OTP attempt 1/3 for bay D2
+2026-10-27T10:17:50.817355100Z|WAL-CDADAA93|AST-104|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_nikhil|Unlocked via OTP. Bay D2 vacated for active rental.
+2026-10-27T10:18:06.369612300Z|WAL-4E8CE4A7|AST-104|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_nikhil|MANDATORY QUARANTINE: Item returned to Bay D2. Security deposit held pending inspection.
+2026-10-27T10:20:05.650978800Z|WAL-AE0460EB|AST-110|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_priya|Unlocked via OTP. Bay B1 vacated for active rental.
+2026-10-27T10:22:43.498387700Z|WAL-75784D81|AST-101|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_nikhil|Escrow locked ₹7380.00. OTP generated for bay A2
+2026-10-27T10:26:39.190903100Z|WAL-B1D2BB92|AST-101|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_nikhil|Unlocked via OTP. Bay A2 vacated for active rental.
+2026-10-27T10:28:32.374994100Z|WAL-BCBCDC63|AST-101|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_nikhil|MANDATORY QUARANTINE: Item returned to Bay A2. Security deposit held pending inspection.
+2026-10-27T10:31:11.382900800Z|WAL-2D3BA9B5|AST-101|INSPECT_APPROVE|INSPECTION_QUARANTINE|AVAILABLE|host_faaris|Clean return approved. Slashed ₹0. Refunded ₹6000.00 deposit to renter_nikhil. Paid ₹1380.00 to host (1 days).
+2026-10-27T12:40:29.972127500Z|WAL-4F15DF91|AST-104|INSPECT_APPROVE|INSPECTION_QUARANTINE|AVAILABLE|host_ketan|Clean return approved. Slashed ₹0. Refunded ₹3850.00 deposit to renter_nikhil. Paid ₹997.50 to host (1 days).
+2026-10-28T12:42:35.880057100Z|WAL-67AEBAE6|AST-107|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_deepak|MANDATORY QUARANTINE: Item returned to Bay H2. Security deposit held pending inspection.
+2026-10-28T12:42:59.321248900Z|WAL-5A5C5851|AST-107|INSPECT_APPROVE|INSPECTION_QUARANTINE|AVAILABLE|host_ketan|Clean return approved. Slashed ₹0. Refunded ₹7200.00 deposit to renter_deepak. Paid ₹5060.00 to host (2 days).
+2026-10-28T12:43:04.997136200Z|WAL-FD0FE137|AST-108|INSPECT_SLASH|INSPECTION_QUARANTINE|AVAILABLE|host_ketan|Damage flagged (20.0%). Slashed ₹400.00 to host. Refunded ₹2000.00 net deposit to renter_priya.
+2026-10-28T19:23:54.839124400Z|WAL-B02D7145|AST-105|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_deepak|MANDATORY QUARANTINE: Item returned to Bay A4. Security deposit held pending inspection.
+2026-10-29T05:24:57.157136800Z|WAL-E9030DA6|AST-111|ONBOARD_ASSET|NONE|AVAILABLE|host_ketan|Onboarded new EventAndMobilityVehicle in Bay H6
+2026-10-29T05:40:49.756223100Z|WAL-92CE41E8|AST-108|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_nikhil|Escrow locked ₹3665.00. OTP generated for bay H4
+2026-10-29T05:42:40.547880100Z|WAL-7703F0B4|AST-108|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_nikhil|Unlocked via OTP. Bay H4 vacated for active rental.
+2026-10-29T05:42:51.590466100Z|WAL-26A30E8B|AST-108|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_nikhil|MANDATORY QUARANTINE: Item returned to Bay H4. Security deposit held pending inspection.
+2026-10-29T05:57:44.721658500Z|WAL-0F1DCEE5|AST-108|INSPECT_APPROVE|INSPECTION_QUARANTINE|AVAILABLE|host_ketan|Clean return approved. Slashed ₹0. Refunded ₹2400.00 deposit to renter_nikhil. Paid ₹1265.00 to host (2 days).
+2026-10-29T05:59:37.030636300Z|WAL-977A1CC0|AST-105|INSPECT_APPROVE|INSPECTION_QUARANTINE|AVAILABLE|host_faaris|Clean return approved. Slashed ₹0. Refunded ₹1200.00 deposit to renter_deepak. Paid ₹300.00 to host (1 days).
+2026-10-29T06:00:49.846354500Z|WAL-BAFAB62F|AST-112|ONBOARD_ASSET|NONE|AVAILABLE|host_faaris|Onboarded new PowerToolEquipment in Bay A1
+2026-10-29T06:53:09.981666200Z|WAL-E6FEEC0E|AST-113|ONBOARD_ASSET|NONE|AVAILABLE|host_ketan|Onboarded new EventAudioAndLighting in Bay A3
+2026-10-29T06:54:02.022870100Z|WAL-DC914E38|AST-113|RESERVE_BLOCKED|AVAILABLE|AVAILABLE|host_ketan|Blocked at Gate 1 (KycIdentityGate): Anti-Self-Rental Invariant: Equipment host 'host_ketan' cannot rent their own registered gear.
+2026-10-29T06:54:31.096729Z|WAL-5BE2E548|AST-113|RESERVE|AVAILABLE|RESERVED_ESCROW|renter_deepak|Escrow locked ₹1760.00. OTP generated for bay A3
+2026-10-29T06:55:14.853747100Z|WAL-4E217E43|AST-113|PICKUP|RESERVED_ESCROW|ACTIVE_LEASE|renter_deepak|Unlocked via OTP. Bay A3 vacated for active rental.
+2026-10-29T06:58:14.236318800Z|WAL-E5BF5869|AST-113|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_deepak|MANDATORY QUARANTINE: Item returned to Bay A3. Security deposit held pending inspection.
+2026-10-29T06:59:43.697187Z|WAL-77F90053|AST-113|INSPECT_SLASH|INSPECTION_QUARANTINE|AVAILABLE|host_ketan|Damage flagged (20.0%). Slashed ₹200.00 to host. Refunded ₹900.00 net deposit to renter_deepak.
+
+2026-10-29T07:49:55.041068300Z|WAL-3B3C34EB|AST-114|ONBOARD_ASSET|NONE|AVAILABLE|host_faaris|Onboarded new EventAndMobilityVehicle in Bay H6
+2026-10-29T07:51:09.086989100Z|WAL-657C1C3A|AST-111|RESERVE|AVAILABLE|RESERVED_ESCROW|host_faaris|Escrow locked ₹31300.00. OTP generated for bay H6
+2026-10-29T07:51:43.747725900Z|WAL-A5DB2969|AST-111|PICKUP_ATTEMPT_FAILED|RESERVED_ESCROW|RESERVED_ESCROW|host_faaris|Invalid OTP attempt 1/3 for bay H6
+2026-10-29T10:05:45.342362Z|WAL-50F969B4|AST-110|RETURN|ACTIVE_LEASE|INSPECTION_QUARANTINE|renter_priya|MANDATORY QUARANTINE: Item returned to Bay B1. Security deposit held pending inspection.
+2026-10-29T10:06:20.691621200Z|WAL-F2D94F71|AST-110|INSPECT_APPROVE|INSPECTION_QUARANTINE|AVAILABLE|host_ketan|Clean return approved. Slashed ₹0. Refunded ₹5500.00 deposit to renter_priya. Paid ₹2640.00 to host (2 days).
+2026-10-29T10:10:21.399061900Z|WAL-3B18EFEF|AST-109|INSPECT_SLASH|INSPECTION_QUARANTINE|AVAILABLE|host_faaris|Damage flagged (20.0%). Slashed ₹1000.00 to host. Refunded ₹4000.00 net deposit to renter_priya.
+2026-10-29T10:12:06.273380300Z|WAL-1EFBA102|AST-115|ONBOARD_ASSET|NONE|AVAILABLE|host_faaris|Onboarded new EventAndMobilityVehicle in Bay H6
