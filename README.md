@@ -89,7 +89,7 @@ The project includes demonstrations of:
 - State guards and duplicate-settlement protection for inspection, dispute, and support workflows.
 - Flat-file persistence and audit records for important operations.
 
-These are project-level implementations and tests, **not a claim of production security certification**. Before any external deployment, conduct an independent security review, configure secrets and accounts safely, harden storage and transport, and remove or isolate academic demo-switching features.
+These are project-level implementations and tests, **not a claim of production security certification**. Before any external deployment, conduct an independent security review, configure secrets and accounts safely, harden storage and transport, and remove or isolate academic demo-switching features. Never publish demo credentials; rotate any credential that has been committed to source history.
 
 ## Build and test
 
@@ -124,7 +124,7 @@ javac -d bin -encoding UTF-8 @sources.txt
 java -cp bin tests.RentSphereVerificationTest
 ```
 
-**Latest verified result:** 163 tests passed across 17 suites on the current checkout. The endpoint and concurrency checks use temporary local loopback servers and isolated test data directories.
+**Latest result documented in [`docs/05_TEST_RESULTS.md`](docs/05_TEST_RESULTS.md):** 163 tests passed across 17 suites. This count reflects the latest verification result currently documented on the repository's `main` branch; rerun the commands below to verify your checkout.
 
 ### 4. Start the web application
 
@@ -142,7 +142,7 @@ node -c frontend/js/app.js
 
 ## Local demo accounts
 
-The project may include seeded local accounts for renter, host, and administrator demonstrations. Use credentials configured for your own local checkout; this README intentionally does not publish a shared password.
+The project may include seeded local accounts for renter, host, and administrator demonstrations. Use credentials configured for your own local checkout; this README intentionally does not publish a shared password. **Do not use any repository-published shared demo password for a real account.**
 
 - The **demo persona switcher**, if enabled, is for local academic walkthroughs only. It is not a substitute for authentication and must not be used as a production identity system.
 - Do not expose the development server publicly with demo accounts enabled.
